@@ -1,5 +1,26 @@
-/*All in one*/
+/*single.c - 
+A two-file library for common things in C (and eventually C++)
+
+LICENSE
+-------
+
+
+Documentation:
+--------------
+
+
+Tests:
+------
+
+TODO:
+-----
+Package a tool to create documentation here.
+
+Package a way to build tests here.
+
+*/
 #include "single.h"
+static const unsigned int lt_hash = 31;
 
 static const char *__errors[] = 
 {
@@ -104,6 +125,21 @@ static const char *__errors[] =
 //Extract a hostname from a hostname string
 
 
+//Return a hash code with a block of memory
+static int lt_hashu (unsigned char *ustr, int len, int size)
+{
+	unsigned int hash=lt_hash;
+	for (int i=0; i<len; i++) hash += ((hash*31) + hash) + ustr[i];
+	return hash % size;
+}
+
+
+int hashint( char *str )
+{
+	return lt_hashu( (uint8_t *)str, strlen( str ), 8 );
+}
+
+
 
 //Write a string or blob as hex
 const char *hash_long ( char *dest, const unsigned char *src, int len, int dlen )
@@ -117,6 +153,32 @@ const char *hash_long ( char *dest, const unsigned char *src, int len, int dlen 
 	fprintf( stderr, "strlen(final): %ld\n", strlen( dest ));
 	return (char *)dest;
 }
+
+const char *shash_long ( const char *src, int len )
+{
+	char aa[ 3 ] = { 0 };
+	char *f = NULL;
+	int s = 0;
+	Buffer b;
+	bf_init( &b, NULL, 1 );
+
+	for ( int i=0, p=0; i < len; i++, src++, p += 2 ) 
+	{
+		//fprintf( stderr, "%c -> %02x\n", *src, *src );
+		snprintf( aa, 3, "%02x", *src );
+		bf_append( &b, (uint8_t *)aa, strlen( aa ));
+	}
+
+	bf_append( &b, (uint8_t *)"\0", 1 );
+	s = bf_written( &b );
+	f = malloc( s );
+	memset( f, 0, s );
+	memcpy( f, bf_data(&b), s ); 
+	write( 2, bf_data( &b ), bf_written( &b ) );	
+	bf_free( &b );
+	return f;
+}
+
 
 
 
@@ -141,6 +203,35 @@ const char *str_combine ( Buffer *b, const char *delim, ... )
 	return ( char * )bf_data( b );
 }
 
+
+//Combine a string using varargs and buff
+
+char *strcmbm ( const char *delim, ... )
+{
+	int a = 1, s = 0;
+	char *ret=NULL, *p = NULL;
+	va_list args;
+	va_start( args, delim );
+	Buffer b;
+	memset( &b, 0, sizeof( Buffer ));
+	bf_init( &b, NULL, 1 );
+
+	while ((p = va_arg( args, char *)) ) 
+	{
+		bf_append( &b, (unsigned char *)p, strlen( p ));
+		( delim ) ? bf_append( &b, (unsigned char *)delim, strlen( delim )) : 0;
+	} 
+
+	va_end( args );
+	s = bf_written( &b ); 
+	p = (char *)bf_data( &b );
+	p[ s - strlen(delim) ] = '\0';
+	ret = malloc( s );
+	memset( ret, 0, s );
+	memcpy( ret, p, strlen( p ) );	
+	bf_free( &b );	
+	return ret;
+}
 
 
 //Here is a quick and shitty file load function
@@ -800,7 +891,7 @@ int print_uerr (const char *err)
 }
 
 
-#if 0
+#if 1
 void print_body ( Bod *b )
 {
 	 niprintf( b->beg );
@@ -813,17 +904,18 @@ void print_body ( Bod *b )
 	 niprintf( b->loop );
 	 niprintf( b->loopKeyLen );
 	 niprintf( b->loopValueLen );
-#if 0
+ #if 0
 	char    *srcTable;
 	uint8_t *tok,
 	        *loopKey,
 					*loopValue,
 					*value,
 					*loopBuf;
-#endif
+ #endif
 }
 #endif
 #endif
+
 
 static void render_dump_mark ( Render *r )
 {
@@ -844,7 +936,7 @@ static void render_dump_mark ( Render *r )
 }
 
 
-//Initialization
+//render_init - Initializes a render block
 int render_init ( Render *r, Table *t )
 {
 	r->depth = 0;
@@ -960,7 +1052,7 @@ int render_map ( Render *r, uint8_t *src, int srclen )
 		}
 	}
 
-	render_dump_mark( r );
+	//render_dump_mark( r );
 	return 1;
 }
 
@@ -1171,7 +1263,6 @@ static const LiteRecord nul = { 0 };
 static const LiteRecord *supernul = &nul;
 static const int lt_maxbuf        = 64;
 static const int lt_buflen        = 4096;
-static const unsigned int lt_hash = 31;
 static const char *lt_polymorph_type_names[] = 
 {
 	[LITE_NON] = "uninitialized", 
@@ -1286,13 +1377,7 @@ int lt_counti ( Table *t, int index )
 
 
 
-//Return a hash code with a block of memory
-static int lt_hashu (unsigned char *ustr, int len, int size)
-{
-	unsigned int hash=lt_hash;
-	for (int i=0; i<len; i++) hash += ((hash*31) + hash) + ustr[i];
-	return hash % size;
-}
+
 
 
 
@@ -1399,7 +1484,7 @@ LiteType lt_add ( Table *t, int side, LiteType lt, int vi, float vf,
 	if ( t->index >= t->total ) 
 	{
 		t->error = ERR_LT_OUT_OF_SPACE;
-		return -1;
+		return 0;
 	}
 		
 	LiteValue  *v = (!side) ? &(t->head + t->index)->key : &(t->head + t->index)->value;
@@ -1408,7 +1493,7 @@ LiteType lt_add ( Table *t, int side, LiteType lt, int vi, float vf,
 
 	//Checks 
 	if ((lt == LITE_BLB || lt == LITE_TXT) && !vblen )
-		return -1;
+		return 0;
 
 	if ( lt == LITE_INT )
 		r->vint = vi;
@@ -1425,8 +1510,9 @@ LiteType lt_add ( Table *t, int side, LiteType lt, int vi, float vf,
 		r->vblob.blob = vb, r->vblob.size = vblen;
 	else if ( lt == LITE_TXT )
 	{
-		if ( !(r->vchar = malloc( vblen + 1 )) )
-			return -1;
+		r->vchar = malloc( vblen + 1 );
+		if ( !r->vchar )
+			return 0;
 		else 
 		{
 			memset( r->vchar, 0, vblen + 1 );
@@ -1456,7 +1542,7 @@ LiteType lt_add ( Table *t, int side, LiteType lt, int vi, float vf,
 	}
 #endif
 	else {
-		return -1;
+		return 0;
 	}
 	return lt;
 }
@@ -1647,9 +1733,11 @@ int lt_get_long_i (Table *t, unsigned char *find, int len)
 	}
 
 	//Find the key
-	for ( int i=0 ; !hv && i < 6; i++ ) 
+	for ( int i=0 ; !hv && i < 5; i++ ) 
 	{
 		uint8_t buf[LT_POLYMORPH_BUFLEN] = {0};
+		//fprintf( stderr, "%d, %d, %d\n", hh, hash, i );
+
 		if ((hh = (t->head + hash)->hash[i]) == -1 || i == lt_max_slots )
 		{
 #if 0
@@ -2228,7 +2316,8 @@ int32_t memstrat (const void *a, const void *b, int32_t size)
 	uint8_t *bb = (uint8_t *)b;
 	int len     = strlen((char *)b);
 	//while (stop = (ct < (size - len)) && memcmp(aa + ct, bb, len) != 0) ct++; 
-	while (stop) {
+	while (stop) 
+	{
 		while ((stop = (ct < (size - len))) && memcmp(aa + ct, bb, 1) != 0) ct++;
 		if (memcmp(aa + ct, bb, len) == 0)
 			return ct; 
@@ -2236,6 +2325,7 @@ int32_t memstrat (const void *a, const void *b, int32_t size)
 	}
 	return -1;
 }
+
 
 //Where exactly is a substr in memory
 int32_t memchrat (const void *a, const char b, int32_t size) {
@@ -2251,7 +2341,8 @@ int32_t memchrat (const void *a, const char b, int32_t size) {
 
 
 //Finds the 1st occurence of one char, Keep running until no tokens are found in range...
-int32_t memtok (const void *a, const uint8_t *tokens, int32_t sz, int32_t tsz) {
+int32_t memtok (const void *a, const uint8_t *tokens, int32_t sz, int32_t tsz) 
+{
 	int32_t p=-1,n;
 	
 	for (int i=0; i<tsz; i++)
@@ -2572,7 +2663,7 @@ static const char *sqlite3_E = "333333333";
 static const int   sqlite3_L = 9;
 static const SQWrite nullw[] = {{ .sentinel = 1 }};
 static const SQWrite nullentry = { .sentinel = 1 };
-const SQWrite nullwriter = { .sentinel = 1 };
+//const SQWrite nullwriter = { .sentinel = 1 };
 static const char *sqltypes[] = 
 {
 	[SQLITE_INTEGER] = "integer",
@@ -2734,7 +2825,7 @@ static int32_t Lmemchrat (const void *a, const char b, int32_t size)
 }
 
 
-
+#if 0
 //Finds the 1st occurence of one char, Keep running until no tokens are found in range...
 static int32_t Lmemtok (const void *a, const uint8_t *tokens, int32_t sz, int32_t tsz) 
 {
@@ -2744,7 +2835,7 @@ static int32_t Lmemtok (const void *a, const uint8_t *tokens, int32_t sz, int32_
 	}
 	return p;
 }
-
+#endif
 
 
 //Opens and creates a new database if it does not exist and closes it
@@ -2757,7 +2848,8 @@ _Bool sq_create_oneshot (const char *filename, const char *sql)
 	//Open the database
 	if (sqlite3_open(filename, &db) != SQLITE_OK) 
 	{
-		return berr(0, ERR_DB_OPEN );
+		//return berr(0, ERR_DB_OPEN );
+		return err(0, "failed to open db: %s\n", sqlite3_errmsg( db ));
 	}
 
 	//TODO: Add checks to make sure that there is a semicolon...
@@ -2768,34 +2860,38 @@ _Bool sq_create_oneshot (const char *filename, const char *sql)
 
 		//Prepare a statement
 		if ((rc = sqlite3_prepare_v2(db, buf, -1, &stmt, 0)) != SQLITE_OK)
-			return berr(0, ERR_DB_PREPARE_STMT);
+			return err(0, "failed to prepare stmt: %s\n", sqlite3_errmsg( db ));
+			//return berr(0, ERR_DB_PREPARE_STMT);
 
 		//Step to commit the record
 		if ((rc = sqlite3_step(stmt)) != SQLITE_DONE) 
 		{
 			sqlite3_finalize(stmt);
 			sqlite3_close(db);
-			return berr(0, ERR_DB_STEP);	
+			return err(0, "error stepping thru db: %s\n", sqlite3_errmsg( db ));
+			//return berr(0, ERR_DB_STEP);	
 		}
 	}
 	else 
 	{
 		//Loop through each part of the SQL query 
-		while ((a = Lmemtok(&sql[t], (uint8_t *)";\0", strlen(sql) - t, 2)) > -1) 
+		while ((a = memtok(&sql[t], (uint8_t *)";\0", strlen(sql) - t, 2)) > -1) 
 		{
 			init_buf(&sql[t], buf, a); 
 			//write(2, &sql[t], a);
 			
 			//Prepare a statement
 			if ((rc = sqlite3_prepare_v2(db, buf, -1, &stmt, 0)) != SQLITE_OK)
-				return berr(0, ERR_DB_PREPARE_STMT);
+				return err(0, "error preparing db stmt: %s\n", sqlite3_errmsg( db ));
+				//return berr(0, ERR_DB_PREPARE_STMT);
 
 			//Step to commit the record
 			if ((rc = sqlite3_step(stmt)) != SQLITE_DONE) 
 			{
 				sqlite3_finalize(stmt);
 				sqlite3_close(db);
-				return berr(0, ERR_DB_STEP);	
+				return err(0, "error stepping through db stmt: %s\n", sqlite3_errmsg( db ));
+				//return berr(0, ERR_DB_STEP);	
 			}
 
 			//Move up the indicator
@@ -2816,7 +2912,8 @@ _Bool sq_create_oneshot (const char *filename, const char *sql)
 
 
 //Do an insert
-_Bool sq_insert_oneshot (const char *filename, const char *sql, const SQWrite *w) {
+int sq_insert_oneshot (const char *filename, const char *sql, const SQWrite *w) 
+{
 	int rc, pos = 1;
 	sqlite3 *db = NULL;
 	sqlite3_stmt *stmt = NULL;
@@ -2824,25 +2921,37 @@ _Bool sq_insert_oneshot (const char *filename, const char *sql, const SQWrite *w
 
 	//Open database	
 	if (sqlite3_open(filename, &db) != SQLITE_OK)
-		return berr(0, ERR_DB_OPEN);
+	{
+		fprintf (stderr, "Failed to prepare db stmt: %s\n", sqlite3_errmsg(db));	
+		return 0; //ERR_DB_OPEN; //berr(0, ERR_DB_OPEN);
+	}
 
 	//Prepare
-	if ((rc = sqlite3_prepare_v2(db, sql, -1, &stmt, 0)) != SQLITE_OK) {
+	if ((rc = sqlite3_prepare_v2(db, sql, -1, &stmt, 0)) != SQLITE_OK) 
+	{
 		//return err(NULL, ERR_DB_PREPARE_STMT);
 		fprintf (stderr, "Failed to prepare db stmt: %s\n", sqlite3_errmsg(db));	
 		return 0;
 	}
 
 	//Loop through each value, do something with it
-	while (!w->sentinel) {
+	while (!w->sentinel) 
+	{
 		if (!stack[w->type].fp (stmt, pos, w))
+		{
+			fprintf( stderr, "Insert at stack failed...\n" );
 			return 0;
+		}
 		w++, pos++;
 	}
 
 	//Step and execute
 	if ((rc = sqlite3_step(stmt)) != SQLITE_DONE)
-		return berr(0, ERR_DB_STEP);
+	{
+		fprintf (stderr, "Failed to step: %s\n", sqlite3_errmsg(db));	
+		//return berr(0, ERR_DB_STEP);
+		return 0;
+	}
 
 	//Finalize statement
 	if (stmt)
@@ -2850,7 +2959,11 @@ _Bool sq_insert_oneshot (const char *filename, const char *sql, const SQWrite *w
 
 	//close database
 	if (sqlite3_close(db) != SQLITE_OK)
-		return berr(0, ERR_DB_CLOSE);
+	{
+		fprintf (stderr, "Failed to close db: %s\n", sqlite3_errmsg(db));	
+		//return berr(0, ERR_DB_CLOSE);
+		return 0;
+	}
 
 	return 1;
 }
@@ -3123,7 +3236,8 @@ static _Bool sq_add_sqlite3_double (sqlite3_stmt *stmt, int i, const SQWrite *w)
 }
 
 
-static _Bool sq_add_sqlite3_text (sqlite3_stmt *stmt, int i, const SQWrite *w) {
+static _Bool sq_add_sqlite3_text (sqlite3_stmt *stmt, int i, const SQWrite *w) 
+{
 	int rc= sqlite3_bind_text(stmt, i, w->v.c,
 		(!w->len || w->len == -1) ? strlen(w->v.c) : w->len, SQLITE_STATIC);
 	if (rc != SQLITE_OK) {
@@ -3297,7 +3411,7 @@ _Bool sq_exec (Database *gb, const char *sql)
 
 	/*This is some silly shit here*/
 	int t = 0, a = 0, rc = 0;
-	while ((a = Lmemtok(&sql[t], (uint8_t *)";\0", strlen(sql) - t, 2)) > -1) 
+	while ((a = memtok(&sql[t], (uint8_t *)";\0", strlen(sql) - t, 2)) > -1) 
 	{
 		//Initialize a buffer
 		init_buf(&sql[t], buf, a); 
@@ -3737,7 +3851,7 @@ int sq_save (Database *db, const char *query, const char *name, const SQWrite *w
 	}
 
 	lt_lock( &db->kvt );
-	lt_printall ( &db->kvt );
+	//lt_printall ( &db->kvt );
 	return 1;	
 }
 #endif
@@ -3875,6 +3989,137 @@ char * rand_any
  #else
 	return rand_stream(4, length);
  #endif
+}
+#endif
+
+
+#ifndef TIMER_H
+static const unsigned long CV_1T = 1000;
+static const unsigned long CV_1M = 1000000;
+static const unsigned long CV_1B = 1000000000;
+
+//Initiailize a timer
+void __timer_init (Timer *t, LiteTimetype type) 
+{
+	memset(t, 0, sizeof(Timer));	
+	t->type = type;
+}
+
+
+//Set the name of a timer
+void __timer_set_name (Timer *t, const char *label) 
+{
+	t->label = label;
+}
+
+
+//Start a currently running timer
+ #ifndef CV_VERBOSE_TIMER 
+void __timer_start (Timer *t)
+{
+ #else
+void __timer_start (Timer *t, const char *file, int line)
+{
+	t->file = file;
+	t->linestart = line;
+ #endif 
+	t->clockid = CLOCK_REALTIME;
+	clock_gettime( t->clockid, &t->start );
+}
+
+
+//Stop a currently running timer
+ #ifndef CV_VERBOSE_TIMER 
+void __timer_end (Timer *t)
+{
+ #else
+void __timer_end (Timer *t, const char *file, int line)
+{
+	t->file = file;
+	t->lineend = line;
+ #endif 
+	clock_gettime( t->clockid, &t->end );
+}
+
+
+//Returns difference of start and end time
+int __timer_elap (Timer *t) 
+{
+	return t->end.tv_sec - t->start.tv_sec;
+}
+
+
+//Pretty prints difference in requested format of start and end time
+void __timer_eprint (Timer *t) 
+{
+	//Define some stuff...
+	unsigned long nsdiff = 0;
+	time_t secs = 0;
+	double mod = 0;
+	char ch[64] = { 0 };
+	const char *ts ;
+	const char *time   = "ns\0ms\0us\0s";
+	const char *label  = (t->label) ? t->label :
+	 #ifdef CV_VERBOSE_TIMER
+		(t->file) ? t->file : "anonymous"
+	 #else
+		"anonymous"
+	 #endif
+	;
+	const char *fmt    =
+   #ifdef CV_VERBOSE_TIMER
+	  //"routine @[ %-20s %d - %d ] completed in %11ld %s\n"
+	  "routine @[ %-20s %d - %d ] completed in %s %s\n"
+   #else
+	  "routine [ %-20s ] completed in %s %s\n"
+   #endif
+	;
+
+
+	//Get the raw elapsed seconds and nanoseconds
+	if ((secs = t->end.tv_sec - t->start.tv_sec) == 0)
+		nsdiff = t->end.tv_nsec - t->start.tv_nsec;
+	else if (secs < 0) 
+	{
+		fprintf(stderr, "Timer error occurred!\n");
+		return; /*Some kind of error occurred*/
+	}
+	else if (secs > 0) 
+	{
+		if ((nsdiff = (CV_1B - t->start.tv_nsec) + t->end.tv_nsec) > CV_1B) {
+			nsdiff -= CV_1B;
+			secs += 1;
+		}
+	}
+
+
+	//Choose a modifier and make any final calculations for formatting
+	switch (t->type) 
+	{
+		case LITE_NSEC:   //0.000,000,001
+			snprintf( ch, 64,  "%ld", nsdiff );
+			ts = &time[0];
+			break;
+		case LITE_USEC:   //0.000,001
+			mod = ((float)secs * CV_1M) + (((float)nsdiff / (float)CV_1B) * (float)CV_1M);
+			ts = &time[6];
+			snprintf( ch, 64, "%.6f", mod);
+			break;
+		case LITE_MSEC:   //0.001
+			mod = ((float)secs * CV_1T) + (((float)nsdiff / (float)CV_1B) * (float)CV_1T);
+			ts = &time[3];
+			snprintf( ch, 64, "%.6f", mod);
+			break;
+		case LITE_SEC:
+			mod = ((float)secs + ((float)nsdiff / (float)CV_1B));
+			ts = &time[9];
+			snprintf( ch, 64, "%.6f", mod);
+			break;
+		default:
+			return;
+	}
+
+	fprintf(stderr, fmt, label, ch, ts); 
 }
 #endif
 

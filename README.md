@@ -13,6 +13,7 @@ It includes:
 <li>Option processing</li>
 <li>Parsing primitives</li>
 <li>A Mime library</li>
+<li>A clock timer</li>
 <li>Rendering</li>
 <li>A Table implementation (similar to Lua's table structure)</li>
 <li>A JSON parser</li>

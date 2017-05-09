@@ -1,5 +1,9 @@
 /*single.h*/
 //Start with includes, not all modules need all headers
+#ifndef _WIN32
+ #define _POSIX_C_SOURCE 200809L
+#endif 
+
 #include <ctype.h>
 #include <dirent.h>
 #include <dlfcn.h>
@@ -15,10 +19,10 @@
 #include <string.h>
 #include <strings.h>
 #include <sys/stat.h>
+#include <time.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <errno.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
 
 #ifndef SINGLE_H
 #define SINGLE_H
@@ -37,17 +41,6 @@
  //Test suite stuff
  #include "http-test.c"
 #endif
-
-#if 0
- //External anything (SDL, Lua, Duktape, etc)
- #include <lauxlib.h>
- #include <lua.h>
- #include <lualib.h>
- #include "vendor/duktape.h"
- #include "vendor/sqlite3.h"
- #include <axTLS/ssl.h>
-#endif
-
 
 /*Start with amalgamating all of the defines*/
 #define FILES_H 
@@ -111,11 +104,13 @@
 
 #ifndef ERR_H
  #if 1
-  #define err(n, ...) fprintf(stderr, __VA_ARGS__) ? n : n
+  #define err(n, ...) (( fprintf(stderr, __VA_ARGS__) ? 0 : 0 ) || fprintf( stderr, "\n" ) ? n : n)
   #define berr(n, c) fprintf(stderr, "%s\n", __errors[ c ] ) ? n : n
+  #define perr(n, ...) ( fprintf(stderr, "%s: ", PROGRAM_NAME ) ? 0 : 0 ) || (( fprintf(stderr, __VA_ARGS__ ) ? 0 : 0 ) || fprintf( stderr, "\n" ) ? n : n )
  #else
   #define err(n, ...) 0
   #define berr(n, ...) 0
+  #define perr(n, c) fprintf(stderr, PROGRAM_NAME, fprintf(stderr, "%s\n", __errors[ c ] ) ? n : n
  #endif
 #endif
 
@@ -276,9 +271,11 @@
  #define lt_addiv(t, v) \
  	lt_add(t, 1, LITE_INT, v, 0, 0, 0, 0, 0, 0, NULL)
  #define lt_addtk(t, v) \
- 	lt_add(t, 0, LITE_TXT, 0, 0, v, 0, 0, 0, 0, NULL)
+ 	lt_add(t, 0, LITE_TXT, 0, 0, 0, (uint8_t *)v, strlen(v), 0, 0, NULL)
+ 	//lt_add(t, 0, LITE_TXT, 0, 0, v, 0, 0, 0, 0, NULL)
  #define lt_addtv(t, v) \
- 	lt_add(t, 1, LITE_TXT, 0, 0, v, 0, 0, 0, 0, NULL)
+ 	lt_add(t, 1, LITE_TXT, 0, 0, 0, (uint8_t *)v, strlen(v), 0, 0, NULL)
+ 	//lt_add(t, 1, LITE_TXT, 0, 0, v, 0, 0, 0, 0, NULL)
  #define lt_addbk(t, vblob, vlen) \
  	lt_add(t, 0, LITE_BLB, 0, 0, 0, vblob, vlen, 0, 0, NULL)
  #define lt_addbv(t, vblob, vlen) \
@@ -354,6 +351,11 @@
   #define sq_insert_oneshot(fn, sql) __sq_run(fn, sql, 1, __sq_insert__)
   #define sq_read_oneshot(fn, sql) __sq_run(fn, sql, 1, __sq_read__)
  #endif
+#endif
+
+
+#ifndef TIMER_H
+ #include <time.h>
 #endif
 
 #ifndef MEM_H
@@ -939,7 +941,7 @@ typedef struct
 #endif
 
 
-#ifdef TIMER_H 
+#ifndef TIMER_H 
 //Different time types
 typedef enum 
 {
@@ -963,8 +965,7 @@ typedef struct
   const char *file;        
  #endif
 	LiteTimetype  type;     
-} 
-Timer;
+} Timer;
 #endif
 
 #ifndef MEM_H
@@ -1237,7 +1238,7 @@ _Bool sq_close (Database *);
 int sq_find (Database *, const char *);
 void print_db (Database *) ;
 _Bool sq_create_oneshot (const char *, const char *) ;
-_Bool sq_insert_oneshot (const char *, const char *, const SQWrite *) ;
+int sq_insert_oneshot (const char *, const char *, const SQWrite *) ;
 uint8_t *sq_read_oneshot(const char *, const char *, int) ;
 int sq_get_query_size ( sqlite3_stmt *stmt ) ;
 _Bool sq_setval (SQWrite *j, uint8_t *p, int len) ;
@@ -1376,6 +1377,14 @@ _Bool nw_add_write (Recvr *r, uint8_t *msg, int size);
 #endif
 
 #ifndef UTIL_H
+#define strcmbd( delim, ... ) \
+	strcmbm( delim, __VA_ARGS__, NULL )
+const char *shash_long ( const char *src, int len );
+#define strhashd( str ) \
+	shash_long( str, strlen( str ) )
+
+int hashint( char *str );
+char *strcmbm ( const char *delim, ... );
 int load_file2 (uint8_t *dest, const char *file, int *size);
 int load_file (Buffer *dest, const char *file, int *size);
 unsigned char *trim (unsigned char *msg, char *trim, int len, int *nlen);
