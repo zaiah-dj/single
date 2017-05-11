@@ -1396,8 +1396,8 @@ const char *hash_long ( char *dest, const unsigned char *src, int len, int dlen 
 _Bool opt_usage (Option *, const char *, const char *, int);
 _Bool opt_eval (Option *opts, int argc, char **argv);
  //union opt_value *get(Option *opts, const char *name);	
-_Bool opt_set (Option *opts, char *flag); 
-Value opt_get (Option *opts, char *flag); 
+_Bool opt_set (Option *opts, const char *flag); 
+Value opt_get (Option *opts, const char *flag); 
 
 #endif
 #endif

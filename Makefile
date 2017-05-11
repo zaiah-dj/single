@@ -1,4 +1,4 @@
-NAME = singe
+NAME = single
 HOST = rc
 WILDCARD = *
 DYLIB = so
@@ -64,7 +64,7 @@ NAMESPACE = obsidian
 LIB = lib$(NAMESPACE)$(VERSION).$(DYLIB)
 TEST = sql
 RUNARGS = $(INIT_ASAN) LD_LIBRARY_PATH=. ./obsrv --start --port 2000 --no-daemon --dir $(WWWDIR) 
-IGNORE = archive tests
+IGNORE = archive src tests
 IGNCLEAN = "sqlite3.o"
 ARCHIVEDIR = ..
 ARCHIVEFMT = gz

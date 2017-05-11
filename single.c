@@ -383,7 +383,8 @@ _Bool opt_usage (Option *opts, const char *prog, const char *msg, int status)
 
 
 //Check if an option was set by a user
-_Bool opt_set (Option *opts, char *flag) {
+_Bool opt_set (Option *opts, const char *flag) 
+{
 	Option *o = opts;
 	while (!o->sentinel) {
 		if (strcmp(o->lng, flag) == 0 && o->set)
@@ -395,7 +396,8 @@ _Bool opt_set (Option *opts, char *flag) {
 
 
 //Return a value if it was set, or a nil value (NULL for strings, 0 for numbers)
-Value opt_get (Option *opts, char *flag) {
+Value opt_get (Option *opts, const char *flag) 
+{
 	Option *o = opts;
 	while (!o->sentinel) {
 		if (strcmp(o->lng, flag) == 0)
