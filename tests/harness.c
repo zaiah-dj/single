@@ -10,7 +10,6 @@
 #define RENDER_H 
 #define SOCKET_H 
 #define SQROOGE_H 
-#define TAB_H
 #define TIMER_H 
 #define UTIL_H 
 
@@ -163,7 +162,7 @@ TestArg tests[] =
 	ARG( sqrooge, 1 ),
 #endif
 #ifndef TAB_H
-	ARG( tab, 1 ),
+	ARG( tab, 0 ),
 #endif
 #ifndef TIMER_H 
 	ARG( timer, 0 ),

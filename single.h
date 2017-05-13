@@ -114,7 +114,7 @@
  #endif
 #endif
 
-#ifndef DEBUG_H
+#ifdef DEBUG_H
  #if 1
 	#define SUSP(...) \
 		fprintf( stderr, "%s, %d: ", __FILE__, __LINE__ ); fprintf( stderr, __VA_ARGS__ ); getchar() 
@@ -132,6 +132,14 @@
   fprintf(stderr, "%-30s [ %s %d ] -> ", __func__, __FILE__, __LINE__); \
   fprintf( stderr, __VA_ARGS__ ); \
   fprintf( stderr, "\n"); } while (0)
+
+ //Dump binary data
+ #define SHOWBDATA(a,b, ...) do { \
+  fprintf(stderr, "%-30s [ %s %d ] -> ", __func__, __FILE__, __LINE__); \
+  fprintf( stderr, __VA_ARGS__ ); \
+	write( 2, a, b ); \
+  fprintf( stderr, "\n"); } while (0)
+
 
  //Encapsulate for testing
  #define ENCAPS( d, len ) \
@@ -262,8 +270,10 @@
  	lt_add(t, 1, LITE_BLB, 0, 0, 0, vblob, vlen, 0, 0, NULL)
  #define lt_addfloatvalue(t, v) \
  	lt_add(t, 1, LITE_FLT, 0, v, 0, 0, 0, 0, 0, NULL)
+#ifdef LITE_NUL
  #define lt_addnullvalue(t) \
  	lt_add(t, 1, LITE_NUL, 0, 0, 0, 0, 0, 0, 0, NULL)
+#endif
  #define lt_addudvalue(t, v) \
  	lt_add(t, 1, LITE_USR, 0, 0, 0, 0, 0, v, 0, NULL)
  #define lt_addik(t, v) \
@@ -373,11 +383,10 @@
 
 #ifndef JSON_H
  #define JSON_MAX_DEPTH 100
- #ifndef DEBUG_H 
+ #ifdef DEBUG_H 
   #define qprintf( ... ) \
    fprintf( stderr, __VA_ARGS__ );
   #define dump( ... )
-  	 
  #else	
   #define qprintf( ... )
   #define dump(...) 
@@ -743,7 +752,9 @@ union LiteRecord
   int         vint;
   float       vfloat;
   char       *vchar;
+#ifdef LITE_NUL
   void       *vnull;
+#endif
   void       *vusrdata;
   LiteBlob    vblob;
   LiteTable   vtable;
@@ -1208,7 +1219,7 @@ int lt_counti ( Table *t, int index );
 //Table *lt_within_long ( Table *t, uint8_t *src, int len );
 Table *lt_within_long( Table *st, uint8_t *src, int len );
 const char *lt_typename (int type);
- #ifndef DEBUG_H
+ #ifdef DEBUG_H
   /*This is only enabled when debugging*/
   void lt_printt (Table *t);
  #endif

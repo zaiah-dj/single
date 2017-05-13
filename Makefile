@@ -93,8 +93,14 @@ build: single.o
 build: tests
 	@printf ''>/dev/null	
 
+#Primary target
+debug: CFLAGS += -DDEBUG_H
+debug: single.o 
+debug: tests
+	@printf ''>/dev/null	
+
 #Tests
-tests: single.o tests/harness.o vendor/sqlite3.o
+tests: single.o tests/harness.o sqlite3.o
 	$(CC) $(CFLAGS) single.o harness.o sqlite3.o -o single-test -lm -lpthread -ldl
 	
 #Sqlite3
@@ -112,9 +118,9 @@ sqlite3.o:
 
 #clean
 clean:
-	-@find . -maxdepth 1 -type f -iname "*.o" -o -iname "*.so" \
+	-find . -maxdepth 1 -type f -iname "*.o" -o -iname "*.so" \
 		`echo $(IGNCLEAN) | sed '{ s/ / ! -iname /g; s/^/! -iname /; }'` | \
-		sed '/sqlite3.o/d' | xargs rm 
+		sed '/sqlite3.o/d' | xargs rm
 	-@rm $(BIN) single-test 2>/dev/null
 
 

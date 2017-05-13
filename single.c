@@ -20,6 +20,7 @@ Package a way to build tests here.
 
 */
 #include "single.h"
+
 static const unsigned int lt_hash = 31;
 
 static const char *__errors[] = 
@@ -1258,7 +1259,7 @@ Buffer *render_rendered (Render *r)
  #else
   static const int lt_max_slots     = 7;
  #endif
- #ifndef DEBUG_H
+ #ifdef DEBUG_H
   static const char *fmt = "%-4s\t%-10s\t%-5s\t%-10s\t%-30s\t%-6s\t%-20s\n";
  #endif
 static const LiteRecord nul = { 0 };
@@ -1272,9 +1273,12 @@ static const char *lt_polymorph_type_names[] =
 	[LITE_FLT] = "float",     
 	[LITE_TXT] = "text",     
 	[LITE_BLB] = "blob",     
+#ifdef LITE_NUL
 	[LITE_NUL] = "null",     
+#endif
 	[LITE_USR] = "userdata",     
 	[LITE_TBL] = "table",     
+	[LITE_TRM] = "terminator",     
 	[LITE_NOD] = "node",     
 };
 
@@ -1327,7 +1331,7 @@ static int build_backwards (LiteKv *t, unsigned char *buf, int bs)
 
 
 
-#ifndef DEBUG_H 
+#ifdef DEBUG_H 
 #endif
 
 //Trim things
@@ -1493,25 +1497,59 @@ LiteType lt_add ( Table *t, int side, LiteType lt, int vi, float vf,
 	LiteRecord *r = &v->v;
 	v->type       = lt;
 
-	//Checks 
-	if ((lt == LITE_BLB || lt == LITE_TXT) && !vblen )
+	//Check for zero length blobs or text
+	if ( ( lt == LITE_BLB || lt == LITE_TXT ) && !vblen )
 		return 0;
 
+	//Set each value to its matching type
 	if ( lt == LITE_INT )
+	{
 		r->vint = vi;
+	#ifdef DEBUG_H
+		SHOWDATA( "Adding int %s %d to table at %p", ( !side ) ? "key" : "value", r->vint, ( void * )t );
+	#endif
+	}
 	else if ( lt == LITE_FLT )
+	{
 		r->vfloat = vf;
+	#ifdef DEBUG_H
+		SHOWDATA( "Adding float %s %f to table at %p", ( !side ) ? "key" : "value", r->vfloat, ( void * )t );
+	#endif
+	}
+#ifdef LITE_NUL
 	else if ( lt == LITE_NUL )
+	{
 		r->vnull = NULL;
+	#ifdef DEBUG_H
+		SHOWDATA( "Adding null %s to table at %p", ( !side ) ? "key" : "value", ( void * )t );
+	#endif
+	}
+#endif
 	else if ( lt == LITE_USR )
+	{
 		r->vusrdata = vn;
-	else if ( lt == LITE_TBL ) 
+	#ifdef DEBUG_H
+		SHOWDATA( "Adding userdata %p to table at %p", ( void * )r->vusrdata, ( void * )t );
+	#endif
+	}
+	else if ( lt == LITE_TBL )
+	{
+	#ifdef DEBUG_H
+		SHOWDATA( "Adding invalid value table!" );
+	#endif
 		return ( t->error = ERR_LT_INVALID_VALUE ) ? -1 : -1;
-	//Even though this says LITE_TXT, the assumption is that tab needs to duplicate the data. 
+	}
 	else if ( lt == LITE_BLB )
+	{
 		r->vblob.blob = vb, r->vblob.size = vblen;
+	#ifdef DEBUG_H
+		SHOWDATA( "Adding blob of length %d to table at %p", r->vblob.size, ( void * )t );
+	#endif
+	}
 	else if ( lt == LITE_TXT )
 	{
+		//Even though this says LITE_TXT, the assumption 
+		//is that tab needs to duplicate the data. 
 		r->vchar = malloc( vblen + 1 );
 		if ( !r->vchar )
 			return 0;
@@ -1520,30 +1558,16 @@ LiteType lt_add ( Table *t, int side, LiteType lt, int vi, float vf,
 			memset( r->vchar, 0, vblen + 1 );
 			memcpy( r->vchar, vb, vblen );
 			r->vchar[ vblen ] = '\0';
-			fprintf( stderr,"'%s'\n", r->vchar  );
+		#ifdef DEBUG_H
+			SHOWDATA( "Adding text %s '%s' to table at %p", ( !side ) ? "key" : "value", r->vchar, ( void * )t );
+		#endif
 		}
 	}
-#if 0
-	else if ( lt == LITE_BLB )
+	else 
 	{
-		int nl = vblen;
-		//uint8_t *m = ( lt == LITE_TXT ) ? (uint8_t *)vc : vb;
-		uint8_t *m = vb;
-
-		if ( !nl )
-			return -1;	
-
-		if ( trim )
-		{
-			while ( memchr(trim, *(m + ( nl - 1 )), strlen( trim )) && nl-- ) ; 
-			while ( memchr(trim, *m, strlen( trim )) && nl-- ) m++;
-		}	
-		
-		r->vblob.blob = m;
-		r->vblob.size = nl;
-	}
-#endif
-	else {
+	#ifdef DEBUG_H
+		SHOWDATA( "Attempted to add unknown %s type to table at %p", ( !side ) ? "key" : "value", ( void * )t );
+	#endif
 		return 0;
 	}
 	return lt;
@@ -2137,8 +2161,10 @@ static void lt_printindex (LiteKv *tt, int ind)
 			/*LITE_NODE is handled in printall*/
 			if (t == LITE_NON)
 				w += snprintf( &b[w], lt_buflen - w, "%s", "is uninitialized" );
+#ifdef LITE_NUL
 			else if (t == LITE_NUL)
 				w += snprintf( &b[w], lt_buflen - w, "is terminator" );
+#endif
 			else if (t == LITE_USR)
 				w += snprintf( &b[w], lt_buflen - w, "userdata [address: %p]", r->vusrdata );
 			else if (t == LITE_TBL) 
@@ -2173,12 +2199,17 @@ static void lt_printindex (LiteKv *tt, int ind)
 	write(2, b, w);
 	write(2, "\n", 1);
 }	
-#if 1
+
+
+
+#ifdef DEBUG_H 
 //Get a key or value somewhere
 void lt_printall ( Table *t ) 
 {
+#ifdef DEBUG_H
 	//Header
 	fprintf( stderr, fmt, "Index", "KType", "VType", "Value", "CombinedValue", "HashOf", "Hashes" );
+#endif
 
 	for ( int ii=0; ii < t->index; ii++ )
 	{
@@ -2453,7 +2484,7 @@ int json_reset ( Table *t, uint8_t **b, int *a, int side  )
 
 
 //Dump
-#ifndef DEBUG_H
+#ifdef DEBUG_H
 static void json_dump (uint8_t *a, int b, const char *msg)
 {
 	(msg) ? fprintf( stderr, "%s: ", msg ) : 0;
@@ -2782,7 +2813,7 @@ int perr (Database *gb, SQ_Error err)
 #endif
 
 
-#ifndef DEBUG_H
+#ifdef DEBUG_H
 /*Print out the weird structure*/
 void print_global (Database *gb) 
 {
