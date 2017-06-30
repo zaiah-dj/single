@@ -39,7 +39,7 @@
 	.value = { LITE_INT, .v.vint = b } 
 
 #define FLOAT_VALUE( b ) \
-	.value = { LITE_FLT, .v.vint = b } 
+	.value = { LITE_FLT, .v.vfloat = b } 
 
 #define USR_VALUE( b ) \
 	.value = { LITE_USR, .v.vusrdata = b } 
@@ -52,6 +52,18 @@
 
 #define TRM_VALUE( ) \
 	.value = { LITE_TRM }
+
+#define TRM( ) \
+	.key = { LITE_TRM }
+
+#define START_TABLEs( str ) \
+	.key = { LITE_TXT, .v.vchar = str }, .value = { LITE_TBL }
+
+#define START_TABLEi( num ) \
+	.key = { LITE_INT, .v.vint = num }, .value = { LITE_TBL }
+
+#define END_TABLE() \
+	.key = { LITE_TRM }
 
 //Here is a stream containing seemingly random data
 //Here are some items that might be embedded in some table somewhere
@@ -85,7 +97,8 @@ struct Test
 
 
 //Here is an example LiteKv structure
-LiteKv kv0[] = {
+LiteKv kv0[] = 
+{
 	{ .key = { LITE_TXT, .v.vchar = "abc"}, .value = { LITE_TXT, .v.vchar = "def" } },
 	{ .key = { LITE_TXT, .v.vchar = "abc"}, .value = { LITE_FLT, .v.vfloat= 342.32} },
 	{ .key = { LITE_TXT, .v.vchar = "abc"}, .value = { LITE_TXT, .v.vchar = "def" } },
@@ -104,13 +117,13 @@ LiteKv kv1[] =
 {
 	{ TEXT_KEY( "abc" ), TEXT_VALUE( "def" ) },
 	{ TEXT_KEY( "def" ), FLOAT_VALUE( 342.32 ) },
-	{ TEXT_KEY( "ghi" ), TEXT_VALUE( "def" ) },
+	{ TEXT_KEY( "ghi" ), TEXT_VALUE( "Indomitable" ) },
 	{ TEXT_KEY( "jkl" ), /*NULL_VALUE( )*/ TEXT_VALUE( "orange julius" ) },
 	{  INT_KEY( 3234  ), TEXT_VALUE( "def" ) },
 	{  INT_KEY( 100   ), TEXT_VALUE( "def" ) },
 	{ TEXT_KEY( "bin" ), BLOB_VALUE( dat4 ) },
 	{  INT_KEY( 32    ),  INT_VALUE( 3222 ) },
-	{ TEXT_KEY( "abc" ), TEXT_VALUE( "def" ) },
+	{ TEXT_KEY( "abc" ), TEXT_VALUE( "Large angry deer are following me." ) },
 	{ LKV_LAST } 
 };
 
@@ -136,7 +149,10 @@ LiteKv kv3[] =
 		{ INT_KEY( 7004 )    , USR_VALUE ( NULL ) },
 		{ INT_KEY( 7008 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog again." )  },
 		{ INT_KEY( 7009 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the last time." )  },
+	#if 0
 		{ INT_KEY( 0 )       , TRM_VALUE( )           },	
+	#endif
+		{ TRM() },
 	{ LKV_LAST } 
 };
 
@@ -153,7 +169,10 @@ LiteKv kv4[] =
 		{ INT_KEY( 7004 )    , USR_VALUE ( NULL ) },
 		{ INT_KEY( 7008 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog again." )  },
 		{ INT_KEY( 7009 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the last time." )  },
+#if 0
 		{ INT_KEY( 0 )       , TRM_VALUE( )           },	
+#endif
+		{ TRM() },
 	{ TEXT_KEY( "ashor" )  , TABLE_VALUE( )         },
 		{ INT_KEY( 7043 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog." )  },
 		{ INT_KEY( 7002 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog another time." )  },
@@ -161,7 +180,10 @@ LiteKv kv4[] =
 		{ INT_KEY( 7004 )    , USR_VALUE ( NULL ) },
 		{ INT_KEY( 7008 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog again." )  },
 		{ INT_KEY( 7009 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the last time." )  },
+#if 0
 		{ INT_KEY( 0 )       , TRM_VALUE( )           },	
+#endif
+		{ TRM() },
 	{ LKV_LAST } 
 };
 
@@ -185,8 +207,12 @@ LiteKv kv5[] =
 			{ INT_KEY( 7004 )    , USR_VALUE ( NULL ) },
 			{ INT_KEY( 7008 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog again." )  },
 			{ INT_KEY( 7009 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the last time." )  },
+			{ TRM() },
+		{ TRM() },
+#if 0
 			{ INT_KEY( 0 )       , TRM_VALUE( )           },	
 		{ INT_KEY( 0 )       , TRM_VALUE( )           },	
+#endif
 	{ LKV_LAST } 
 };
 
@@ -217,7 +243,10 @@ LiteKv kv6[] =
 				{ INT_KEY( 7074 )    , USR_VALUE ( NULL ) },
 				{ INT_KEY( 7089 )    , TEXT_VALUE( "Terrible again." )  },
 				{ INT_KEY( 7089 )    , TEXT_VALUE( "Terrible for the last time." )  },
+				{ TRM() },
+			#if 0
 				{ INT_KEY( 0 )       , TRM_VALUE( )           },	
+			#endif
 	/*Level 3*/
 			{ TEXT_KEY( "hwang" )  , TABLE_VALUE( )         },
 				{ INT_KEY( 7043 )    , TEXT_VALUE( "Terrible." )  },
@@ -228,8 +257,12 @@ LiteKv kv6[] =
 					{ INT_KEY( 7043 )    , TEXT_VALUE( "Terrible." )  },
 					{ INT_KEY( 7044 )    , TEXT_VALUE( "Terrible another time." )  },
 					{ INT_KEY( 7089 )    , TEXT_VALUE( "Terrible for the last time." )  },
+					{ TRM() },
+				{ TRM() },
+		#if 0
 					{ INT_KEY( 0 )       , TRM_VALUE( )           },	
 				{ INT_KEY( 0 )       , TRM_VALUE( )           },	
+		#endif
 	/*Level 3*/
 			{ TEXT_KEY( "siegfried" )  , TABLE_VALUE( )         },
 				{ INT_KEY( 7043 )    , TEXT_VALUE( "Terrible." )  },
@@ -245,11 +278,18 @@ LiteKv kv6[] =
 						{ INT_KEY( 7043 )    , TEXT_VALUE( "Terrible." )  },
 						{ INT_KEY( 7044 )    , TEXT_VALUE( "Terrible another time." )  },
 						{ INT_KEY( 7089 )    , TEXT_VALUE( "Terrible for the last time." )  },
+						{ TRM() },
+					{ TRM() },
+				{ TRM() },
+			{ TRM() },
+		{ TRM() },
+#if 0
 						{ INT_KEY( 0 )       , TRM_VALUE( )           },	
 					{ INT_KEY( 0 )       , TRM_VALUE( )           },	
 				{ INT_KEY( 0 )       , TRM_VALUE( )           },	
 			{ INT_KEY( 0 )       , TRM_VALUE( )           },	
 		{ INT_KEY( 0 )       , TRM_VALUE( )           },	
+#endif
 	{ LKV_LAST } 
 };
 
@@ -302,6 +342,12 @@ Table *convert_lkv ( LiteKv *kv )
 			lt_addblobkey( t, kv->key.v.vblob.blob, kv->key.v.vblob.size );
 		else if ( kv->key.type == LITE_INT )
 			lt_addintkey( t, kv->key.v.vint );
+		else if ( kv->key.type == LITE_TRM )
+		{
+			lt_ascend( t );
+			kv ++;
+			continue;
+		}
 		else 
 		{
 			//Abort immediately b/c this is an error
@@ -311,8 +357,6 @@ Table *convert_lkv ( LiteKv *kv )
 
 		if ( kv->value.type == LITE_TXT )
 			lt_addtextvalue( t, kv->value.v.vchar );
-		else if ( kv->value.type == LITE_TBL )
-			lt_descend( t );
 		else if ( kv->value.type == LITE_BLB )
 			lt_addblobvalue( t, kv->value.v.vblob.blob, kv->value.v.vblob.size );
 		else if ( kv->value.type == LITE_INT )
@@ -321,8 +365,14 @@ Table *convert_lkv ( LiteKv *kv )
 			lt_addfloatvalue( t, kv->value.v.vfloat );
 		else if ( kv->value.type == LITE_USR )
 			lt_addudvalue( t, kv->value.v.vusrdata );
-		else if ( kv->value.type == LITE_TRM )
-			lt_ascend( t );
+		else if ( kv->value.type == LITE_NUL )
+			0;//lt_ascend has already been called, thus we should never reach this
+		else if ( kv->value.type == LITE_TBL )
+		{
+			lt_descend( t );
+			kv ++;
+			continue;
+		}
 		else
 		{ 
 			//Abort immediately b/c this is an error
@@ -332,6 +382,7 @@ Table *convert_lkv ( LiteKv *kv )
 
 		if ( kv->value.type != LITE_TBL )
 		{
+			fprintf( stderr, "Descended, but did you finalize?\n" );
 			lt_finalize( t );
 		}
 		kv ++;
@@ -339,74 +390,6 @@ Table *convert_lkv ( LiteKv *kv )
 	lt_lock( t );
 	return t;
 }
-
-
-//This tests some new functionality 
-_Bool test10 (Test *t) 
-{
-#if 0
-	//This is a new polymoprh test
-	LiteBlob *by = NULL;
-	by = &lt_blob( t, "root.routes.pdf.model" );
-	if ( !by->size )
-		fprintf( stderr, "This should be here..." );
-
-	if ( !lt_within( t, "root.routes.pdf" ) )
-		fprintf( stderr, "Couldn't find this table..." );
-
-	by = &lt_blob( t, "model" );
-	if ( !by->size )
-		fprintf( stderr, "Hey, this key wasn't found here..." );
-
-	lt_reset( t );
-
-	if ( !lt_within( t, "root.routes.pdf" ) )
-		fprintf( stderr, "Couldn't find this table..." );
-#endif
-
-	return 0;
-}
-
-
-#if 0
-_Bool test11 (Test *t)
-{
-	Table tt;
-	int aa;
-	const char *dups[] = 
-	{
-		"Analytics",
-		"Speedcore Bass Kittens",
-		"Jason is coming for you.",
-		"Because you're so cute.",
-		"It's too much for the poor little guy.",
-		"Bass Terror Mansion",
-		"Dubstep sux..."
-	};
-
-	lt_init( &tt, NULL, 1027 );
-
-	for ( int i = 0; i< sizeof(dups)/sizeof( char *); i++ )
-	{
-		fprintf( stderr, " %s\n", dups[ i ] );
-		lt_addintkey( &tt, i  );
-		lt_addtextvalue( &tt, dups[ i ] );
-		lt_finalize( &tt );
-	}
-
-	lt_lock( &tt );
-	aa = lt_geti( &tt, "3" );
-	fprintf( stderr, "3 is at: %d\n", aa );
-
-	char *a = lt_text( &tt, "3" );
-	fprintf( stderr, "Text at %d is: %s\n", aa, a );
-	
-
-	lt_dump( &tt );
-	lt_free( &tt );
-	return 1;
-}
-#endif
 
 
 
@@ -458,51 +441,6 @@ TEST( tab )
 		//Next
 		j++;
 	}
-#if 0
-	while ( *k )
-	{
-		//Convert the key values to Table 
-		Table *t = NULL;
-		if ( (t = convert_lkv( *k )) == NULL ) 
-		{
-			char buf [ 2048 ];
-			EPRINTF( "Failed to convert #%d set of key values", set );
-		}
 
-		//Always dump (you could theoretically use memcmp/strcmp to check this)
-		lt_dump( t );
-		
-		//Run any tests that may need to be run.
-		//		
-
-		//Free the values and the table
-		lt_free( t );
-		free( t );
-	
-		//Next entry	
-		k ++;
-	}
-#endif
-	
-#if 0
-	for (int i=0; i<sizeof(testsi)/sizeof(Test); i++) 
-	{
-		Test tt = testsi[i];
-		if (tt.test) 
-		{
-			//Define
-			int status;
-
-			//Populate tests
-			status = tt.test(&tt);
-			
-			//Retrieval tests
-
-			//Status
-			fprintf( stderr, "Test %-20s %s\n", tt.name, (status) ? "PASSED" : "FAILED");
-			fprintf( stderr, "\n\n" );
-		}
-	}
-#endif
 	return 0;
 }

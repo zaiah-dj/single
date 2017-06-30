@@ -1229,7 +1229,8 @@ int render_render ( Render *r )
 						//Skip completely if this is a table and there are no entries
 						if ( (dt->times = lt_counti( r->srctable, ct->index )) > 0 )
 						{
-							--dt->times;
+							--dt->times;  /*Adjust count b/c the sentinel has its own index*/
+							//dt->times -= 2;  /*Adjust count b/c the sentinel has its own index*/
 							dt->mark = ct + 1;
 							dt->psize = ct->size;
 							dt->parent = ct->blob;
@@ -1543,7 +1544,7 @@ LiteType lt_add ( Table *t, int side, LiteType lt, int vi, float vf,
 	{
 		r->vblob.blob = vb, r->vblob.size = vblen;
 	#ifdef DEBUG_H
-		SHOWDATA( "Adding blob of length %d to table at %p", r->vblob.size, ( void * )t );
+		SHOWDATA( "Adding blob %s of length %d to table at %p", (!side) ? "key" : "value", r->vblob.size, ( void * )t );
 	#endif
 	}
 	else if ( lt == LITE_TXT )
@@ -1624,6 +1625,9 @@ int lt_move (Table *t, int dir)
 	//Left or right?	
 	if ( !dir )
 	{
+	#ifdef DEBUG_H
+		SHOWDATA( "Descending into table value to table at %p", ( void * )t );
+	#endif
 		//Set count of elements in this new table to actual count
 		LiteTable *T = &value->v.vtable;
 		value->type  = LITE_TBL;
@@ -1642,6 +1646,9 @@ int lt_move (Table *t, int dir)
 		key->type      = LITE_TRM;
 		value->type    = LITE_NUL;
 		LiteRecord *r  = &key->v;	
+	#ifdef DEBUG_H
+		SHOWDATA( "Ascending from inner table within at %p", ( void * )t );
+	#endif
 
 		//
 		if ( !t->current->parent )
@@ -4533,7 +4540,7 @@ int socket_connect (Socket *self, const char *uri, int port)
 	if ( (stat = getaddrinfo( uri, portstr, &self->hints, &self->res)) != 0 )
 	{
 		self->err = errno;
-		err(1, (char *)gai_strerror(stat));
+		err(1, "%s", (char *)gai_strerror(stat));
 	}
 
 	// ...
@@ -4556,12 +4563,12 @@ int socket_connect (Socket *self, const char *uri, int port)
 		else 
 		{
 			fprintf( stderr, "socket connect error..." );
-			err(1, strerror(errno));	
+			err(1, "%s", strerror(errno));	
 		}
 
 		// Close the parent if unsuccessful
 		if ( close( self->fd ) == -1 )
-			err(1, strerror(errno));	
+			err(1, "%s", strerror(errno));	
 	}
 
 	freeaddrinfo( self->res );	

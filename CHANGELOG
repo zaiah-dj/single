@@ -1,0 +1,21 @@
+Fri Jun 30 02:54:04 EDT 2017
+	 -Added vendor/sqlite3.[ch] to the build.  Will remove from v/c later, b/c I am not adding anything to it nor taking away anything from it.
+
+Fri Jun 30 02:53:10 EDT 2017
+	 -Made some changes to format strings because they were compiling without hitches in clang.
+	 -Added a couple of more tests.
+
+Fri, May 19, 2017  2:14:33 PM
+	 -Render tests are NOT coming along super well.  I found some bugs, but more than that, I can't seem to get the table structures to work correctly...
+
+Sat, May 13, 2017 11:27:14 AM
+	 -Finished add tab tests.  They work reliably and don't rely on parsing of any kind.  In fact, the macros that are defined to make long structures might work better than expected.
+
+Thu, May 11, 2017  6:54:48 PM
+	 -Will finally start adding some tests.
+	 -Harness should be completely finished now.
+	 -Synced all other directories with this same work.
+
+Tue May  9 17:30:53 EDT 2017
+	 -Added test harness file.  Added Timer module.  Added tests and working on merging other libraries.
+

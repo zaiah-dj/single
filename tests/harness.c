@@ -2,12 +2,14 @@
 #include "harness.h"
 #include "harness-test-data.c"
 
+//#define BUFFER_H
+//#define JSON_H
 #define FILES_H 
-#define MEM_H 
+//#define MEM_H 
 #define OPT_H
 #define PARSELY_H 
 #define RAND_H 
-#define RENDER_H 
+//#define RENDER_H 
 #define SOCKET_H 
 #define SQROOGE_H 
 #define TIMER_H 
@@ -88,6 +90,9 @@
 #ifndef RAND_H 
  #include "random.c"
 #endif
+#ifndef TAB_H
+ #include "tab.c"
+#endif
 #ifndef RENDER_H 
  #include "render.c"
 #endif
@@ -96,9 +101,6 @@
 #endif
 #ifndef SQROOGE_H 
  #include "sqrooge.c"
-#endif
-#ifndef TAB_H
- #include "tab.c"
 #endif
 #ifndef TIMER_H 
  #include "timer.c"
@@ -141,7 +143,7 @@ TestArg tests[] =
 	ARG( json, 1 ),
 #endif
 #ifndef MEM_H 
-	ARG( mem, 1 ),
+	ARG( mem, 0 ),
 #endif
 #ifndef OPT_H
 	ARG( opt, 0 ),
@@ -153,7 +155,7 @@ TestArg tests[] =
 	ARG( rand, 0 ),
 #endif
 #ifndef RENDER_H 
-	ARG( render, 1 ),
+	ARG( render, 0 ),
 #endif
 #ifndef SOCKET_H 
 	ARG( socket, 0 ),
@@ -244,7 +246,7 @@ int main (int argc, char *argv[])
 		}
 
 		RPRINTF( "YES" );
-		HPRINTF( t->name ); 
+		HPRINTF( "%s", t->name ); 
 
 		if ( !t->file )
 			//Run non file based tests
