@@ -1,5 +1,21 @@
-/*single.h*/
-//Start with includes, not all modules need all headers
+/*
+single.h
+========
+
+@summary
+	A two file library for C that handles basic utilities.
+
+@usage
+	Build it! :)
+
+	gcc -Wall -Werror -Wno-unused -c single.c  
+	will do it on most systems.
+
+@todo
+- Add specialized Makefiles for different platforms (OSX, Linux, Windows).
+- 
+
+*/
 #ifndef _WIN32
  #define _POSIX_C_SOURCE 200809L
 #endif 
@@ -348,7 +364,17 @@
 #endif
 
 #ifndef SQROOGE_H
- #include "vendor/sqlite3.h"
+ #ifdef SQLITE3_GLOBAL
+	#include <sqlite3.h>
+ #endif
+
+ #ifdef SQLITE3_PATH
+  #include SQLITE3_PATH
+ #endif
+
+ #if !defined(SQLITE3_PATH) && !defined(SQLITE3_GLOBAL)
+ 	#include "vendor/sqlite3.h"
+ #endif
  
  /*This is because C sucks... :) (sometimes) */
  #define init_buf(dest, src, len) \

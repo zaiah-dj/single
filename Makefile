@@ -1,69 +1,17 @@
+# Makefile for single 
 NAME = single
-HOST = rc
 WILDCARD = *
-DYLIB = so
-BIN = obsrv
-BIN_RENDER = obrender
-BIN_CONNECT = obconnect
-BINTEST = obtest
-SRC = buff.c lite.c json.c mime.c nw.c http.c tab.c parsely.c render.c sqlite3.c sqrooge.c utilities.c
-OBJ = ${SRC:.c=.o}
 PREFIX = /usr/local
 MANPREFIX = ${PREFIX}/share/man
-#LDDIRS = -L$(PREFIX)/lib
-LDDIRS = -L. -L$(PREFIX)/lib -I$(PREFIX)/include
-LDFLAGS = -lm -ldl -llua #-l$(NAMESPACE)$(VERSION) 
-COMPLAIN = -Wno-unused
-ABC = `locate llvm-symbolizer | grep /usr | head -n 1`
-#ABC = llvm-symbolizer
-INIT_ASAN = ASAN_SYMBOLIZER_PATH=$(ABC)
-
-#CFlags get very complicated very easily
-#All defines go here
 DFLAGS = -DNW_VERBOSE
 PICTYPE=-fPIC
-#Clang compilation flags
-CLANGFLAGS = -g $(PICTYPE) -Wall -Werror -std=c99 $(COMPLAIN) -fsanitize=address -fsanitize-undefined-trap-on-error $(DFLAGS)
-CLANGSHARED = $(LDFLAGS) $(LDDIRS)
-#GCC compilation flags
-#GCCFLAGS = -g $(PICTYPE) -Wall -Werror $(COMPLAIN) -Wstrict-overflow -ansi -std=c99 -Wno-deprecated-declarations -Xlinker --verbose -O0 $(DFLAGS)
-GCCFLAGS = -g $(PICTYPE) -Wall -Werror $(COMPLAIN) -Wstrict-overflow -ansi -std=c99 -Wno-deprecated-declarations -O0 $(DFLAGS)
-GCCSHARED = $(LDDIRS) $(LDFLAGS)
-
-#ifdef LINUX
-#Linux / BSD targets will most likely have no trouble with the following options
-#SHARED = $(CLANGSHARED)
-#CC = clang
-#CFLAGS = $(CLANGFLAGS)
-#And here's one for those who prefer GCC
-#SHARED = $(GCCSHARED)
-#CC = gcc
-#CFLAGS = $(GCCFLAGS)
-#endif
-
-#ifdef CYGWIN
-#Cygwin needs a couple of adjustments
-PICTYPE=-fpic
-GCCFLAGS = -g $(PICTYPE) -Wall -Werror $(COMPLAIN) -Wstrict-overflow -ansi -std=c99 -Wno-deprecated-declarations -O0 $(DFLAGS)
-#SHARED = $(GCCSHARED)
-CC = gcc
-CFLAGS = $(GCCFLAGS)
-#endif
-
-#ifdef WIN32
-#Windows..., oh boy... Windows...
-#SHARED = $(GCCSHARED)
-#CC = gcc
-#CFLAGS = $(GCCFLAGS)
-#endif
+CFLAGS = -g -Wall -Wno-unused -Werror -std=c99 $(COMPLAIN) -fsanitize=address -fsanitize-undefined-trap-on-error 
+CC=clang
+#GCCFLAGS = -g -Wall -Wno-unused -Werror $(COMPLAIN) -Wstrict-overflow -ansi -std=c99 -Wno-deprecated-declarations -O0 $(DFLAGS)
+#CC=gcc
 
 #if 0
-WWWDIR=`realpath ../obsidian-www`
-VERSION = 0.2-rc1
-NAMESPACE = obsidian
-LIB = lib$(NAMESPACE)$(VERSION).$(DYLIB)
-TEST = sql
-RUNARGS = $(INIT_ASAN) LD_LIBRARY_PATH=. ./obsrv --start --port 2000 --no-daemon --dir $(WWWDIR) 
+# Packaging
 IGNORE = archive src tests
 IGNCLEAN = "sqlite3.o"
 ARCHIVEDIR = ..
@@ -72,6 +20,8 @@ ARCHIVEFILE = $(NAME).`date +%F`.`date +%H.%M.%S`.tar.${ARCHIVEFMT}
 PKGDIR = $(NAME).$(VERSION)
 PKGFILE = $(ARCHIVEDIR)/$(NAME).$(VERSION).tar.${ARCHIVEFMT}
 SYNCDIR = space/archives/private/$(NAME)
+# Platform optimizations
+DYLIB = so
 DB=gdb
 DBFLAGS=-ex run --args 
 LC=valgrind

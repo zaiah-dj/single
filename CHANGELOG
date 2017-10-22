@@ -1,3 +1,7 @@
+Sun Oct 22 15:55:40 EDT 2017
+t -Added SQLITE3_PATH and SQLITE3_GLOBAL to the build.  Users should have been able to do this a long time ago...
+t -Added some slightly better documentation.  Still lots to go on this....
+
 Fri Jun 30 02:54:04 EDT 2017
 	 -Added vendor/sqlite3.[ch] to the build.  Will remove from v/c later, b/c I am not adding anything to it nor taking away anything from it.
 
