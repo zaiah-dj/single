@@ -1,21 +1,5 @@
-/*
-single.h
-========
-
-@summary
-	A two file library for C that handles basic utilities.
-
-@usage
-	Build it! :)
-
-	gcc -Wall -Werror -Wno-unused -c single.c  
-	will do it on most systems.
-
-@todo
-- Add specialized Makefiles for different platforms (OSX, Linux, Windows).
-- 
-
-*/
+/*single.h*/
+//Start with includes, not all modules need all headers
 #ifndef _WIN32
  #define _POSIX_C_SOURCE 200809L
 #endif 
@@ -130,13 +114,18 @@ single.h
  #endif
 #endif
 
-#ifdef DEBUG_H
- #define SUSP(...) \
-	fprintf( stderr, "%s, %d: ", __FILE__, __LINE__ ); fprintf( stderr, __VA_ARGS__ ); getchar() 
+#ifndef DEBUG_H
+ #if 1
+	#define SUSP(...) \
+		fprintf( stderr, "%s, %d: ", __FILE__, __LINE__ ); fprintf( stderr, __VA_ARGS__ ); getchar() 
 
- #define STEP(...) do { \
-  fprintf( stderr, "%20s [ %s: %d ]", __func__, __FILE__, __LINE__ ); \
-  getchar(); } while (0)
+  #define STEP(...) do { \
+   fprintf( stderr, "%20s [ %s: %d ]", __func__, __FILE__, __LINE__ ); \
+   getchar(); } while (0)
+ #else
+  #define STEP(...) do { \
+   fprintf( stderr, __VA_ARGS__ ); getchar(); } while (0)
+ #endif
 
  //A define to help dump data
  #define SHOWDATA(...) do { \
@@ -151,6 +140,7 @@ single.h
 	write( 2, a, b ); \
   fprintf( stderr, "\n"); } while (0)
 
+
  //Encapsulate for testing
  #define ENCAPS( d, len ) \
   write( 2, "'", 1 ); \
@@ -158,11 +148,11 @@ single.h
   write( 2, "'", 1 ); \
   write( 2, "\n", 1 )
 #else
- #define SUSP(...)
- #define STEP(...)
- #define SHOWDATA(...)
- #define SHOWBDATA(a,b, ...)
- #define ENCAPS( d, len )
+	#define SUSP(...)
+  #define STEP(...) 
+  #define SHOWDATA(...)
+	#define SHOWBDATA(a,b, ...) 
+	#define ENCAPS( d, len )
 #endif
 
 
@@ -364,16 +354,10 @@ single.h
 #endif
 
 #ifndef SQROOGE_H
- #ifdef SQLITE3_GLOBAL
-	#include <sqlite3.h>
- #endif
-
- #ifdef SQLITE3_PATH
+ #ifndef SQLITE3_PATH
+  #include "sqlite3.h"
+ #else
   #include SQLITE3_PATH
- #endif
-
- #if !defined(SQLITE3_PATH) && !defined(SQLITE3_GLOBAL)
- 	#include "vendor/sqlite3.h"
  #endif
  
  /*This is because C sucks... :) (sometimes) */
