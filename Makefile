@@ -5,7 +5,7 @@ PREFIX = /usr/local
 MANPREFIX = ${PREFIX}/share/man
 DFLAGS = -DNW_VERBOSE
 PICTYPE=-fPIC
-CFLAGS = -g -Wall -Wno-unused -Werror -std=c99 $(COMPLAIN) -fsanitize=address -fsanitize-undefined-trap-on-error 
+CFLAGS = -g -Wall -Wno-unused -Werror -std=c99 $(COMPLAIN) -fsanitize=address -fsanitize-undefined-trap-on-error  -DSQLITE3_PATH="\"vendor/sqlite3.h\""
 CC=clang
 #GCCFLAGS = -g -Wall -Wno-unused -Werror $(COMPLAIN) -Wstrict-overflow -ansi -std=c99 -Wno-deprecated-declarations -O0 $(DFLAGS)
 #CC=gcc
@@ -19,13 +19,6 @@ ARCHIVEFMT = gz
 ARCHIVEFILE = $(NAME).`date +%F`.`date +%H.%M.%S`.tar.${ARCHIVEFMT}
 PKGDIR = $(NAME).$(VERSION)
 PKGFILE = $(ARCHIVEDIR)/$(NAME).$(VERSION).tar.${ARCHIVEFMT}
-SYNCDIR = space/archives/private/$(NAME)
-# Platform optimizations
-DYLIB = so
-DB=gdb
-DBFLAGS=-ex run --args 
-LC=valgrind
-LCFLAGS=--leak-check=full --log-fd=3
 #endif
 
 
@@ -89,16 +82,6 @@ run:
 	$(RUNARGS)
 
 
-#Add flags here, b/c the server should free all resources...
-leak: CFLAGS += -DNW_BEATDOWN_POST
-leak: CFLAGS += -DNW_BEATDOWN_MODE
-leak: clean 
-leak: build 
-leak:
-	@echo $(LC) $(LCFLAGS) $(RUNARGS) 3>etc
-	@$(LC) $(LCFLAGS) $(RUNARGS) 3>etc
-
-
 # Make a tarball that goes to another directory
 backup: veryclean
 backup:
@@ -145,23 +128,6 @@ pkg-debug: pkg-base
 pkg: PKGDEBUG = 2>/dev/null
 pkg: pkg-base
 	@printf '' >/dev/null
-
-# Pull / sync
-pull:
-	@VAR=`ssh $(HOST) 'ls ~/$(SYNCDIR)/$(NAME)$(WILDCARD) | tail -n 1'`; \
-	 ssh $(HOST) "cat $$VAR" | tee archive/`basename $$VAR` | tar xzf -
-
-
-# Push 
-push: ARCHIVEDIR = archive
-push:
-	@-rm -f sqlite3.o
-	@VAR=$(ARCHIVEFILE); \
-	tar chzf $(ARCHIVEDIR)/$$VAR --exclude-backups \
-		`echo $(IGNORE) | sed '{ s/^/--exclude=/; s/ / --exclude=/g; }'` ./$(WILDCARD) ; \
-	ssh $(HOST) 'mkdir ~/$(SYNCDIR)/'; \
-	scp $(ARCHIVEDIR)/$$VAR $(HOST):~/$(SYNCDIR)/
-
 
 # Create a changelog
 changelog:
