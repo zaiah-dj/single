@@ -21,6 +21,8 @@ It includes:
 </ul>
 </p>
 
+
+
 ## Usage
 
 ### Building
@@ -48,6 +50,81 @@ $	gcc -Wall -Werror -Wno-unused -c single.c -DTIMER_H
 </p>
 
 
+
+## More
+
+single is the result of combining a lot of separate utilities into one useful library.  The included functionality can be controlled by a set of compilation flags.  What do I mean by this?:
+
+Assume that you're writing some a game that processes basic messages from a network socket.  You may already have a SQL driver that you're planning on using.  Or maybe you are using Sean Barrett's `stretchy buffers` from stb_buffer.   Even though this library includes an implementation of both of those--they can be disabled by specifying the flags -DBUFF_H and -DSQROOGE_H during compilation.  Your program won't have this code compiled into the final version of your program.
+
+
+
+### Error Handling
+
+
+### Buffers
+
+Buffers can be loosely described as "flexible unsigned char \*"s.  You can use them to store (and more importantly) append to strings.  Here's a picture:
+
+<pre>
+//Assume we've got a regular array of chars. 
+char farf[ 5 ] = { 0 };
+char \*myString = "this string is way too long and will cause a crash..." ;
+
+//I can only write 5 bytes to this array.  So if I write the following, I've got a buffer overflow.
+strcpy( farf, myString ); 
+</pre>
+
+<pre>
+//Now, let's try the same with a buffer.
+Buffer farf;
+char \*myString = "this string is way too long and will cause a crash..." ;
+
+//The following tells the Buffer library to initialize this structure dynamically.
+bf_init( &farf, NULL, 1 );  
+
+//Then I can append as often as I want and as much as I want.
+bf_append( farf, myString, strlen( myString ) );
+
+//To read it off, I need to use the following.
+char \*myNewString = (char \*)bf_data( farf );
+</pre>
+
+
+
+
+## How Tos and Examples
+
+
+### Sockets
+
+### Templating via the Render() module 
+
+Setting up rendering with this library is a long ten-step process.     The first step is declaring a few types and initializing them.
+
+<pre>
+//Set up a table structure with space for at least 1024 keys
+Table t;
+lt_init( &t, NULL, 1024 );
+
+//Set up a render structure
+Render rn;
+memset( &rn, 0, sizeof(Render));
+render_init( &rn, &t );
+</pre>
+
+So what we've just done is set up a hash table, an instance of Table.  The rendering module uses this hash table when running its process.  The render_init step sets up some key fields in the Render structure.   It is written this way because the render buffer size will eventually be able to be set by the user.
+
+
+
+
+
+
+
+
+
+## Caveats / Bugs
+
 ### Database
 <p> 
 Note, that the library ships a version of SQLite.  However, it is not the newest and really should be removed since this code is not really part of the base.   Since most Unix based systems include a globally installed version of the library, a compile time option can be used to utilize the system's SQLite headers. 
@@ -63,11 +140,6 @@ $	gcc -Wall -Werror -Wno-unused -c single.c -DSQLITE3_PATH="\"hero/sqlite3.h\""
 
 Unfortunately, support for other open source SQL databases does not yet exist.
 </p> 
-
-
-
-## Caveats / Bugs
-None yet :)
 
 
 ## Contact and Help
