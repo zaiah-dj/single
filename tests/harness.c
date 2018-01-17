@@ -1,6 +1,7 @@
 #include "../single.h"
 #include "harness.h"
 #include "harness-test-data.c"
+#include <stdlib.h>
 
 //#define BUFFER_H
 //#define JSON_H
@@ -225,6 +226,7 @@ Option opts[] =
 	{ "-h", "--help", "Show help" },
 	{ .sentinel = 1 }
 };
+
 
 
 int main (int argc, char *argv[])

@@ -5,10 +5,10 @@ PREFIX = /usr/local
 MANPREFIX = ${PREFIX}/share/man
 DFLAGS = -DNW_VERBOSE
 PICTYPE=-fPIC
-CFLAGS = -g -Wall -Wno-unused -Werror -std=c99 $(COMPLAIN) -fsanitize=address -fsanitize-undefined-trap-on-error  -DSQLITE3_PATH="\"vendor/sqlite3.h\""
-CC=clang
-#GCCFLAGS = -g -Wall -Wno-unused -Werror $(COMPLAIN) -Wstrict-overflow -ansi -std=c99 -Wno-deprecated-declarations -O0 $(DFLAGS)
-#CC=gcc
+#CFLAGS = -g -Wall -Wno-unused -Werror -std=c99 $(COMPLAIN) -fsanitize=address -fsanitize-undefined-trap-on-error  -DSQLITE3_PATH="\"vendor/sqlite3.h\""
+#CC=clang
+CFLAGS = -g -Wall -Wno-unused -Werror -std=c99 $(COMPLAIN) -DSQLITE3_PATH="\"vendor/sqlite3.h\""
+CC=gcc
 
 #if 0
 # Packaging

@@ -2082,13 +2082,8 @@ void lt_free (Table *t)
 	for ( int ii=0; ii < t->index; ii++ )
 	{
 		LiteKv *k = t->head + ii;
-		SHOWDATA( "Checking for and freeing key at index [%d] -> %p", ii, k->key.v.vchar );
 		( k->key.type == LITE_TXT ) ? free( k->key.v.vchar ), k->key.v.vchar = NULL : 0;
-		SHOWDATA( "Key at index is now                   [%d] -> %p", ii, k->key.v.vchar );
-
-		SHOWDATA( "Checking for & freeing value at index [%d] -> %p", ii, k->value.v.vchar );
 		( k->value.type == LITE_TXT ) ? free( k->value.v.vchar ), k->value.v.vchar = NULL : 0;
-		SHOWDATA( "Value at index is now                 [%d] -> %p", ii, k->value.v.vchar );
 	}
 
 	if ( t->mallocd )
@@ -2161,10 +2156,10 @@ static void lt_printindex (LiteKv *tt, int ind)
 			/*LITE_NODE is handled in printall*/
 			if (t == LITE_NON)
 				w += snprintf( &b[w], lt_buflen - w, "%s", "is uninitialized" );
-#ifdef LITE_NUL
+		#ifdef LITE_NUL
 			else if (t == LITE_NUL)
 				w += snprintf( &b[w], lt_buflen - w, "is terminator" );
-#endif
+		#endif
 			else if (t == LITE_USR)
 				w += snprintf( &b[w], lt_buflen - w, "userdata [address: %p]", r->vusrdata );
 			else if (t == LITE_TBL) 
