@@ -8,23 +8,42 @@
  * work (i.e. when not there, the rest of
  * the render src does not show)
  *
- * - 
+ * - Test other types of data
  *
+ * - Test function pointers....
+ *
+ * - Test inner loops...
+ *
+ * - Test key / value iteration
+ * 
+ * - Test all the syntax:
+ *   {{   x }}  = Replace x with the value of x in the table
+ *   {{#  x }},
+ *   	...
+ *   {{/  x }}  = Replace every target in ... with values
+ *   							from the source table.
+ *   {{$  k }}  = Replace k with the key of the current 
+ *   							key-value pair in the current table 
+ *   							(whether numeric or not)
+ *   {{$  v }}  = Replace v with the value of the current 
+ *   							key-value pair in the current table 
+ *   {{!  x }}  = ???
+ *   {{+  x }}  = ???
+ *   {{=  x }}  = ???
+ *   {{@  x }}  = ???
+ *   							
  * -------------------------------------- */
 
-/*...*/
-const char rs1[] =
- "<html>\n"
- "<head>\n"
- "</head>\n"
- "<body>\n"
- "	<h2>{{ ghi }}</h2>\n"
- "	<p>\n"
- "		{{ abc }}\n"
- "	</p>	\n"
- "</body>\n"
- "</html>\n"
-;
+
+
+//Pull random lines from an array of const char *s
+#define RND_TEXT() \
+	LOREMIPSUM[ random() % ( sizeof( LOREMIPSUM ) / sizeof( const char *) ) ]
+
+#define RND_NUM() \
+	random()
+
+#define RND_FUNCT()
 
 
 const char rs2[] =
@@ -89,10 +108,185 @@ const char rs3[] =
 ;
 
 
+typedef struct 
+{
+	const char *name  ,
+						 *desc  ,
+						 *renSrc,
+						 *renCmp;
+	LiteKv values[100];
+} RenderTest;
 
 
-/*Regular table with no nested tables*/
-LiteKv rn1[] = 
+
+RenderTest r[] = 
+{
+	//These should be pretty easy to read:
+	//.name   = Name of the test
+	//.desc   = A quick description of the test
+	//.renSrc = the input that the test will use for find and replace
+	//.renCmp = the constant to compare against to make sure that rendering worked
+	//.values = the Table to use for values (these tests do not test any parsing)
+
+#if 0	
+	{ // 1 
+		.name   = "Integers",
+		.desc   = "Integers",
+
+		.renSrc = 	
+			 "<html>\n"
+			 "<head>\n"
+			 "</head>\n"
+			 "<body>\n"
+			 "	<h2>{{ ghi }}</h2>\n"
+			 "	<p>\n"
+			 "		{{ abc }}\n"
+			 "	</p>	\n"
+			 "</body>\n"
+			 "</html>\n"
+		,
+
+		.renCmp = 
+			""
+		,
+
+		.values = 
+		{
+			{ TEXT_KEY( "abc" ), TEXT_VALUE( "def" ) },
+			{ TEXT_KEY( "def" ), FLOAT_VALUE( 342.32 ) },
+			{ TEXT_KEY( "ghi" ), TEXT_VALUE( "Indomitable" ) },
+			{ TEXT_KEY( "abc" ), TEXT_VALUE( "Large angry deer are following me." ) },
+			{ LKV_LAST } 
+		},
+	},
+
+	{
+		.name   = "Integers",
+		.desc   = "Integers",
+		.values = 
+		{
+			{ INT_KEY( 33 ), TEXT_VALUE( "def" ) },
+			{ INT_KEY( 53 ), FLOAT_VALUE( 342.32 ) },
+			{ INT_KEY( 1  ), BLOB_VALUE( dat4 ) },
+			{ INT_KEY( 32 ),  INT_VALUE( 3222 ) },
+			{ INT_KEY( 2  ), TEXT_VALUE( "Large angry deer are following me." ) },
+			{ LKV_LAST } 
+		},
+
+		.renSrc =
+		 "<html>\n"
+		 "<head>\n"
+		 "</head>\n"
+		 "<body>\n"
+		 "	<h2>{{ ghi }}</h2>\n"
+		 "	<p>\n"
+		 "		{{ abc }}\n"
+		 "	</p>	\n"
+		 "</body>\n"
+		 "</html>\n"
+		,
+
+		.renCmp = 
+			""
+
+	},
+#endif
+
+	{
+		.name = "mixed_keys",
+		.desc = "Mixed keys",
+		.values = {
+			{ TEXT_KEY( "zxy" ), TEXT_VALUE( "def" ) },
+			{ TEXT_KEY( "def" ), FLOAT_VALUE( 342.32 ) },
+			{ TEXT_KEY( "ghi" ), FLOAT_VALUE( 245.01 ) },
+			{  INT_KEY( 553   ), FLOAT_VALUE( 455.37 ) },
+			{ TEXT_KEY( "jkl" ), FLOAT_VALUE( 981.68 ) },
+			{  INT_KEY( 8234  ), FLOAT_VALUE( 477.99 ) },
+			{  INT_KEY( 11    ), FLOAT_VALUE( 343.01 ) },
+			{ TEXT_KEY( "bin" ), BLOB_VALUE( dat4 ) },
+			{  INT_KEY( 32    ),  INT_VALUE( 3222 ) },
+			{ TEXT_KEY( "abc" ), TEXT_VALUE( "Large angry deer are following me." ) },
+			{ LKV_LAST } 
+		},
+
+		.renSrc =
+		 "<html>\n"
+		 "<head>\n"
+		 "</head>\n"
+		 "<body>\n"
+		 "	<h2>{{ ghi }}</h2>\n"
+		 "	<p>\n"
+		 "		{{ abc }}\n"
+		 "	</p>	\n"
+		 "</body>\n"
+		 "</html>\n"
+		,
+
+		.renCmp = 
+		 "<html>\n"
+		 "<head>\n"
+		 "</head>\n"
+		 "<body>\n"
+		 "	<h2>245.01</h2>\n"
+		 "	<p>\n"
+		 "		Large angry deer are following me.\n"
+		 "	</p>	\n"
+		 "</body>\n"
+		 "</html>\n"
+	},
+
+
+#if 0
+	{
+
+.name = "",
+.desc = "",
+.values = {
+	{ TEXT_KEY( "baltimore" ), TEXT_VALUE( "City of Dreams" )  },
+	{ TEXT_KEY( "durham" ), BLOB_VALUE( "City of Chicken and Guns" )    },
+
+	//This is much easier to see
+	//{ START_TABLE( "artillery" ) }
+	{ TEXT_KEY( "artillery" )       , TABLE_VALUE( )         },
+		/*Database records look a lot like this*/
+		{ INT_KEY( 0 )       , TABLE_VALUE( )         },
+			{ TEXT_KEY( "val" ), BLOB_VALUE( "MySQL makes me tired." ) },
+			{ TEXT_KEY( "rec" ), TEXT_VALUE( "Choo choo cachoo." ) },
+			{ TRM() },
+		{ TRM() },
+	#if 0
+			{ INT_KEY( 0 )     , TRM_VALUE( )           },	
+		{ INT_KEY( 0 )     , TRM_VALUE( )           },	
+	#endif
+
+	{ TEXT_KEY( "ashor" )  , TABLE_VALUE( )         },
+		{ INT_KEY( 7043 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog." )  },
+		{ INT_KEY( 7002 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog another time." )  },
+		{ INT_KEY( 7003 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the 3rd time." )  },
+		{ INT_KEY( 7004 )    , USR_VALUE ( NULL ) },
+		{ INT_KEY( 7008 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog again." )  },
+		{ INT_KEY( 7009 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the last time." )  },
+		{ TRM() },
+	#if 0
+		{ INT_KEY( 0 )       , TRM_VALUE( )           },	
+	#endif
+	{ LKV_LAST } 
+},
+
+.renSrc = 
+	"",
+
+.renCmp =
+	"",
+
+	},
+#endif
+};
+
+
+
+
+LiteKv level_1_table_alpha[] = 
 {
 	{ TEXT_KEY( "abc" ), TEXT_VALUE( "def" ) },
 	{ TEXT_KEY( "def" ), FLOAT_VALUE( 342.32 ) },
@@ -101,15 +295,48 @@ LiteKv rn1[] =
 	{ LKV_LAST } 
 };
 
-LiteKv rn2[] = 
+
+const char rs1[] =
+ "<html>\n"
+ "<head>\n"
+ "</head>\n"
+ "<body>\n"
+ "	<h2>{{ ghi }}</h2>\n"
+ "	<p>\n"
+ "		{{ abc }}\n"
+ "	</p>	\n"
+ "</body>\n"
+ "</html>\n"
+;
+
+
+
+LiteKv level_1_table_numeric [] = 
+{
+	{ INT_KEY( 33 ), TEXT_VALUE( "def" ) },
+	{ INT_KEY( 53 ), FLOAT_VALUE( 342.32 ) },
+	{ INT_KEY( 1  ), BLOB_VALUE( dat4 ) },
+	{ INT_KEY( 32 ),  INT_VALUE( 3222 ) },
+	{ INT_KEY( 2  ), TEXT_VALUE( "Large angry deer are following me." ) },
+	{ LKV_LAST } 
+};
+
+
+LiteKv level_1_table_mixed [] = 
 {
 	{ TEXT_KEY( "abc" ), TEXT_VALUE( "def" ) },
 	{ TEXT_KEY( "def" ), FLOAT_VALUE( 342.32 ) },
+	{ TEXT_KEY( "def" ), FLOAT_VALUE( 342.32 ) },
+	{  INT_KEY( 553   ), FLOAT_VALUE( 342.32 ) },
+	{ TEXT_KEY( "def" ), FLOAT_VALUE( 342.32 ) },
+	{  INT_KEY( 8234  ), FLOAT_VALUE( 342.32 ) },
+	{  INT_KEY( 11    ), FLOAT_VALUE( 342.32 ) },
 	{ TEXT_KEY( "bin" ), BLOB_VALUE( dat4 ) },
 	{  INT_KEY( 32    ),  INT_VALUE( 3222 ) },
 	{ TEXT_KEY( "abc" ), TEXT_VALUE( "Large angry deer are following me." ) },
 	{ LKV_LAST } 
 };
+
 
 LiteKv rn3[] = 
 {
@@ -264,13 +491,16 @@ struct RTest
 	int         sentinel;
 };
 
+
+
+
 RTest rtests[] =
 {
  #if 0
-	{ rn1, rs1, "Single result with long words" },
-	{ rn2, rs1, "Single result with non existent values and long words" },
-	{ rn3, rs1, "Ints and floats" },
-	{ rn5, rs2, "Tabular values" },  /*Non-existent loops*/
+	{ level_1_deep_table, rs1, "Single result with long words" },
+	{ level_2_deep_table, rs1, "Single result with non existent values and long words" },
+	{ level_3_deep_table, rs1, "Ints and floats" },
+	{ level_4_deep_table, rs2, "Tabular values" },  /*Non-existent loops*/
  #endif
 	{ rn4, rs2, "Tabular values" },  /*All values exist*/
 	{ rn5, rs25, "Tabular values" }, 
@@ -288,11 +518,16 @@ RTest rtests[] =
 };
 
 
+
+
 TEST( render )
 {
 	int set = 1;
 	RTest *rt = rtests;
 	char buf[ 2048 ];
+
+	//Make a random seed for the random number generator.
+	srandom( );
 
 	//Loop through each RTest
 	while ( !rt->sentinel )
