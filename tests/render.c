@@ -31,7 +31,15 @@
  *   {{+  x }}  = ???
  *   {{=  x }}  = ???
  *   {{@  x }}  = ???
- *   							
+ * 
+ * - Add a function:
+ *   render_???( Render *r, char *, (void *)( ... ))
+ *   This should allow a dev to setup some kind of custom action for a new term 
+ *
+ * PROBLEMS:
+ * - FLOAT_VALUE looks to be using a printf modifier (it's too many places out)
+ * - Looping only goes from max to min
+ * - Still getting that extra row
  * -------------------------------------- */
 
 
@@ -257,11 +265,19 @@ RenderTest r[] =
 					{ TEXT_KEY( "val" ), BLOB_VALUE( "MySQL makes me tired." ) },
 					{ TEXT_KEY( "rec" ), TEXT_VALUE( "Choo choo cachoo." ) },
 					{ TRM() },
+				{ INT_KEY( 1 )       , TABLE_VALUE( )         },
+					{ TEXT_KEY( "val" ), BLOB_VALUE( "MySQL makes me giddy." ) },
+					{ TEXT_KEY( "rec" ), TEXT_VALUE( "Choo choo cachoo." ) },
+					{ TRM() },
+				{ INT_KEY( 2 )       , TABLE_VALUE( )         },
+					{ TEXT_KEY( "val" ), BLOB_VALUE( "MySQL makes me ecstatic." ) },
+					{ TEXT_KEY( "rec" ), TEXT_VALUE( "Choo choo cachoo." ) },
+					{ TRM() },
+				{ INT_KEY( 3 )       , TABLE_VALUE( )         },
+					{ TEXT_KEY( "val" ), BLOB_VALUE( "MySQL makes me a bother." ) },
+					{ TEXT_KEY( "rec" ), TEXT_VALUE( "Choo choo cachoo." ) },
+					{ TRM() },
 				{ TRM() },
-			#if 0
-					{ INT_KEY( 0 )     , TRM_VALUE( )           },	
-				{ INT_KEY( 0 )     , TRM_VALUE( )           },	
-			#endif
 
 			{ TEXT_KEY( "ashor" )  , TABLE_VALUE( )         },
 				{ INT_KEY( 7043 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog." )  },
@@ -271,9 +287,6 @@ RenderTest r[] =
 				{ INT_KEY( 7008 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog again." )  },
 				{ INT_KEY( 7009 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the last time." )  },
 				{ TRM() },
-			#if 0
-				{ INT_KEY( 0 )       , TRM_VALUE( )           },	
-			#endif
 			{ LKV_LAST } 
 		},
 
@@ -282,10 +295,12 @@ RenderTest r[] =
 		 "<head>\n"
 		 "</head>\n"
 		 "<body>\n"
-		 "	<h2>{{ ghi }}</h2>\n"
+		 "{{# artillery }}\n"
+		 "	<h2>{{ .rec }}</h2>\n"
 		 "	<p>\n"
-		 "		{{ abc }}\n"
+		 "		{{ .val }}\n"
 		 "	</p>	\n"
+		 "{{/ artillery }}\n"
 		 "</body>\n"
 		 "</html>\n"
 		,
@@ -295,163 +310,113 @@ RenderTest r[] =
 		 "<head>\n"
 		 "</head>\n"
 		 "<body>\n"
-		 "	<h2>245</h2>\n"
+		 "	<h2>Choo choo cachoo</h2>\n"
 		 "	<p>\n"
-		 "		Large angry deer are following me.\n"
+		 "		MySQL makes me tired.\n"
+		 "	</p>	\n"
+		 "	<h2>Choo choo cachoo</h2>\n"
+		 "	<p>\n"
+		 "		MySQL makes me giddy.\n"
+		 "	</p>	\n"
+		 "	<h2>Choo choo cachoo</h2>\n"
+		 "	<p>\n"
+		 "		MySQL makes me ecstatic.\n"
+		 "	</p>	\n"
+		 "	<h2>Choo choo cachoo</h2>\n"
+		 "	<p>\n"
+		 "		MySQL makes me a bother.\n"
+		 "	</p>	\n"
+		 "</body>\n"
+		 "</html>\n"
+	},
+
+	{
+		.values = {
+			{ TEXT_KEY( "baltimore" ), TEXT_VALUE( "City of Dreams" )  },
+			{ TEXT_KEY( "winston-salem" ), BLOB_VALUE( "City of Chicken and Guns" )    },
+
+			//This is much easier to see
+			//{ START_TABLE( "artillery" ) }
+			{ TEXT_KEY( "artillery" )       , TABLE_VALUE( )         },
+				/*Database records look a lot like this*/
+				{ TEXT_KEY( "arbutus" )       , TABLE_VALUE( )         },
+					{ TEXT_KEY( "city" ), BLOB_VALUE( "San Francisco, CA" ) },
+					{ TEXT_KEY( "population" ), INT_VALUE( 332420 ) },
+					{ TEXT_KEY( "favorite spots" ), TEXT_VALUE( "China, Dacao, Maharantz" ) },
+					{ TRM() },
+				{ TEXT_KEY( "dreamer" )       , TABLE_VALUE( )         },
+					{ TEXT_KEY( "city" ), BLOB_VALUE( "Winston-Salem, NC" ) },
+					{ TEXT_KEY( "population" ), INT_VALUE( 33242 ) },
+					{ TEXT_KEY( "favorite spots" ), TEXT_VALUE( "China, Dacao, Maharantz" ) },
+					{ TRM() },
+				{ TEXT_KEY( "daca" )       , TABLE_VALUE( )         },
+					{ TEXT_KEY( "city" ), BLOB_VALUE( "Modesto, CA" ) },
+					{ TEXT_KEY( "population" ), INT_VALUE( 777000 ) },
+					{ TEXT_KEY( "favorite spots" ), TEXT_VALUE( "Get out now..." ) },
+					{ TRM() },
+				{ TEXT_KEY( "real-global" )       , TABLE_VALUE( )         },
+					{ TEXT_KEY( "city" ), BLOB_VALUE( "New York, NY" ) },
+					{ TEXT_KEY( "population" ), INT_VALUE( 8312101 ) },
+					{ TEXT_KEY( "favorite spots" ), TEXT_VALUE( "Brooklyn, Manhattan" ) },
+					{ TRM() },
+				{ TRM() },
+
+			{ TEXT_KEY( "ashor" )  , TABLE_VALUE( )         },
+				{ INT_KEY( 7043 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog." )  },
+				{ INT_KEY( 7002 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog another time." )  },
+				{ INT_KEY( 7003 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the 3rd time." )  },
+				{ INT_KEY( 7004 )    , USR_VALUE ( NULL ) },
+				{ INT_KEY( 7008 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog again." )  },
+				{ INT_KEY( 7009 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the last time." )  },
+				{ TRM() },
+			{ LKV_LAST } 
+		},
+
+		.renSrc =
+		 "<html>\n"
+		 "<head>\n"
+		 "</head>\n"
+		 "<body>\n"
+		 "{{# artillery }}\n"
+		 "	<h2>{{$ key }}</h2>\n"
+		 "	<p>\n"
+		 "		{{$ val }}\n"
+		 "	</p>	\n"
+		 "{{/ artillery }}\n"
+		 "</body>\n"
+		 "</html>\n"
+		,
+
+		.renCmp = 
+		 "<html>\n"
+		 "<head>\n"
+		 "</head>\n"
+		 "<body>\n"
+		 "	<h2>Choo choo cachoo</h2>\n"
+		 "	<p>\n"
+		 "		MySQL makes me tired.\n"
+		 "	</p>	\n"
+		 "	<h2>Choo choo cachoo</h2>\n"
+		 "	<p>\n"
+		 "		MySQL makes me giddy.\n"
+		 "	</p>	\n"
+		 "	<h2>Choo choo cachoo</h2>\n"
+		 "	<p>\n"
+		 "		MySQL makes me ecstatic.\n"
+		 "	</p>	\n"
+		 "	<h2>Choo choo cachoo</h2>\n"
+		 "	<p>\n"
+		 "		MySQL makes me a bother.\n"
 		 "	</p>	\n"
 		 "</body>\n"
 		 "</html>\n"
 	},
 
 
-
-#if 0
-	{
-
-.name = "",
-.desc = "",
-.values = {
-	{ TEXT_KEY( "baltimore" ), TEXT_VALUE( "City of Dreams" )  },
-	{ TEXT_KEY( "durham" ), BLOB_VALUE( "City of Chicken and Guns" )    },
-
-	//This is much easier to see
-	//{ START_TABLE( "artillery" ) }
-	{ TEXT_KEY( "artillery" )       , TABLE_VALUE( )         },
-		/*Database records look a lot like this*/
-		{ INT_KEY( 0 )       , TABLE_VALUE( )         },
-			{ TEXT_KEY( "val" ), BLOB_VALUE( "MySQL makes me tired." ) },
-			{ TEXT_KEY( "rec" ), TEXT_VALUE( "Choo choo cachoo." ) },
-			{ TRM() },
-		{ TRM() },
-	#if 0
-			{ INT_KEY( 0 )     , TRM_VALUE( )           },	
-		{ INT_KEY( 0 )     , TRM_VALUE( )           },	
-	#endif
-
-	{ TEXT_KEY( "ashor" )  , TABLE_VALUE( )         },
-		{ INT_KEY( 7043 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog." )  },
-		{ INT_KEY( 7002 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog another time." )  },
-		{ INT_KEY( 7003 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the 3rd time." )  },
-		{ INT_KEY( 7004 )    , USR_VALUE ( NULL ) },
-		{ INT_KEY( 7008 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog again." )  },
-		{ INT_KEY( 7009 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the last time." )  },
-		{ TRM() },
-	#if 0
-		{ INT_KEY( 0 )       , TRM_VALUE( )           },	
-	#endif
-	{ LKV_LAST } 
-},
-
-.renSrc = 
-	"",
-
-.renCmp =
-	"",
-
-	},
-#endif
-
 	{ .sentinel = 1 }
 };
 
 
-
-
-LiteKv level_1_table_alpha[] = 
-{
-	{ TEXT_KEY( "abc" ), TEXT_VALUE( "def" ) },
-	{ TEXT_KEY( "def" ), FLOAT_VALUE( 342.32 ) },
-	{ TEXT_KEY( "ghi" ), TEXT_VALUE( "Indomitable" ) },
-	{ TEXT_KEY( "abc" ), TEXT_VALUE( "Large angry deer are following me." ) },
-	{ LKV_LAST } 
-};
-
-
-const char rs1[] =
- "<html>\n"
- "<head>\n"
- "</head>\n"
- "<body>\n"
- "	<h2>{{ ghi }}</h2>\n"
- "	<p>\n"
- "		{{ abc }}\n"
- "	</p>	\n"
- "</body>\n"
- "</html>\n"
-;
-
-
-
-LiteKv level_1_table_numeric [] = 
-{
-	{ INT_KEY( 33 ), TEXT_VALUE( "def" ) },
-	{ INT_KEY( 53 ), FLOAT_VALUE( 342.32 ) },
-	{ INT_KEY( 1  ), BLOB_VALUE( dat4 ) },
-	{ INT_KEY( 32 ),  INT_VALUE( 3222 ) },
-	{ INT_KEY( 2  ), TEXT_VALUE( "Large angry deer are following me." ) },
-	{ LKV_LAST } 
-};
-
-
-LiteKv level_1_table_mixed [] = 
-{
-	{ TEXT_KEY( "abc" ), TEXT_VALUE( "def" ) },
-	{ TEXT_KEY( "def" ), FLOAT_VALUE( 342.32 ) },
-	{ TEXT_KEY( "def" ), FLOAT_VALUE( 342.32 ) },
-	{  INT_KEY( 553   ), FLOAT_VALUE( 342.32 ) },
-	{ TEXT_KEY( "def" ), FLOAT_VALUE( 342.32 ) },
-	{  INT_KEY( 8234  ), FLOAT_VALUE( 342.32 ) },
-	{  INT_KEY( 11    ), FLOAT_VALUE( 342.32 ) },
-	{ TEXT_KEY( "bin" ), BLOB_VALUE( dat4 ) },
-	{  INT_KEY( 32    ),  INT_VALUE( 3222 ) },
-	{ TEXT_KEY( "abc" ), TEXT_VALUE( "Large angry deer are following me." ) },
-	{ LKV_LAST } 
-};
-
-
-LiteKv rn3[] = 
-{
-	{ TEXT_KEY( "abc" ), FLOAT_VALUE( 3212.0001 ) },
-	{ TEXT_KEY( "def" ), FLOAT_VALUE( 342.32 ) },
-	{ TEXT_KEY( "ghi" ), INT_VALUE( 32042384 ) },
-	{ TEXT_KEY( "abc" ), TEXT_VALUE( "Large angry deer are following me." ) },
-	{ LKV_LAST } 
-};
-
-
-/*One table with one value*/
-LiteKv rn4[] =
-{
-	{ TEXT_KEY( "baltimore" ), TEXT_VALUE( "City of Dreams" )  },
-	{ TEXT_KEY( "durham" ), BLOB_VALUE( "City of Chicken and Guns" )    },
-
-	//This is much easier to see
-	//{ START_TABLE( "artillery" ) }
-	{ TEXT_KEY( "artillery" )       , TABLE_VALUE( )         },
-		/*Database records look a lot like this*/
-		{ INT_KEY( 0 )       , TABLE_VALUE( )         },
-			{ TEXT_KEY( "val" ), BLOB_VALUE( "MySQL makes me tired." ) },
-			{ TEXT_KEY( "rec" ), TEXT_VALUE( "Choo choo cachoo." ) },
-			{ TRM() },
-		{ TRM() },
-	#if 0
-			{ INT_KEY( 0 )     , TRM_VALUE( )           },	
-		{ INT_KEY( 0 )     , TRM_VALUE( )           },	
-	#endif
-
-	{ TEXT_KEY( "ashor" )  , TABLE_VALUE( )         },
-		{ INT_KEY( 7043 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog." )  },
-		{ INT_KEY( 7002 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog another time." )  },
-		{ INT_KEY( 7003 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the 3rd time." )  },
-		{ INT_KEY( 7004 )    , USR_VALUE ( NULL ) },
-		{ INT_KEY( 7008 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog again." )  },
-		{ INT_KEY( 7009 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the last time." )  },
-		{ TRM() },
-	#if 0
-		{ INT_KEY( 0 )       , TRM_VALUE( )           },	
-	#endif
-	{ LKV_LAST } 
-};
 
 /*Two seperate tables*/
 LiteKv rn5[] =
@@ -494,55 +459,6 @@ LiteKv rn5[] =
 };
 
 
-/*JSON test string*/
-const char json_text[] = 
-"{ \"data\": ["
-"      {"
-"         \"id\": \"X999_Y999\","
-"         \"from\": {"
-"            \"name\": \"Tom Brady\", \"id\": \"X12\""
-"         },"
-"         \"message\": \"Looking forward to 2010!\","
-"         \"actions\": ["
-"            {"
-"               \"name\": \"Comment\","
-"               \"link\": \"http://www.facebook.com/X999/posts/Y999\""
-"            },"
-"            {"
-"               \"name\": \"Like\","
-"               \"link\": \"http://www.facebook.com/X999/posts/Y999\""
-"            }"
-"         ],"
-"         \"type\": \"status\","
-"         \"created_time\": \"2010-08-02T21:27:44+0000\","
-"         \"updated_time\": \"2010-08-02T21:27:44+0000\""
-"      },"
-"      {"
-"         \"id\": \"X998_Y998\","
-"         \"from\": {"
-"            \"name\": \"Peyton Manning\", \"id\": \"X18\""
-"         },"
-"         \"message\": \"Where's my contract?\","
-"         \"actions\": ["
-"            {"
-"               \"name\": \"Comment\","
-"               \"link\": \"http://www.facebook.com/X998/posts/Y998\""
-"            },"
-"            {"
-"               \"name\": \"Like\","
-"               \"link\": \"http://www.facebook.com/X998/posts/Y998\""
-"            }"
-"         ],"
-"         \"type\": \"status\","
-"         \"created_time\": \"2010-08-02T21:27:44+0000\","
-"         \"updated_time\": \"2010-08-02T21:27:44+0000\""
-"      }"
-"   ]"
-"}"
-;
-
-
-
 
 TEST( render )
 {
@@ -569,7 +485,7 @@ TEST( render )
 		}
 
 		//Print the table (if it crashes here, you have bigger problems)
-		//lt_dump( t ); 
+		lt_dump( t ); 
 	
 		//Run the test via the render thing
 		if ( !render_init( &R, t ) ) {
@@ -619,53 +535,5 @@ TEST( render )
 		set ++, rt ++;
 	}
 
-#if 0
-	//Split the files received into two
-	uint8_t *b1 = NULL,
-					*b2 = NULL;
-          *src= NULL:
-	int b1_len  = 0,
-      b2_len  = 0,
-      srcpos  = 0;
- #if 0
-	//Find the sequence
-	if ( !memchr( TEST_BYTES, *seq, TEST_BYTES_LENGTH ) )
-		return xerr( 1, "Failed to split file. Test failed." );
- #else
-	b2 = b1 = TEST_BYTES;
-	b2_len = TEST_BYTES_LENGTH;
-	b1_len = 0;
-
-	while ( 1 )
-	{
-		if ( *b2 == *seq && memcmp( b2, seq, 8 ) )
-		{
-			b2 += 8;
-			b2_len -= 8;	
-		}
-		b2++, b1_len++, b2_len--;
-	}
- #endif
-
-	//Serialize JSON, b/c I'm using that as my model	
-	if ( !json_json( &tt, TEST_BYTES, TEST_BYTES_LENGTH ) )
-		return perr( 1, "You're going to die...\n" );
-
-	//Memset/clean this structure
-	if ( !render_init( &R, &tt ) )
-		return xerr( 1, "Failed to initialize...\n" );	
-
-	//
-	if ( !render_map( &R, f[1].src, f[1].len ) )
-		return xerr( 1, "Failed to render view: %s\n", vfile );
-
-	//Render something
-	if ( !render_render( &R ) ) //, f[1].src, f[1].len ) )
-		return xerr( 1, "Failed to render view: %s\n", vfile );
-
-	//See what was rendered 
-	if ( !(rr = render_rendered( &R )) )
-		return xerr( 1, "Other error occurred... Can't render\n" );
-#endif
 	return 0;
 }
