@@ -928,7 +928,7 @@ void print_body ( Bod *b )
 #endif
 
 
-static void render_dump_mark ( Render *r )
+void render_dump_mark ( Render *r )
 {
 	Mark *ct = &r->markers[0];
 	while ( ct->blob )
@@ -1514,34 +1514,34 @@ LiteType lt_add ( Table *t, int side, LiteType lt, int vi, float vf,
 	if ( lt == LITE_INT )
 	{
 		r->vint = vi;
-		SHOWDATA( "Adding int %s %d to table at %p", ( !side ) ? "key" : "value", r->vint, ( void * )t );
+		//SHOWDATA( "Adding int %s %d to table at %p", ( !side ) ? "key" : "value", r->vint, ( void * )t );
 	}
 	else if ( lt == LITE_FLT )
 	{
 		r->vfloat = vf;
-		SHOWDATA( "Adding float %s %f to table at %p", ( !side ) ? "key" : "value", r->vfloat, ( void * )t );
+		//SHOWDATA( "Adding float %s %f to table at %p", ( !side ) ? "key" : "value", r->vfloat, ( void * )t );
 	}
 #ifdef LITE_NUL
 	else if ( lt == LITE_NUL )
 	{
 		r->vnull = NULL;
-		SHOWDATA( "Adding null %s to table at %p", ( !side ) ? "key" : "value", ( void * )t );
+		//SHOWDATA( "Adding null %s to table at %p", ( !side ) ? "key" : "value", ( void * )t );
 	}
 #endif
 	else if ( lt == LITE_USR )
 	{
 		r->vusrdata = vn;
-		SHOWDATA( "Adding userdata %p to table at %p", ( void * )r->vusrdata, ( void * )t );
+		//SHOWDATA( "Adding userdata %p to table at %p", ( void * )r->vusrdata, ( void * )t );
 	}
 	else if ( lt == LITE_TBL )
 	{
-		SHOWDATA( "Adding invalid value table!" );
+		//SHOWDATA( "Adding invalid value table!" );
 		return ( t->error = ERR_LT_INVALID_VALUE ) ? -1 : -1;
 	}
 	else if ( lt == LITE_BLB )
 	{
 		r->vblob.blob = vb, r->vblob.size = vblen;
-		SHOWDATA( "Adding blob %s of length %d to table at %p", (!side) ? "key" : "value", r->vblob.size, ( void * )t );
+		//SHOWDATA( "Adding blob %s of length %d to table at %p", (!side) ? "key" : "value", r->vblob.size, ( void * )t );
 	}
 	else if ( lt == LITE_TXT )
 	{
@@ -1555,7 +1555,7 @@ LiteType lt_add ( Table *t, int side, LiteType lt, int vi, float vf,
 			memset( r->vchar, 0, vblen + 1 );
 			memcpy( r->vchar, vb, vblen );
 			r->vchar[ vblen ] = '\0';
-			SHOWDATA( "Adding text %s '%s' to table at %p", ( !side ) ? "key" : "value", r->vchar, ( void * )t );
+			//SHOWDATA( "Adding text %s '%s' to table at %p", ( !side ) ? "key" : "value", r->vchar, ( void * )t );
 		}
 	}
 	else 

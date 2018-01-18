@@ -38,14 +38,14 @@
 
 //Pull random lines from an array of const char *s
 #define RND_TEXT() \
-	LOREMIPSUM[ random() % ( sizeof( LOREMIPSUM ) / sizeof( const char *) ) ]
+	LOREMIPSUM[ (rand_number() % (sizeof( LOREMIPSUM ) / sizeof( const char *))) ]
 
 #define RND_NUM() \
 	random()
 
 #define RND_FUNCT()
 
-
+#if 0
 const char rs2[] =
  "<html>\n"
  "<head>\n"
@@ -106,6 +106,7 @@ const char rs3[] =
  "</body>\n"
  "</html>\n"
 ;
+#endif
 
 
 typedef struct 
@@ -115,6 +116,7 @@ typedef struct
 						 *renSrc,
 						 *renCmp;
 	LiteKv values[100];
+	int    sentinel   ;
 } RenderTest;
 
 
@@ -197,12 +199,12 @@ RenderTest r[] =
 		.desc = "Mixed keys",
 		.values = {
 			{ TEXT_KEY( "zxy" ), TEXT_VALUE( "def" ) },
-			{ TEXT_KEY( "def" ), FLOAT_VALUE( 342.32 ) },
-			{ TEXT_KEY( "ghi" ), FLOAT_VALUE( 245.01 ) },
-			{  INT_KEY( 553   ), FLOAT_VALUE( 455.37 ) },
-			{ TEXT_KEY( "jkl" ), FLOAT_VALUE( 981.68 ) },
-			{  INT_KEY( 8234  ), FLOAT_VALUE( 477.99 ) },
-			{  INT_KEY( 11    ), FLOAT_VALUE( 343.01 ) },
+			{ TEXT_KEY( "def" ), INT_VALUE( 342 ) },
+			{ TEXT_KEY( "ghi" ), INT_VALUE( 245 ) },
+			{  INT_KEY( 553   ), INT_VALUE( 455 ) },
+			{ TEXT_KEY( "jkl" ), INT_VALUE( 981 ) },
+			{  INT_KEY( 8234  ), INT_VALUE( 477 ) },
+			{  INT_KEY( 11    ), INT_VALUE( 343 ) },
 			{ TEXT_KEY( "bin" ), BLOB_VALUE( dat4 ) },
 			{  INT_KEY( 32    ),  INT_VALUE( 3222 ) },
 			{ TEXT_KEY( "abc" ), TEXT_VALUE( "Large angry deer are following me." ) },
@@ -227,13 +229,80 @@ RenderTest r[] =
 		 "<head>\n"
 		 "</head>\n"
 		 "<body>\n"
-		 "	<h2>245.01</h2>\n"
+		 "	<h2>245</h2>\n"
 		 "	<p>\n"
 		 "		Large angry deer are following me.\n"
 		 "	</p>	\n"
 		 "</body>\n"
 		 "</html>\n"
 	},
+
+
+	//execution
+	//userdata (and custom, close to execution)
+	//one table
+	//two tables
+	//multi-level tables
+	//key and value vs actual values
+	{
+		.values = {
+			{ TEXT_KEY( "baltimore" ), TEXT_VALUE( "City of Dreams" )  },
+			{ TEXT_KEY( "durham" ), BLOB_VALUE( "City of Chicken and Guns" )    },
+
+			//This is much easier to see
+			//{ START_TABLE( "artillery" ) }
+			{ TEXT_KEY( "artillery" )       , TABLE_VALUE( )         },
+				/*Database records look a lot like this*/
+				{ INT_KEY( 0 )       , TABLE_VALUE( )         },
+					{ TEXT_KEY( "val" ), BLOB_VALUE( "MySQL makes me tired." ) },
+					{ TEXT_KEY( "rec" ), TEXT_VALUE( "Choo choo cachoo." ) },
+					{ TRM() },
+				{ TRM() },
+			#if 0
+					{ INT_KEY( 0 )     , TRM_VALUE( )           },	
+				{ INT_KEY( 0 )     , TRM_VALUE( )           },	
+			#endif
+
+			{ TEXT_KEY( "ashor" )  , TABLE_VALUE( )         },
+				{ INT_KEY( 7043 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog." )  },
+				{ INT_KEY( 7002 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog another time." )  },
+				{ INT_KEY( 7003 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the 3rd time." )  },
+				{ INT_KEY( 7004 )    , USR_VALUE ( NULL ) },
+				{ INT_KEY( 7008 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog again." )  },
+				{ INT_KEY( 7009 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the last time." )  },
+				{ TRM() },
+			#if 0
+				{ INT_KEY( 0 )       , TRM_VALUE( )           },	
+			#endif
+			{ LKV_LAST } 
+		},
+
+		.renSrc =
+		 "<html>\n"
+		 "<head>\n"
+		 "</head>\n"
+		 "<body>\n"
+		 "	<h2>{{ ghi }}</h2>\n"
+		 "	<p>\n"
+		 "		{{ abc }}\n"
+		 "	</p>	\n"
+		 "</body>\n"
+		 "</html>\n"
+		,
+
+		.renCmp = 
+		 "<html>\n"
+		 "<head>\n"
+		 "</head>\n"
+		 "<body>\n"
+		 "	<h2>245</h2>\n"
+		 "	<p>\n"
+		 "		Large angry deer are following me.\n"
+		 "	</p>	\n"
+		 "</body>\n"
+		 "</html>\n"
+	},
+
 
 
 #if 0
@@ -281,6 +350,8 @@ RenderTest r[] =
 
 	},
 #endif
+
+	{ .sentinel = 1 }
 };
 
 
@@ -471,63 +542,15 @@ const char json_text[] =
 ;
 
 
-/*All tests in one table*/
-/*Use the same tables from tab.c, but use embedded text for each render*/
-typedef struct RTest RTest;
-struct RTest
-{
-	LiteKv     *kv;     /*Source Table*/
-	const char *render; /*Source tags*/
-	const char *fmt   ; /*A message*/
-	enum RTestTypes 
-	{ 
-		R_NONE, 
-		R_JSON, 
-		R_SQL 
-	}           type  ;
-	const char *str   ;
-	uint8_t    *dest  ; /*Destination*/
-	int         destlen;
-	int         sentinel;
-};
-
-
-
-
-RTest rtests[] =
-{
- #if 0
-	{ level_1_deep_table, rs1, "Single result with long words" },
-	{ level_2_deep_table, rs1, "Single result with non existent values and long words" },
-	{ level_3_deep_table, rs1, "Ints and floats" },
-	{ level_4_deep_table, rs2, "Tabular values" },  /*Non-existent loops*/
- #endif
-	{ rn4, rs2, "Tabular values" },  /*All values exist*/
-	{ rn5, rs25, "Tabular values" }, 
- #if 0
- #ifndef JSON_H
-	/*Tests JSON conversions*/
-	{ NULL, rs3, "Tabular values", R_JSON, json_text }, /*One row table*/
-	{ NULL, rs3, "Tabular values", R_JSON, json_text }, /*Multi row table*/
- #endif
- #endif
- #ifndef SQROOGE_H
-	/*Tests SQL result conversions*/
- #endif
-	{ .sentinel = 1 }
-};
-
-
 
 
 TEST( render )
 {
 	int set = 1;
-	RTest *rt = rtests;
+	RenderTest *rt = r;
 	char buf[ 2048 ];
-
-	//Make a random seed for the random number generator.
-	srandom( );
+	int destlen = 0;
+	uint8_t *dest = NULL;
 
 	//Loop through each RTest
 	while ( !rt->sentinel )
@@ -536,58 +559,63 @@ TEST( render )
 		Render R;
 		Table *t = NULL; 
 
-		//Print the results
-		fprintf( stderr, "%s\n", rt->fmt );
+		//Print the name and description 
+		fprintf( stderr, "Name: %s\n", rt->name );
+		fprintf( stderr, "Description: %s\n", rt->desc );
 
-		if ( rt->type == R_NONE )
-		{
-			//Convert the values to a real table
-			if ( !( t = convert_lkv( rt->kv )) )
-			{
-				EPRINTF( "Failed to convert #%d set of key values in %s", set, __FILE__ );
-			}
-		}
-		else if ( rt->type == R_JSON )
-		{
-			/*....*/
-			t = malloc( sizeof( Table ) );
-			memset( t, 0, sizeof( Table ) );
-			if ( !json_json( t, (uint8_t *)rt->str, strlen( rt->str ) ) )
-			{
-				EPRINTF( "Failed to convert JSON at #%d set of key values in %s", set, __FILE__ );
-			}
+		//Convert the table
+		if ((t = convert_lkv( rt->values )) == NULL ) {
+			EPRINTF( "Failed to convert values to table.\n" );
 		}
 
-		lt_dump( t );
-		if ( !render_init( &R, t ) )
-		{
+		//Print the table (if it crashes here, you have bigger problems)
+		//lt_dump( t ); 
+	
+		//Run the test via the render thing
+		if ( !render_init( &R, t ) ) {
 			EPRINTF( "Failed to iniitalize render module at test #%d", set );
 		}
 
-		if ( !render_map( &R, (uint8_t *)rt->render, strlen( rt->render ) ) )
-		{
+		//Map
+		if ( !render_map( &R, (uint8_t *)rt->renSrc, strlen( rt->renSrc ) ) ) {
 			EPRINTF( "Failed to set render source correctly at test #%d", set );
 		}
 
-		if ( !render_render( &R ) )
-		{
+		//Dump the map? (is useful to see what's what)
+		//render_dump_mark( &R );
+
+		//Start replacing things
+		if ( !render_render( &R ) ) {
 			EPRINTF( "Failed to set render source correctly at test #%d", set );
 		}
-
 
 		//Retrieve rendered source and do something with it
-		rt->dest = bf_data( render_rendered( &R ) );
-		rt->destlen = bf_written ( render_rendered( &R ) );
-		write( 2, rt->dest, rt->destlen );
-		
+		dest = bf_data( render_rendered( &R ) ); 
+		destlen = bf_written ( render_rendered( &R )); 
+
+		//We know something went wrong if destlen is zero.
+		if ( !destlen ) {
+			EPRINTF( "Templating failed somewhere.  Not sure where...\n" );
+		}
+
+
+		//Check rendered result against what should be
+		if ( memcmp( rt->renCmp, dest, destlen ) == 0 )
+			fprintf( stderr, "SUCCESS: Final matches expected!\n" );
+		else {
+			fprintf( stderr, "FAILED:  Final and expected do not match.\n" );
+			nlprintf( strlen( rt->renCmp ) );
+			niprintf( destlen );
+			fprintf( stderr, "source:\n" );
+			write( 2, rt->renCmp, strlen( rt->renCmp ));
+			fprintf( stderr, "rendered:\n" );
+			write( 2, dest, destlen );
+			//EPRINTF( "Finished result did not match expected result" );
+		}
 
 		//Free everything
-		render_free( &R );
+		//render_free( &R );
 		lt_free( t );
-		if ( rt->type == R_JSON || rt->type == R_SQL )
-		{
-			free( t );
-		}
 		set ++, rt ++;
 	}
 

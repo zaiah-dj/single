@@ -62,6 +62,9 @@ Assume that you're writing some a game that processes basic messages from a netw
 ### Error Handling
 
 
+
+## How Tos and Examples
+
 ### Buffers
 
 Buffers can be loosely described as "flexible unsigned char \*"s.  You can use them to store (and more importantly) append to strings.  Here's a picture:
@@ -91,12 +94,11 @@ char \*myNewString = (char \*)bf_data( farf );
 </pre>
 
 
-
-
-## How Tos and Examples
-
-
 ### Sockets
+
+uh... :)
+
+
 
 ### Templating via the Render() module 
 
@@ -116,11 +118,43 @@ render_init( &rn, &t );
 So what we've just done is set up a hash table, an instance of Table.  The rendering module uses this hash table when running its process.  The render_init step sets up some key fields in the Render structure.   It is written this way because the render buffer size will eventually be able to be set by the user.
 
 
+<pre>
+//Declare a bunch of stuff
+uint8_t ab[];
+Render R;
+Table t;
+
+//Somehow initialize the table...
+// init_table( &t );
+</pre>
 
 
+<pre>
+//Initialize the templating engine 
+render_init( &R, &t );
+</pre>
+
+Before you start doing any templating, you'll need to initialize the Render datatype.  You are basically telling the datatype what you plan to use.
 
 
+<pre>
+//Figure out where the replacements are, then use that in later runs 
+render_map( &R, &ab, strlen( ab ) ); 
+</pre>
 
+At this point, the render module knows what to "find and replace".   This is not always useful, but very much so when looping through large tables.
+
+
+<pre>
+//This is where it actually gets done
+render_render( &R )
+</pre>
+
+<pre>
+//Retrieve the written data
+uint8_t \*output = bf_data( render_rendered( &R ) );
+int outputLen = bf_written( render_rendered( &R ) );
+</pre>
 
 
 ## Caveats / Bugs

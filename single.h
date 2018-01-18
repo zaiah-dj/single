@@ -1243,6 +1243,7 @@ void render_free ( Render *r );
 void render_set_srcdata (Render *r, uint8_t *src);
 void render_set_srctable (Render *r, Table *t);
 int render_map ( Render *r, uint8_t *src, int srclen );
+void render_dump_mark ( Render *r );
 Buffer *render_rendered (Render *r);
 #endif
 

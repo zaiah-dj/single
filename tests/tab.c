@@ -382,7 +382,7 @@ Table *convert_lkv ( LiteKv *kv )
 
 		if ( kv->value.type != LITE_TBL )
 		{
-			fprintf( stderr, "Descended, but did you finalize?\n" );
+			//fprintf( stderr, "Descended, but did you finalize?\n" );
 			lt_finalize( t );
 		}
 		kv ++;
