@@ -927,6 +927,7 @@ void print_body ( Bod *b )
 #endif
 #endif
 
+#define RENDER_DEBUG_H
 
 void render_dump_mark ( Render *r )
 {
@@ -1141,37 +1142,51 @@ int render_render ( Render *r )
 
 		//Simply copy this data
 		if ( ct->action == RAW )
+		{
+		#ifdef RENDER_DEBUG_H
+			write( 2, ct->blob, ct->size );
+		#endif
 			bf_append( &r->dest, ct->blob, ct->size );
-
+		}
 		//Retrieve the reference and write it
 		else if ( ct->action == DIRECT && ct->index > -1 )
 		{
+		#ifdef RENDER_DEBUG_H
+			if ( ct->type == LITE_BLB )
+				write( 2, lt_blobdata_at( r->srctable, ct->index ), lt_blobsize_at( r->srctable, ct->index ));
+			else if ( ct->type == LITE_INT )
+				fprintf( stderr, "%d", lt_int_at( r->srctable, ct->index )); 
+			else if ( ct->type == LITE_FLT )
+				fprintf( stderr, "%f", lt_float_at( r->srctable, ct->index )); 
+			else if ( ct->type == LITE_USR )
+				fprintf( stderr, "%p", lt_userdata_at( r->srctable, ct->index )); 
+			else if ( ct->type == LITE_TBL )
+				fprintf( stderr, "%p", (void *)&lt_table_at( r->srctable, ct->index )); 
+			else if ( ct->type == LITE_TXT )
+				fprintf( stderr, "%s\n", lt_text_at( r->srctable, ct->index ) );
+			else { 
+			}	
+		#endif
 			//fprintf( stderr, "Direct reference is of type: %s", lt_typename( ct->type ));
 			if ( ct->type == LITE_BLB )
 				bf_append( &r->dest, lt_blobdata_at( r->srctable, ct->index ), lt_blobsize_at( r->srctable, ct->index ));
-			else if ( ct->type == LITE_TXT ) {
-				char *a = lt_text_at( r->srctable, ct->index );
+			else { 
+				char *a = NULL, b[128] = {0};
+				if ( ct->type == LITE_INT )
+					snprintf( a = b, 63, "%d", lt_int_at( r->srctable, ct->index )); 
+				else if ( ct->type == LITE_FLT )
+					snprintf( a = b, 127, "%f", lt_float_at( r->srctable, ct->index )); 
+				else if ( ct->type == LITE_USR )
+					snprintf( a = b, 127, "%p", lt_userdata_at( r->srctable, ct->index )); 
+				else if ( ct->type == LITE_TBL )
+					snprintf( a = b, 127, "%p", (void *)&lt_table_at( r->srctable, ct->index )); 
+				else if ( ct->type == LITE_TXT )
+					a = lt_text_at( r->srctable, ct->index );
+				else { 
+					a = 0;//Skip all other types
+				}	
 				bf_append( &r->dest, (uint8_t *)a, strlen( a ) );
 			}
-			else if ( ct->type == LITE_INT )
-			{ char a[ 64 ]={0}; 
-				snprintf( a, 63, "%d", lt_int_at( r->srctable, ct->index )); 
-				bf_append( &r->dest, (uint8_t *)a, strlen( a ) ); }
-			else if ( ct->type == LITE_FLT )
-			{ char a[ 128 ]={0}; 
-				snprintf( a, 127, "%f", lt_float_at( r->srctable, ct->index )); 
-				bf_append( &r->dest, (uint8_t *)a, strlen( a ) ); }
-			else if ( ct->type == LITE_USR )
-			{ char a[ 128 ]={0}; 
-				snprintf( a, 127, "%p", lt_userdata_at( r->srctable, ct->index )); 
-				bf_append( &r->dest, (uint8_t *)a, strlen( a ) ); }
-			else if ( ct->type == LITE_TBL )
-			{ char a[ 128 ]={0}; 
-				snprintf( a, 127, "%p", (void *)&lt_table_at( r->srctable, ct->index )); 
-				bf_append( &r->dest, (uint8_t *)a, strlen( a ) ); }
-			else { 
-				;//Skip all other types 
-			}	
 		}
 		else if ( ct->action == STUB )
 		{
@@ -1183,11 +1198,14 @@ int render_render ( Render *r )
 			memcpy( &search[ p ], ct->blob, ct->size );
 			p += ct->size;
 		
-#if 1
+		#ifdef RENDER_DEBUG_H
+			niprintf( dt->psize );
+			niprintf( ct->size  );
+			niprintf( dt->times );
+			write( 2, "Search: ", 8 );
 			write( 2, search, p );
 			write( 2, "\n", 1 );
-			//getchar();
-#endif
+		#endif
 		
 			if ( (i = lt_get_long_i( r->srctable, search, p )) == -1 )
 				{ ct++; continue; }//fprintf( stderr, "Looks like there's nothing here..." );		
@@ -1219,6 +1237,8 @@ int render_render ( Render *r )
 		}
 		else if ( ct->action == NEGLOOP || ct->action == POSLOOP )
 		{
+		#ifdef RENDER_DEBUG_H
+		#endif
 			if ( ct->action == NEGLOOP && ct->index > -1 )
 				dt->skip = 1; //Set something
 			else 
