@@ -1617,7 +1617,7 @@ int lt_move (Table *t, int dir)
 	//Left or right?	
 	if ( !dir )
 	{
-		SHOWDATA( "Descending into table value to table at %p", ( void * )t );
+		//SHOWDATA( "Descending into table value to table at %p", ( void * )t );
 		//Set count of elements in this new table to actual count
 		LiteTable *T = &value->v.vtable;
 		value->type  = LITE_TBL;
@@ -1636,7 +1636,7 @@ int lt_move (Table *t, int dir)
 		key->type      = LITE_TRM;
 		value->type    = LITE_NUL;
 		LiteRecord *r  = &key->v;	
-		SHOWDATA( "Ascending from inner table within at %p", ( void * )t );
+		//SHOWDATA( "Ascending from inner table within at %p", ( void * )t );
 
 		//
 		if ( !t->current->parent )
