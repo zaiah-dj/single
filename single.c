@@ -1122,12 +1122,12 @@ int render_render ( Render *r )
 				if ( dt->skip )
 					dt->skip = 0;
 				else {
-#if 0
+			#if 0
 					//Write
 					write( 2, dt->parent, dt->psize );
 					fprintf( stderr, " => " );
 					write( 2, ct->blob, ct->size );
-#endif
+			#endif
 					//Decrement repetition
 					if ( dt->times == 0 )
 						dt--;
@@ -1152,6 +1152,7 @@ int render_render ( Render *r )
 		else if ( ct->action == DIRECT && ct->index > -1 )
 		{
 		#ifdef RENDER_DEBUG_H
+			SHOWDATA( "in rdbgh" );
 			if ( ct->type == LITE_BLB )
 				write( 2, lt_blobdata_at( r->srctable, ct->index ), lt_blobsize_at( r->srctable, ct->index ));
 			else if ( ct->type == LITE_INT )
@@ -1254,6 +1255,7 @@ int render_render ( Render *r )
 					{
 						dt++;
 						memset( dt, 0, sizeof (struct DT));
+
 						//Skip completely if this is a table and there are no entries
 						if ( (dt->times = lt_counti( r->srctable, ct->index )) > 0 )
 						{
@@ -1263,6 +1265,11 @@ int render_render ( Render *r )
 							dt->psize = ct->size;
 							dt->parent = ct->blob;
 						}
+					#ifdef RENDER_DEBUG_H
+						lt_dump( r->srctable );
+						fprintf( stderr, "We is gonna repeat this, this many times: %d\n", dt->times );
+						return 0;	
+					#endif
 					}
 				}
 			}
@@ -1288,7 +1295,7 @@ Buffer *render_rendered (Render *r)
  #else
   static const int lt_max_slots     = 7;
  #endif
- #ifndef DEBUG_H
+ #ifdef DEBUG_H
   static const char *fmt = "%-4s\t%-10s\t%-5s\t%-10s\t%-30s\t%-6s\t%-20s\n";
  #endif
 static const LiteRecord nul = { 0 };
@@ -1377,10 +1384,10 @@ unsigned char *lt_trim (uint8_t *msg, char *trim, int len, int *nlen)
 }
 
 
-
-//Count indicies in a table. If index is greater than 1 and the item is a "table", then will return the number of elements in said table
+//Count indices in a table. If index is greater than 1 and the item is a "table", then will return the number of elements in said table
 int lt_counti ( Table *t, int index )
 {
+	SHOWDATA( "index: %d", index );
 	//Return count of all elements
 	if ( index == -1 )
 		return t->count;
@@ -1391,6 +1398,7 @@ int lt_counti ( Table *t, int index )
 		else 
 		{
 			LiteTable *tt = &lt_table_at( t, index );
+SHOWDATA( "tt: %p", tt );
 			return ( tt ) ? (tt->count - 1) : 0;
 		}
 	}
@@ -1402,20 +1410,14 @@ int lt_counti ( Table *t, int index )
 		else 
 		{
 			LiteTable *tt = &lt_table_at( t, index );
+SHOWDATA( "tt: %p", tt );
+SHOWDATA( "tt->count: %d", tt->count );
+SHOWDATA( "tt->count: %d", tt->count - 1 );
 			return ( tt ) ? (tt->count - 1) : 0;
 		}
 	}
 	return 0;
 }
-
-
-
-
-
-
-
-
-
 
 
 //Clear error
@@ -1534,34 +1536,34 @@ LiteType lt_add ( Table *t, int side, LiteType lt, int vi, float vf,
 	if ( lt == LITE_INT )
 	{
 		r->vint = vi;
-		//SHOWDATA( "Adding int %s %d to table at %p", ( !side ) ? "key" : "value", r->vint, ( void * )t );
+		SHOWDATA( "Adding int %s %d to table at %p", ( !side ) ? "key" : "value", r->vint, ( void * )t );
 	}
 	else if ( lt == LITE_FLT )
 	{
 		r->vfloat = vf;
-		//SHOWDATA( "Adding float %s %f to table at %p", ( !side ) ? "key" : "value", r->vfloat, ( void * )t );
+		SHOWDATA( "Adding float %s %f to table at %p", ( !side ) ? "key" : "value", r->vfloat, ( void * )t );
 	}
 #ifdef LITE_NUL
 	else if ( lt == LITE_NUL )
 	{
 		r->vnull = NULL;
-		//SHOWDATA( "Adding null %s to table at %p", ( !side ) ? "key" : "value", ( void * )t );
+		SHOWDATA( "Adding null %s to table at %p", ( !side ) ? "key" : "value", ( void * )t );
 	}
 #endif
 	else if ( lt == LITE_USR )
 	{
 		r->vusrdata = vn;
-		//SHOWDATA( "Adding userdata %p to table at %p", ( void * )r->vusrdata, ( void * )t );
+		SHOWDATA( "Adding userdata %p to table at %p", ( void * )r->vusrdata, ( void * )t );
 	}
 	else if ( lt == LITE_TBL )
 	{
-		//SHOWDATA( "Adding invalid value table!" );
+		SHOWDATA( "Adding invalid value table!" );
 		return ( t->error = ERR_LT_INVALID_VALUE ) ? -1 : -1;
 	}
 	else if ( lt == LITE_BLB )
 	{
 		r->vblob.blob = vb, r->vblob.size = vblen;
-		//SHOWDATA( "Adding blob %s of length %d to table at %p", (!side) ? "key" : "value", r->vblob.size, ( void * )t );
+		SHOWDATA( "Adding blob %s of length %d to table at %p", (!side) ? "key" : "value", r->vblob.size, ( void * )t );
 	}
 	else if ( lt == LITE_TXT )
 	{
@@ -1575,7 +1577,7 @@ LiteType lt_add ( Table *t, int side, LiteType lt, int vi, float vf,
 			memset( r->vchar, 0, vblen + 1 );
 			memcpy( r->vchar, vb, vblen );
 			r->vchar[ vblen ] = '\0';
-			//SHOWDATA( "Adding text %s '%s' to table at %p", ( !side ) ? "key" : "value", r->vchar, ( void * )t );
+			SHOWDATA( "Adding text %s '%s' to table at %p", ( !side ) ? "key" : "value", r->vchar, ( void * )t );
 		}
 	}
 	else 
@@ -2217,7 +2219,7 @@ static void lt_printindex (LiteKv *tt, int ind)
 
 
 
-#ifndef DEBUG_H 
+#ifdef DEBUG_H 
 //Get a key or value somewhere
 void lt_printall ( Table *t ) 
 {
@@ -4043,6 +4045,8 @@ char * rand_any
 static const unsigned long CV_1T = 1000;
 static const unsigned long CV_1M = 1000000;
 static const unsigned long CV_1B = 1000000000;
+#ifdef DEBUG_H
+#endif
 
 //Initiailize a timer
 void __timer_init (Timer *t, LiteTimetype type) 
@@ -4060,7 +4064,7 @@ void __timer_set_name (Timer *t, const char *label)
 
 
 //Start a currently running timer
- #ifndef CV_VERBOSE_TIMER 
+ #ifndef DEBUG_H 
 void __timer_start (Timer *t)
 {
  #else
@@ -4075,7 +4079,7 @@ void __timer_start (Timer *t, const char *file, int line)
 
 
 //Stop a currently running timer
- #ifndef CV_VERBOSE_TIMER 
+ #ifndef DEBUG_H 
 void __timer_end (Timer *t)
 {
  #else
@@ -4085,6 +4089,38 @@ void __timer_end (Timer *t, const char *file, int line)
 	t->lineend = line;
  #endif 
 	clock_gettime( t->clockid, &t->end );
+}
+
+
+//Return the current time (in a platform agnostic way)
+char *timer_now( Timer *t )
+{
+#if 1
+	time_t tm = time( NULL ); 
+	snprintf( t->ts_string, sizeof( t->ts_string ), "%s", ctime( &tm )); 
+	if ( t->ts_string[ strlen( t->ts_string ) - 1 ] == '\n' ) {
+		t->ts_string[ strlen( t->ts_string ) - 1 ] = '\0';
+	}
+#else
+	t->clockid = CLOCK_REALTIME;
+	clock_gettime( t->clockid, &t->start );
+	struct tm tm;
+	//tm.tm_sec = t->start.tv_sec % 60;
+	fprintf( stderr, "seconds\n" );
+	nlprintf( t->start.tv_sec % 60 ); 
+	fprintf( stderr, "min\n" );
+	nlprintf( ( t->start.tv_sec / 60 ) % 60 ); 
+	fprintf( stderr, "hour\n" ); //This seems wrong, but we are 5 hours ahead
+	nlprintf( ( ( t->start.tv_sec / 60 ) / 60 ) % 12 ); 
+	fprintf( stderr, "day\n" );
+	//60 secs * 60 min * 24 = 86400 secs per day, crude math would give me this...
+	//add all leap years since 1970, then the remaining
+	nlprintf(( t->start.tv_sec / 86400 ) % 365 );
+	//nlprintf( ( ( ( t->start.tv_sec / 60 ) / 60 ) / 24 ) % 365 ); 
+	//nlprintf( t->start.tv_sec % 60 ); 
+	//strftime( t->ts_string, sizeof( t->ts_string ), "%a %b %d %I:%M:%S %Y", t-> );
+#endif
+	return t->ts_string;
 }
 
 

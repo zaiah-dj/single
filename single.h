@@ -114,40 +114,34 @@
  #endif
 #endif
 
-#ifndef DEBUG_H
- #if 1
-	#define SUSP(...) \
-		fprintf( stderr, "%s, %d: ", __FILE__, __LINE__ ); fprintf( stderr, __VA_ARGS__ ); getchar() 
+#ifdef DEBUG_H
+ #define PATH( a ) \
+	 ( fprintf( #a ) ? 1 : 1 ) && a 
+ #define SUSP(...) \
+	fprintf( stderr, "%s, %d: ", __FILE__, __LINE__ ); fprintf( stderr, __VA_ARGS__ ); getchar() 
 
-  #define STEP(...) do { \
-   fprintf( stderr, "%20s [ %s: %d ]", __func__, __FILE__, __LINE__ ); \
-   getchar(); } while (0)
- #else
-  #define STEP(...) do { \
-   fprintf( stderr, __VA_ARGS__ ); getchar(); } while (0)
- #endif
+ #define STEP(...) do { \
+  fprintf( stderr, "%20s [ %s: %d ]", __func__, __FILE__, __LINE__ ); \
+  getchar(); } while (0)
 
- //A define to help dump data
  #define SHOWDATA(...) do { \
-  fprintf(stderr, "%-30s [ %s %d ] -> ", __func__, __FILE__, __LINE__); \
+  fprintf(stderr, "%-30s [ %s %d ] ( %s ) ", __func__, __FILE__, __LINE__, __CURRENT_TIME__ ); \
   fprintf( stderr, __VA_ARGS__ ); \
   fprintf( stderr, "\n"); } while (0)
 
- //Dump binary data
  #define SHOWBDATA(a,b, ...) do { \
-  fprintf(stderr, "%-30s [ %s %d ] -> ", __func__, __FILE__, __LINE__); \
+  fprintf(stderr, "%-30s [ %s %d ] ( %s ) ", __func__, __FILE__, __LINE__, __CURRENT_TIME__ ); \
   fprintf( stderr, __VA_ARGS__ ); \
 	write( 2, a, b ); \
   fprintf( stderr, "\n"); } while (0)
 
-
- //Encapsulate for testing
  #define ENCAPS( d, len ) \
   write( 2, "'", 1 ); \
   write( 2, d, len ); \
   write( 2, "'", 1 ); \
   write( 2, "\n", 1 )
 #else
+  #define PATH( a )
 	#define SUSP(...)
   #define STEP(...) 
   #define SHOWDATA(...)
@@ -376,6 +370,24 @@
 
 #ifndef TIMER_H
  #include <time.h>
+ #define timer_init( ) 
+ #define timer_set_name( ) 
+ #define timer_eprint( ) 
+ #define timer_elapsed( ) 
+
+#define __CURRENT_TIME__ \
+	timer_now( &__thx__ )	
+ #ifdef DEBUG_H
+  #define timer_start( t ) \
+   timer_start( t, __FILE__, __LINE__ )
+  #define timer_end( t ) \
+   timer_end( t, __FILE__, __LINE__ )
+ #else
+  #define timer_start( t ) \
+   timer_start( t )
+  #define timer_end( t ) \
+   timer_end( t )
+ #endif
 #endif
 
 #ifndef MEM_H
@@ -387,8 +399,6 @@
 	memset(&mems, 0, sizeof(Mem)); \
 	mems.pos = p; \
 	mems.it = m; 
-
-
 #endif
 
 #ifndef JSON_H
@@ -976,16 +986,17 @@ typedef enum
 typedef struct 
 {	
 	clockid_t   clockid;     
-	int         linestart,   
-              lineend;	  
 	struct 
   timespec    start,     
               end;      
 	const char *label; 
- #ifdef CV_VERBOSE_TIMER 
+ #ifdef DEBUG_H 
   const char *file;        
+	int         linestart,   
+              lineend;	  
  #endif
 	LiteTimetype  type;     
+	char        ts_string[1024];
 } Timer;
 #endif
 
@@ -1277,6 +1288,25 @@ const char *sq_strerror ( Database * );
  #ifdef SQROOGE_EXPERIMENTAL
   _Bool sq_read (Database *, const char *sql);
   _Bool sq_create (Database *, const char *);
+ #endif
+#endif
+
+#ifndef TIMER_H
+void __timer_init (Timer *t, LiteTimetype type);
+void __timer_set_name (Timer *t, const char *label);
+int __timer_elap (Timer *t) ;
+void __timer_eprint (Timer *t) ;
+char *timer_now( Timer *t );
+#ifndef TIMER_LOCAL_STRUCT_H
+#define TIMER_LOCAL_STRUCT_H
+static Timer __thx__ = { 0 };
+#endif
+ #ifdef DEBUG_H
+ void __timer_start (Timer *t, const char *file, int line);
+ void __timer_end (Timer *t, const char *file, int line);
+ #else
+ void __timer_start (Timer *t);
+ void __timer_end (Timer *t);
  #endif
 #endif
 

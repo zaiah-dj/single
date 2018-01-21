@@ -99,13 +99,22 @@ LiteKv NoTable[] = {
 };
 
 LiteKv SingleTable[] = {
-	{ TEXT_KEY( "baltimore" ), TEXT_VALUE( "City of Dreams" )  },
-	{ TEXT_KEY( "durham" ), BLOB_VALUE( "City of Chicken and Guns" )    },
+	{ TEXT_KEY( "ashor" )  , TABLE_VALUE( )         },
+		{ INT_KEY( 7043 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog." )  },
+		{ INT_KEY( 7002 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog another time." )  },
+#if 0
+		{ INT_KEY( 7003 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the 3rd time." )  },
+		{ INT_KEY( 7004 )    , USR_VALUE ( NULL ) },
+		{ INT_KEY( 7008 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog again." )  },
+		{ INT_KEY( 7009 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the last time." )  },
+#endif
+		{ TRM() },
 
-	//This is much easier to see
-	//{ START_TABLE( "artillery" ) }
+	{ TEXT_KEY( "baltimore" ), TEXT_VALUE( "City of Dreams" ) },
+#if 1
 	{ TEXT_KEY( "artillery" )       , TABLE_VALUE( )         },
 		/*Database records look a lot like this*/
+#if 1
 		{ INT_KEY( 0 )       , TABLE_VALUE( )         },
 			{ TEXT_KEY( "val" ), BLOB_VALUE( "MySQL makes me tired." ) },
 			{ TEXT_KEY( "rec" ), TEXT_VALUE( "Choo choo cachoo." ) },
@@ -118,20 +127,30 @@ LiteKv SingleTable[] = {
 			{ TEXT_KEY( "val" ), BLOB_VALUE( "MySQL makes me ecstatic." ) },
 			{ TEXT_KEY( "rec" ), TEXT_VALUE( "Choo choo cachoo." ) },
 			{ TRM() },
-		{ INT_KEY( 3 )       , TABLE_VALUE( )         },
-			{ TEXT_KEY( "val" ), BLOB_VALUE( "MySQL makes me a bother." ) },
-			{ TEXT_KEY( "rec" ), TEXT_VALUE( "Choo choo cachoo." ) },
-			{ TRM() },
 		{ TRM() },
+#endif
 
-	{ TEXT_KEY( "ashor" )  , TABLE_VALUE( )         },
-		{ INT_KEY( 7043 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog." )  },
-		{ INT_KEY( 7002 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog another time." )  },
+#if 1
+	{ TEXT_KEY( "willis" )  , TABLE_VALUE( )         },
+		{ INT_KEY( 678 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog." )  },
+		{ INT_KEY( 679 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog another time." )  },
 		{ INT_KEY( 7003 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the 3rd time." )  },
 		{ INT_KEY( 7004 )    , USR_VALUE ( NULL ) },
 		{ INT_KEY( 7008 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog again." )  },
 		{ INT_KEY( 7009 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the last time." )  },
 		{ TRM() },
+#endif
+#if 1
+	{ TEXT_KEY( "graham" )  , TABLE_VALUE( )         },
+		{ INT_KEY( 678 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog." )  },
+		{ INT_KEY( 679 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog another time." )  },
+		{ INT_KEY( 7003 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the 3rd time." )  },
+		{ INT_KEY( 7004 )    , USR_VALUE ( NULL ) },
+		{ INT_KEY( 7008 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog again." )  },
+		{ INT_KEY( 7009 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the last time." )  },
+		{ TRM() },
+#endif
+#endif
 	{ LKV_LAST } 
 };
 
@@ -294,6 +313,7 @@ RenderTest r[] =
 	//.renSrc = the input that the test will use for find and replace
 	//.renCmp = the constant to compare against to make sure that rendering worked
 	//.values = the Table to use for values (these tests do not test any parsing)
+#if 0
 	{
 		.name = "mixed_keys",
 		.desc = "Mixed keys",
@@ -323,7 +343,7 @@ RenderTest r[] =
 		 "</body>\n"
 		 "</html>\n"
 	},
-
+#endif
 	//one table
 	{
 		.name = "one level table",
@@ -371,12 +391,12 @@ RenderTest r[] =
 	},
 
 
+#if 0 
 	{
 		.name = "two level table",
 		.desc = "two level table | key value test",
 		.values = DoubleTableAlpha,
 
-#if 0 
 		//Notice the cities.metadata loop block.  Teset for short and long keys...
 		.renSrc =
 		 "<html>\n"
@@ -406,7 +426,6 @@ RenderTest r[] =
 		 "{{/ cities }}\n"
 		 "</body>\n"
 		 "</html>\n"
-#endif
 		.renSrc =
 		 "<html>\n"
 		 "<head>\n"
@@ -492,6 +511,7 @@ RenderTest r[] =
 		 "</body>\n"
 		 "</html>\n"
 	},
+#endif
 
 #if 0
 	{
@@ -644,7 +664,7 @@ TEST( render )
 		//Print the table (if it crashes here, you have bigger problems)
 		lt_dump( t ); 
 
-#if 1	
+#if 0
 		//Run the test via the render thing
 		if ( !render_init( &R, t ) ) {
 			EPRINTF( "Failed to iniitalize render module at test #%d", set );
@@ -663,6 +683,7 @@ TEST( render )
 			EPRINTF( "Failed to set render source correctly at test #%d", set );
 		}
 
+#if 0	
 		//Retrieve rendered source and do something with it
 		dest = bf_data( render_rendered( &R ) ); 
 		destlen = bf_written ( render_rendered( &R )); 
@@ -689,6 +710,7 @@ TEST( render )
 
 		//Free everything
 		render_free( &R );
+#endif
 #endif
 
 		lt_free( t );

@@ -13,7 +13,7 @@
 //#define RENDER_H 
 #define SOCKET_H 
 #define SQROOGE_H 
-#define TIMER_H 
+//#define TIMER_H 
 #define UTIL_H 
 
 /*Pretty print left side values*/
