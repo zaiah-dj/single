@@ -370,24 +370,63 @@
 
 #ifndef TIMER_H
  #include <time.h>
- #define timer_init( ) 
- #define timer_set_name( ) 
- #define timer_eprint( ) 
- #define timer_elapsed( ) 
 
-#define __CURRENT_TIME__ \
+ #define __CURRENT_TIME__ \
 	timer_now( &__thx__ )	
+
+ #define timer_init(a, b) \
+  __timer_init( a, b )
+
+ #define timer_use_us(a) \
+  __timer_init( a, LITE_USEC )
+
+ #define timer_use_ms(a) \
+  __timer_init( a, LITE_MSEC )
+
+ #define timer_use_secs(a) \
+  __timer_init( a, LITE_SEC )
+
+ #define timer_use_ns(a) \
+  __timer_init( a, LITE_NSEC )
+
+ #define timer_set_name(...) \
+	__timer_set_name( __VA_ARGS__ )
+
+ #define timer_elapsed(a) \
+	__timer_elap( a ) 
+
+ #define timer_selapsed() \
+	__timer_elap( &__thx__ )
+
+ #define timer_sprint( ) \
+	__timer_eprint( &__thx__ )
+
+ #define timer_sset_name( str ) \
+	__timer_set_name( &__thx__, str )
+
+ #define timer_print(a) \
+	__timer_eprint( a )
+
  #ifdef DEBUG_H
+  #define timer_sstart( ) \
+	 __timer_start( &__thx__, __FILE__, __LINE__ )
+  #define timer_send( ) \
+	 __timer_end( &__thx__, __FILE__, __LINE__ )
   #define timer_start( t ) \
-   timer_start( t, __FILE__, __LINE__ )
+   __timer_start( t, __FILE__, __LINE__ )
   #define timer_end( t ) \
-   timer_end( t, __FILE__, __LINE__ )
+   __timer_end( t, __FILE__, __LINE__ )
  #else
+  #define timer_sstart( ) \
+	 __timer_start( &__thx__ )
+  #define timer_send( ) \
+	 __timer_end( &__thx__ )
   #define timer_start( t ) \
-   timer_start( t )
+   __timer_start( t )
   #define timer_end( t ) \
-   timer_end( t )
+   __timer_end( t )
  #endif
+
 #endif
 
 #ifndef MEM_H
