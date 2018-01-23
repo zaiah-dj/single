@@ -62,7 +62,6 @@ Assume that you're writing some a game that processes basic messages from a netw
 ### Error Handling
 
 
-
 ## How Tos and Examples
 
 ### Buffers

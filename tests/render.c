@@ -110,7 +110,6 @@ LiteKv SingleTable[] = {
 #endif
 		{ TRM() },
 
-	{ TEXT_KEY( "baltimore" ), TEXT_VALUE( "City of Dreams" ) },
 #if 1
 	{ TEXT_KEY( "artillery" )       , TABLE_VALUE( )         },
 		/*Database records look a lot like this*/
@@ -664,6 +663,9 @@ TEST( render )
 		//Print the table (if it crashes here, you have bigger problems)
 		lt_dump( t ); 
 
+		//What does the total count return (that's the entire reason why that pointer trans takes
+		//place the way it does.
+		fprintf( stderr, "there are a total of %d elements in this table:\n", lt_countall( t ) );
 #if 0
 		//Run the test via the render thing
 		if ( !render_init( &R, t ) ) {

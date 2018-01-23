@@ -380,11 +380,13 @@ Table *convert_lkv ( LiteKv *kv )
 			exit( 0 );	
 		}
 
+#if 1
 		if ( kv->value.type != LITE_TBL )
 		{
 			//fprintf( stderr, "Descended, but did you finalize?\n" );
 			lt_finalize( t );
 		}
+#endif
 		kv ++;
 	}
 	lt_lock( t );

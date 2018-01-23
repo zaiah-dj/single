@@ -271,8 +271,6 @@ int load_file2 (uint8_t *dest, const char *file, int *size)
 
 
 
-
-
 //Here is a far better file load function which utilizes buffers
 //I need an iterator function, especially for chunked-encoding
 int load_file (Buffer *dest, const char *file, int *size)
@@ -1367,9 +1365,6 @@ static int build_backwards (LiteKv *t, unsigned char *buf, int bs)
 
 
 
-#ifdef DEBUG_H 
-#endif
-
 //Trim things
 unsigned char *lt_trim (uint8_t *msg, char *trim, int len, int *nlen) 
 {
@@ -1434,6 +1429,7 @@ const char *lt_strerror (Table *t)
 	return ( t->error > -1 && t->error < ERR_LT_INDEX_MAX) ? __errors[ t->error ] : NULL; 
 }
 
+
 //Initiailizes a table data structure
 Table *lt_init (Table *t, LiteKv *k, int size) 
 {
@@ -1464,8 +1460,9 @@ Table *lt_init (Table *t, LiteKv *k, int size)
 		t->modulo = 199999; 
 	else if ( size <= 199961 )
 		t->modulo = 199999; 
-	else
+	else {
 		t->modulo = 511997; 
+	}
 
 	int actual_size = size;
 	t->mallocd = (!k) ? 1 : 0;
@@ -1505,6 +1502,7 @@ Table *lt_init (Table *t, LiteKv *k, int size)
 	t->start   = 0;
 	t->end     = 0;
 	t->rCount  = &t->count;
+	SHOWDATA( "t->rCount (the errant pointer): %p\n", t->rCount ); 
 	//t->parent = NULL;
 
 	//Lastly, increment tte pointer by one so we can always follow it
@@ -1620,7 +1618,7 @@ const char *lt_typename (int type)
 
 
 
-//Descend one level (creating a table)
+//Move left or right within the hierarchy of tables
 int lt_move (Table *t, int dir) 
 {
 	//Out of space
@@ -1648,7 +1646,6 @@ int lt_move (Table *t, int dir)
 		/*Yay*/
 		T->parent  = ( !t->current ) ? NULL : t->current;
 		T->ptr     = *(long *)&T; 
-		//T->ptr   = (int)T; //for some reason, GCC doesn't like this...
 		t->current = T;
 	}
 	else 
@@ -1663,6 +1660,7 @@ int lt_move (Table *t, int dir)
 		//
 		if ( !t->current->parent )
 		{
+SHOWDATA("Check here: "); //this means we're at the root node
 			t->rCount = &t->count;
 			r->vptr = (long)t->current->ptr;
 		}
@@ -1670,6 +1668,7 @@ int lt_move (Table *t, int dir)
 		{
 			r->vptr = (long)t->current->ptr;
 			LiteTable *T = t->current->parent;
+SHOWDATA("Check here: "); //this may have something to do with it
 			t->rCount = &T->count;
 			t->current = T;
 		}
@@ -1684,7 +1683,9 @@ int lt_move (Table *t, int dir)
 //Finalize adding to both sides of a table data structure
 void lt_finalize (Table *t)
 {
-	( *t->rCount )++;
+	//This is where things are going awry... but why.
+	//if ( t->current->parent )
+		( *t->rCount )++;
 	t->count ++;
 	t->index ++;
 }

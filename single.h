@@ -305,7 +305,7 @@
  #define lt_iitems(t, ind) \
  	lt_items_by_index(t, ind )
  #define lt_countall( t ) \
- 	lt_counti( t, 0 );
+ 	lt_counti( t, 0 )
  #define lt_within( t, str ) \
  	lt_within_long( t, (uint8_t *)str, strlen(str))
 #endif
@@ -737,9 +737,9 @@ typedef struct
   	   prev,       //previous match
   	   next;       //next match
   struct words { 
-       char *word,       //Find this
-             *catch,      //If you found *word, skip all other characters until you find this 
-                *negate;     //If you found *word, skip *catch until you find this
+	char *word,       //Find this
+       *catch,      //If you found *word, skip all other characters until you find this 
+       *negate;     //If you found *word, skip *catch until you find this
   }              words[31];
 } Parser;
 
@@ -753,6 +753,8 @@ typedef struct LiteTable LiteTable;
 typedef struct LiteKv LiteKv;
 typedef union  LiteRecord LiteRecord;
 //typedef struct LiteNode LiteNode;
+
+
 //Table for table values
 typedef enum 
 {
@@ -768,6 +770,7 @@ typedef enum
   LITE_NOD,     //A node
 } LiteType;
 
+
 struct LiteTable 
 {
   uint32_t  count;
@@ -775,26 +778,26 @@ struct LiteTable
   LiteTable *parent;
 };
 
-//
+
 typedef struct 
 {
-  unsigned int  total  ,   //Size allocated (the bound)
-                modulo ,   //Optimal modulus value for hashing
-                index  ,   //Index to current element
-                count  ,   //Elements in table
-                *rCount;   //Elements in current table 
-  int           error  ;   //An error occurred, read it...
-  int           mallocd;   //An error occurred, read it...
-  int           srcmallocd;   //An error occurred, read it...
-  int           size   ;   //Size of newly trimmed key or pointer
-  int           cptr;    //Table will stop here
-  int           start  ,   //Table bounds are here if "lt_within" is used
+  unsigned int  total  ,     //Size allocated (the bound)
+                modulo ,     //Optimal modulus value for hashing
+                index  ,     //Index to current element
+                count  ,     //Elements in table
+                *rCount;     //Elements in current table 
+  int           error  ;     //An error occurred, read it...
+  int           mallocd;     //An error occurred, read it...
+  int           srcmallocd;  //An error occurred, read it...
+  int           size   ;     //Size of newly trimmed key or pointer
+  int           cptr;        //Table will stop here
+  int           start  ,     //Table bounds are here if "lt_within" is used
                 end    ,
                 buflen ;
-  unsigned char *src   ;   //Source for when you need it
-  unsigned char *buf   ;   //Pointer for trimmed keys and values
-  LiteKv        *head  ;   //Pointer to the first element
-  LiteTable     *current;   //Pointer to the first element
+  unsigned char *src   ;     //Source for when you need it
+  unsigned char *buf   ;     //Pointer for trimmed keys and values
+  LiteKv        *head  ;     //Pointer to the first element
+  LiteTable     *current;    //Pointer to the first element
   
 } Table;
 
