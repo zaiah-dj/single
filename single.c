@@ -1,25 +1,25 @@
-/*single.c - 
+/*
+single.c
+========
 A two-file library for common things in C (and eventually C++)
 
 LICENSE
 -------
 
+DOCUMENTATION
+-------------
 
-Documentation:
---------------
-
-
-Tests:
-------
-
-TODO:
+TESTS
 -----
-Package a tool to create documentation here.
 
+TODO
+----
+Package a tool to create documentation here.
 Package a way to build tests here.
 
 */
 #include "single.h"
+#define RENDER_DEBUG_H
 
 //This flag is here to control how table counts work...
 
@@ -902,7 +902,6 @@ int print_uerr (const char *err)
 }
 
 
-#if 1
 void print_body ( Bod *b )
 {
 	 niprintf( b->beg );
@@ -915,19 +914,17 @@ void print_body ( Bod *b )
 	 niprintf( b->loop );
 	 niprintf( b->loopKeyLen );
 	 niprintf( b->loopValueLen );
- #if 0
+  #if 0
 	char    *srcTable;
 	uint8_t *tok,
 	        *loopKey,
 					*loopValue,
 					*value,
 					*loopBuf;
- #endif
+  #endif
 }
-#endif
-#endif
+ #endif
 
-//#define RENDER_DEBUG_H
 
 void render_dump_mark ( Render *r )
 {
@@ -1019,20 +1016,25 @@ int render_map ( Render *r, uint8_t *src, int srclen )
 		//Just mark each section (and it's position)
 		if ((t = p.word[ p.tokenSize - 1 ]) == '#')
 		{
+			//The start of "positive" loops (items that should be true)
 			ct->blob = &src[p.prev],
 			ct->size = p.size,
 			ct->action = RAW;
 			REALLOC( raw, r->markers );
 			ct->action = POSLOOP;
 		}
-		else if (t == '^') {
+		else if (t == '^') 
+		{
+			//The start of "negative" loops (items that should be false)
 			ct->blob = &src[p.prev],
 			ct->size = p.size,
 			ct->action = RAW;
 			REALLOC( raw, r->markers );
 			ct->action = NEGLOOP;
 		}
-		else if (t == '/') {
+		else if (t == '/')
+		{
+			//The end of either a "positive" or "negative" loop
 			ct->blob = &src[p.prev],
 			ct->size = p.size,
 			ct->action = RAW;
@@ -1041,6 +1043,7 @@ int render_map ( Render *r, uint8_t *src, int srclen )
 		}
 		else if (t == '{')
 		{
+			//The start of a key (any type)
 			ct->blob = &src[p.prev],
 			ct->size = p.size,
 			ct->action = RAW;
@@ -1051,14 +1054,24 @@ int render_map ( Render *r, uint8_t *src, int srclen )
 		{
 			//Anything within here will always be a table
 			ct->blob  = trim( (uint8_t *)&src[ p.prev ], (char *)trimchars, p.size, &ct->size );
+		#ifdef RENDER_DEBUG_H
+			fprintf( stderr, "%s\n", "hi" );
+			write( 2, ct->blob, ct->size );
+			write( 2, "\n", 1 );
 
+			fprintf( stderr, "%s\n", "What is index?" );
+			fprintf( stderr, "%d\n", lt_get_long_i( r->srctable, ct->blob, ct->size ) );	
+		#endif
 			if ( *ct->blob == '.' )
 				ct->action = STUB;
 			else {
 				ct->index = lt_get_long_i( r->srctable, ct->blob, ct->size );
 				ct->type  = lt_vta( r->srctable, ct->index );
-				if ((ct->type == LITE_TBL) && (ct->action == POSLOOP || ct->action == NEGLOOP))
-					ct->parent = ct->blob, ct->psize = ct->size;	
+				if ((ct->type == LITE_TBL) && (ct->action == POSLOOP || ct->action == NEGLOOP)) 
+				{
+					ct->parent = ct->blob; 
+					ct->psize = ct->size;	
+				}
 			}
 			REALLOC( raw, r->markers );
 		}
@@ -1106,6 +1119,7 @@ int render_render ( Render *r )
 	//everytime you descend, src is what you got, size is length of src
 	//and times is times to repeat
 	struct DT *dt = d;
+	int top = 0;
 	memset( search, 0, sizeof(search) );
 	memset( dt, 0, sizeof (struct DT));
 	
@@ -1122,12 +1136,12 @@ int render_render ( Render *r )
 				if ( dt->skip )
 					dt->skip = 0;
 				else {
-			#if 0
+				#if 0
 					//Write
 					write( 2, dt->parent, dt->psize );
 					fprintf( stderr, " => " );
 					write( 2, ct->blob, ct->size );
-			#endif
+				#endif
 					//Decrement repetition
 					if ( dt->times == 0 )
 						dt--;
@@ -1169,8 +1183,10 @@ int render_render ( Render *r )
 			}	
 		#endif
 			//fprintf( stderr, "Direct reference is of type: %s", lt_typename( ct->type ));
-			if ( ct->type == LITE_BLB )
-				bf_append( &r->dest, lt_blobdata_at( r->srctable, ct->index ), lt_blobsize_at( r->srctable, ct->index ));
+			if ( ct->type == LITE_BLB ) {
+				uint8_t *b = lt_blobdata_at( r->srctable, ct->index );
+				bf_append( &r->dest, b, lt_blobsize_at( r->srctable, ct->index ));
+			}
 			else { 
 				char *a = NULL, b[128] = {0};
 				if ( ct->type == LITE_INT )
@@ -1195,6 +1211,8 @@ int render_render ( Render *r )
 			int i=0, p=0;
 			memcpy( &search[ p ], dt->parent, dt->psize );
 			p += dt->psize;
+
+			//Reverse can be done by manipulating dt->times (top = dt->times; num = top - dt->times )
 			p += snprintf( (char *)&search[ p ], 64, ".%d", dt->times );
 			memcpy( &search[ p ], ct->blob, ct->size );
 			p += ct->size;
@@ -1206,11 +1224,16 @@ int render_render ( Render *r )
 			write( 2, "Search: ", 8 );
 			write( 2, search, p );
 			write( 2, "\n", 1 );
+			getchar();
 		#endif
-		
+	
+			//Get long i, yay
 			if ( (i = lt_get_long_i( r->srctable, search, p )) == -1 )
-				{ ct++; continue; }//fprintf( stderr, "Looks like there's nothing here..." );		
-			else 
+			{
+				ct++;
+				continue;
+			}
+			else
 			{
 				uint8_t *src = NULL;
 				LiteType t = lt_vta( r->srctable, i );
@@ -1238,8 +1261,6 @@ int render_render ( Render *r )
 		}
 		else if ( ct->action == NEGLOOP || ct->action == POSLOOP )
 		{
-		#ifdef RENDER_DEBUG_H
-		#endif
 			if ( ct->action == NEGLOOP && ct->index > -1 )
 				dt->skip = 1; //Set something
 			else 
