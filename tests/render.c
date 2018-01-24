@@ -147,16 +147,20 @@ LiteKv SingleTable[] = {
 	{ TEXT_KEY( "artillery" )       , TABLE_VALUE( )         },
 		/*Database records look a lot like this*/
 		{ INT_KEY( 0 )       , TABLE_VALUE( )         },
-			{ TEXT_KEY( "val" ), BLOB_VALUE( "MySQL makes me tired." ) },
-			{ TEXT_KEY( "rec" ), TEXT_VALUE( "Choo choo cachoo." ) },
+			{ TEXT_KEY( "val" ), TEXT_VALUE( "MySQL makes me a bother." ) },
+			{ TEXT_KEY( "rec" ), TEXT_VALUE( "Choo choo cachoo" ) },
 			{ TRM() },
 		{ INT_KEY( 1 )       , TABLE_VALUE( )         },
-			{ TEXT_KEY( "val" ), BLOB_VALUE( "MySQL makes me giddy." ) },
-			{ TEXT_KEY( "rec" ), TEXT_VALUE( "Choo choo cachoo." ) },
+			{ TEXT_KEY( "val" ), TEXT_VALUE( "MySQL makes me ecstatic." ) },
+			{ TEXT_KEY( "rec" ), TEXT_VALUE( "Choo choo cachoo" ) },
 			{ TRM() },
 		{ INT_KEY( 2 )       , TABLE_VALUE( )         },
-			{ TEXT_KEY( "val" ), BLOB_VALUE( "MySQL makes me ecstatic." ) },
-			{ TEXT_KEY( "rec" ), TEXT_VALUE( "Choo choo cachoo." ) },
+			{ TEXT_KEY( "val" ), TEXT_VALUE( "MySQL makes me giddy." ) },
+			{ TEXT_KEY( "rec" ), TEXT_VALUE( "Choo choo cachoo" ) },
+			{ TRM() },
+		{ INT_KEY( 3 )       , TABLE_VALUE( )         },
+			{ TEXT_KEY( "val" ), TEXT_VALUE( "MySQL makes me tired." ) },
+			{ TEXT_KEY( "rec" ), TEXT_VALUE( "Choo choo cachoo" ) },
 			{ TRM() },
 		{ TRM() },
 
@@ -383,12 +387,12 @@ RenderTest r[] =
 		 "<head>\n"
 		 "</head>\n"
 		 "<body>\n"
-		 "{{# artillery }}\n"
+		 "{{# artillery }}"
 		 "	<h2>{{ .rec }}</h2>\n"
 		 "	<p>\n"
 		 "		{{ .val }}\n"
-		 "	</p>	\n"
-		 "{{/ artillery }}\n"
+		 "	</p>\n"
+		 "{{/ artillery }}"
 		 "</body>\n"
 		 "</html>\n"
 		,
@@ -401,19 +405,19 @@ RenderTest r[] =
 		 "	<h2>Choo choo cachoo</h2>\n"
 		 "	<p>\n"
 		 "		MySQL makes me tired.\n"
-		 "	</p>	\n"
+		 "	</p>\n"
 		 "	<h2>Choo choo cachoo</h2>\n"
 		 "	<p>\n"
 		 "		MySQL makes me giddy.\n"
-		 "	</p>	\n"
+		 "	</p>\n"
 		 "	<h2>Choo choo cachoo</h2>\n"
 		 "	<p>\n"
 		 "		MySQL makes me ecstatic.\n"
-		 "	</p>	\n"
+		 "	</p>\n"
 		 "	<h2>Choo choo cachoo</h2>\n"
 		 "	<p>\n"
 		 "		MySQL makes me a bother.\n"
-		 "	</p>	\n"
+		 "	</p>\n"
 		 "</body>\n"
 		 "</html>\n"
 	},
@@ -705,11 +709,10 @@ TEST( render )
 		//Print the table (if it crashes here, you have bigger problems)
 		lt_dump( t ); 
 
-
 		//What does the total count return (that's the entire reason why that pointer trans takes
 		//place the way it does.
-		fprintf( stderr, "there are a total of %d elements in this table:\n", lt_countall( t ) );
-#if 0
+		//fprintf( stderr, "there are a total of %d elements in this table:\n", lt_countall( t ) );
+#if 1
 		//Run the test via the render thing
 		if ( !render_init( &R, t ) ) {
 			EPRINTF( "Failed to iniitalize render module at test #%d", set );
@@ -728,7 +731,7 @@ TEST( render )
 			EPRINTF( "Failed to set render source correctly at test #%d", set );
 		}
 
-#if 0	
+#if 1	
 		//Retrieve rendered source and do something with it
 		dest = bf_data( render_rendered( &R ) ); 
 		destlen = bf_written ( render_rendered( &R )); 

@@ -927,7 +927,7 @@ void print_body ( Bod *b )
 #endif
 #endif
 
-#define RENDER_DEBUG_H
+//#define RENDER_DEBUG_H
 
 void render_dump_mark ( Render *r )
 {
@@ -1265,7 +1265,7 @@ int render_render ( Render *r )
 							dt->psize = ct->size;
 							dt->parent = ct->blob;
 						}
-					#ifdef RENDER_DEBUG_H
+					#if 0
 						lt_dump( r->srctable );
 						fprintf( stderr, "We is gonna repeat this, this many times: %d\n", dt->times );
 						return 0;	
