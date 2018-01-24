@@ -367,26 +367,21 @@ Table *convert_lkv ( LiteKv *kv )
 			lt_addudvalue( t, kv->value.v.vusrdata );
 		else if ( kv->value.type == LITE_NUL )
 			0;//lt_ascend has already been called, thus we should never reach this
-		else if ( kv->value.type == LITE_TBL )
-		{
+		else { 
+			if ( kv->value.type != LITE_TBL ) {
+				//Abort immediately b/c this is an error
+				EPRINTF( "Got unknown or invalid key type!  Bailing!" );
+				return NULL;
+			}
+		}
+
+		if ( kv->value.type != LITE_TBL )
+			lt_finalize( t );
+		else {
 			lt_descend( t );
 			kv ++;
 			continue;
 		}
-		else
-		{ 
-			//Abort immediately b/c this is an error
-			EPRINTF( "Got unknown or invalid key type!  Bailing!" );
-			exit( 0 );	
-		}
-
-#if 1
-		if ( kv->value.type != LITE_TBL )
-		{
-			//fprintf( stderr, "Descended, but did you finalize?\n" );
-			lt_finalize( t );
-		}
-#endif
 		kv ++;
 	}
 	lt_lock( t );

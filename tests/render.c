@@ -98,22 +98,54 @@ LiteKv NoTable[] = {
 	{ LKV_LAST } 
 };
 
+
+//
+LiteKv ST[] = {
+	{ TEXT_KEY( "ashor" )  , TABLE_VALUE( )         },
+		{ INT_KEY( 7043 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog." )  },
+		{ INT_KEY( 7002 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog another time." )  },
+		{ TRM() },
+	{ LKV_LAST } 
+};
+
+
+LiteKv MT[] = {
+	{ INT_KEY( 1 )    , TEXT_VALUE( "Wash the dog." )  },
+	{ TEXT_KEY( "ashor" )  , TABLE_VALUE( )         },
+		{ INT_KEY( 7043 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog." )  },
+		{ INT_KEY( 7002 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog another time." )  },
+		{ TRM() },
+	{ TEXT_KEY( "artillery" )       , TABLE_VALUE( )         },
+		/*Database records look a lot like this*/
+		{ INT_KEY( 0 )       , TABLE_VALUE( )         },
+			{ TEXT_KEY( "val" ), BLOB_VALUE( "MySQL makes me tired." ) },
+			{ TEXT_KEY( "rec" ), TEXT_VALUE( "Choo choo cachoo." ) },
+			{ TRM() },
+		{ TRM() },
+	{ TEXT_KEY( "michael" )       , TABLE_VALUE( )         },
+		{ TEXT_KEY( "val" ), BLOB_VALUE( "MySQL makes me giddy." ) },
+		{ TEXT_KEY( "rec" ), TEXT_VALUE( "Choo choo cachoo." ) },
+		{ TRM() },
+	{ TEXT_KEY( "jackson" )       , TABLE_VALUE( )         },
+		{ TEXT_KEY( "val" ), BLOB_VALUE( "MySQL makes me ecstatic." ) },
+		{ TEXT_KEY( "rec" ), TEXT_VALUE( "Choo choo cachoo." ) },
+		{ TRM() },
+	{ LKV_LAST } 
+};
+
+
 LiteKv SingleTable[] = {
 	{ TEXT_KEY( "ashor" )  , TABLE_VALUE( )         },
 		{ INT_KEY( 7043 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog." )  },
 		{ INT_KEY( 7002 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog another time." )  },
-#if 0
 		{ INT_KEY( 7003 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the 3rd time." )  },
 		{ INT_KEY( 7004 )    , USR_VALUE ( NULL ) },
 		{ INT_KEY( 7008 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog again." )  },
 		{ INT_KEY( 7009 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the last time." )  },
-#endif
 		{ TRM() },
 
-#if 1
 	{ TEXT_KEY( "artillery" )       , TABLE_VALUE( )         },
 		/*Database records look a lot like this*/
-#if 1
 		{ INT_KEY( 0 )       , TABLE_VALUE( )         },
 			{ TEXT_KEY( "val" ), BLOB_VALUE( "MySQL makes me tired." ) },
 			{ TEXT_KEY( "rec" ), TEXT_VALUE( "Choo choo cachoo." ) },
@@ -127,9 +159,8 @@ LiteKv SingleTable[] = {
 			{ TEXT_KEY( "rec" ), TEXT_VALUE( "Choo choo cachoo." ) },
 			{ TRM() },
 		{ TRM() },
-#endif
 
-#if 1
+#if 0
 	{ TEXT_KEY( "willis" )  , TABLE_VALUE( )         },
 		{ INT_KEY( 678 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog." )  },
 		{ INT_KEY( 679 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog another time." )  },
@@ -138,8 +169,7 @@ LiteKv SingleTable[] = {
 		{ INT_KEY( 7008 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog again." )  },
 		{ INT_KEY( 7009 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the last time." )  },
 		{ TRM() },
-#endif
-#if 1
+
 	{ TEXT_KEY( "graham" )  , TABLE_VALUE( )         },
 		{ INT_KEY( 678 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog." )  },
 		{ INT_KEY( 679 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog another time." )  },
@@ -148,7 +178,6 @@ LiteKv SingleTable[] = {
 		{ INT_KEY( 7008 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog again." )  },
 		{ INT_KEY( 7009 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the last time." )  },
 		{ TRM() },
-#endif
 #endif
 	{ LKV_LAST } 
 };
@@ -638,6 +667,19 @@ RenderTest r[] =
 
 TEST( render )
 {
+#if 0
+		Table *a = NULL, *b = NULL; 
+		a = convert_lkv( ST );
+		lt_dump( a );
+		niprintf( lt_countall( a ) );
+
+		b = convert_lkv( MT );
+		lt_dump( b );
+		niprintf( lt_countall( b ) );
+#if 0
+#endif
+		return 1;
+#else
 	int set = 1;
 	RenderTest *rt = r;
 	char buf[ 2048 ];
@@ -662,6 +704,7 @@ TEST( render )
 
 		//Print the table (if it crashes here, you have bigger problems)
 		lt_dump( t ); 
+
 
 		//What does the total count return (that's the entire reason why that pointer trans takes
 		//place the way it does.
@@ -720,4 +763,5 @@ TEST( render )
 	}
 
 	return 0;
+#endif
 }

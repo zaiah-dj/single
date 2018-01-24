@@ -304,8 +304,6 @@
  	lt_items_i(t, (uint8_t*)str, strlen((char *)str))
  #define lt_iitems(t, ind) \
  	lt_items_by_index(t, ind )
- #define lt_countall( t ) \
- 	lt_counti( t, 0 )
  #define lt_within( t, str ) \
  	lt_within_long( t, (uint8_t *)str, strlen(str))
 #endif
@@ -1279,6 +1277,7 @@ int lt_count_elements ( Table *t, int index );
 //Table *lt_copy (Table *t, int from, int to); 
 int lt_exists (Table *t, int index);
 int lt_counti ( Table *t, int index );
+int lt_countall ( Table *t );
 //Table *lt_within_long ( Table *t, uint8_t *src, int len );
 Table *lt_within_long( Table *st, uint8_t *src, int len );
 const char *lt_typename (int type);

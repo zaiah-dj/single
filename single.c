@@ -21,6 +21,8 @@ Package a way to build tests here.
 */
 #include "single.h"
 
+//This flag is here to control how table counts work...
+
 static const unsigned int lt_hash = 31;
 
 static const char *__errors[] = 
@@ -1382,7 +1384,6 @@ unsigned char *lt_trim (uint8_t *msg, char *trim, int len, int *nlen)
 //Count indices in a table. If index is greater than 1 and the item is a "table", then will return the number of elements in said table
 int lt_counti ( Table *t, int index )
 {
-	SHOWDATA( "index: %d", index );
 	//Return count of all elements
 	if ( index == -1 )
 		return t->count;
@@ -1393,7 +1394,6 @@ int lt_counti ( Table *t, int index )
 		else 
 		{
 			LiteTable *tt = &lt_table_at( t, index );
-SHOWDATA( "tt: %p", tt );
 			return ( tt ) ? (tt->count - 1) : 0;
 		}
 	}
@@ -1405,13 +1405,16 @@ SHOWDATA( "tt: %p", tt );
 		else 
 		{
 			LiteTable *tt = &lt_table_at( t, index );
-SHOWDATA( "tt: %p", tt );
-SHOWDATA( "tt->count: %d", tt->count );
-SHOWDATA( "tt->count: %d", tt->count - 1 );
 			return ( tt ) ? (tt->count - 1) : 0;
 		}
 	}
 	return 0;
+}
+
+
+int lt_countall( Table *t )
+{
+	return t->count + 1;
 }
 
 
@@ -1433,6 +1436,8 @@ const char *lt_strerror (Table *t)
 //Initiailizes a table data structure
 Table *lt_init (Table *t, LiteKv *k, int size) 
 {
+	SHOWDATA( "\n\tWorking with root table %p\n", t );
+
 	//Calculate optimal modulus for hashing
 	if ( size <= 63 )
 		t->modulo = 63; 
@@ -1486,8 +1491,9 @@ Table *lt_init (Table *t, LiteKv *k, int size)
 	}
 
 	//Initialize all hash entries to -1
-	for (int i=0; i < actual_size; i++)
+	for ( int i=0; i < actual_size; i++ ) {
 		memset( k[i].hash, -1, sizeof(int) * lt_max_slots );
+	}
 
 	//Set this
 	t->current = NULL;
@@ -1502,7 +1508,6 @@ Table *lt_init (Table *t, LiteKv *k, int size)
 	t->start   = 0;
 	t->end     = 0;
 	t->rCount  = &t->count;
-	SHOWDATA( "t->rCount (the errant pointer): %p\n", t->rCount ); 
 	//t->parent = NULL;
 
 	//Lastly, increment tte pointer by one so we can always follow it
@@ -1521,7 +1526,8 @@ LiteType lt_add ( Table *t, int side, LiteType lt, int vi, float vf,
 		t->error = ERR_LT_OUT_OF_SPACE;
 		return 0;
 	}
-		
+
+	//...		
 	LiteValue  *v = (!side) ? &(t->head + t->index)->key : &(t->head + t->index)->value;
 	LiteRecord *r = &v->v;
 	v->type       = lt;
@@ -1617,7 +1623,6 @@ const char *lt_typename (int type)
 }
 
 
-
 //Move left or right within the hierarchy of tables
 int lt_move (Table *t, int dir) 
 {
@@ -1633,11 +1638,9 @@ int lt_move (Table *t, int dir)
 	LiteKv **cptr    = &curr;
 	LiteValue *value = &curr->value;
 
-
 	//Left or right?	
 	if ( !dir )
 	{
-		//SHOWDATA( "Descending into table value to table at %p", ( void * )t );
 		//Set count of elements in this new table to actual count
 		LiteTable *T = &value->v.vtable;
 		value->type  = LITE_TBL;
@@ -1647,6 +1650,12 @@ int lt_move (Table *t, int dir)
 		T->parent  = ( !t->current ) ? NULL : t->current;
 		T->ptr     = *(long *)&T; 
 		t->current = T;
+
+		//Ascension shouldn't need pointer increment...
+	#ifdef SUPEREXTRA
+		t->count ++;
+		t->index ++;
+	#endif
 	}
 	else 
 	{
@@ -1655,26 +1664,31 @@ int lt_move (Table *t, int dir)
 		key->type      = LITE_TRM;
 		value->type    = LITE_NUL;
 		LiteRecord *r  = &key->v;	
-		//SHOWDATA( "Ascending from inner table within at %p", ( void * )t );
 
-		//
+		//....
 		if ( !t->current->parent )
 		{
-SHOWDATA("Check here: "); //this means we're at the root node
 			t->rCount = &t->count;
 			r->vptr = (long)t->current->ptr;
+			t->current = NULL;
 		}
 		else if ( t->current->parent )
 		{
 			r->vptr = (long)t->current->ptr;
 			LiteTable *T = t->current->parent;
-SHOWDATA("Check here: "); //this may have something to do with it
 			t->rCount = &T->count;
 			t->current = T;
 		}
+
+	#ifdef SUPEREXTRA
+		lt_finalize (t);
+	#endif
 	}
-		
-	lt_finalize (t);
+
+#ifndef SUPEREXTRA
+	lt_finalize( t );		
+#endif
+
 	return 1;
 }
 
@@ -1683,9 +1697,8 @@ SHOWDATA("Check here: "); //this may have something to do with it
 //Finalize adding to both sides of a table data structure
 void lt_finalize (Table *t)
 {
-	//This is where things are going awry... but why.
-	//if ( t->current->parent )
-		( *t->rCount )++;
+	//if these are equal, don't increment both *t->rCount and t->count
+	( t->rCount == &t->count ) ? 0 : ( *t->rCount )++ ; 
 	t->count ++;
 	t->index ++;
 }
