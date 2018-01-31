@@ -164,25 +164,6 @@ LiteKv SingleTable[] = {
 			{ TRM() },
 		{ TRM() },
 
-#if 0
-	{ TEXT_KEY( "willis" )  , TABLE_VALUE( )         },
-		{ INT_KEY( 678 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog." )  },
-		{ INT_KEY( 679 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog another time." )  },
-		{ INT_KEY( 7003 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the 3rd time." )  },
-		{ INT_KEY( 7004 )    , USR_VALUE ( NULL ) },
-		{ INT_KEY( 7008 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog again." )  },
-		{ INT_KEY( 7009 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the last time." )  },
-		{ TRM() },
-
-	{ TEXT_KEY( "graham" )  , TABLE_VALUE( )         },
-		{ INT_KEY( 678 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog." )  },
-		{ INT_KEY( 679 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog another time." )  },
-		{ INT_KEY( 7003 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the 3rd time." )  },
-		{ INT_KEY( 7004 )    , USR_VALUE ( NULL ) },
-		{ INT_KEY( 7008 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog again." )  },
-		{ INT_KEY( 7009 )    , TEXT_VALUE( "The quick brown fox jumps over the lazy dog for the last time." )  },
-		{ TRM() },
-#endif
 	{ LKV_LAST } 
 };
 
@@ -423,7 +404,30 @@ RenderTest r[] =
 	},
 
 
-#if 0 
+/* -------------------------------------------- *
+ * Render does not currently handle nested tables.
+ *
+ * If A)
+ * 	the dev does not spell out the whole hash
+ * 	( x.y.z ) vs ( .z ) - then the module will
+ * 	have to look at multiple sets of keys.
+ *
+ * 	when specificity is needed, use the entire
+ * 	hash.  otherwise, moving backwards and 
+ * 	checking parents is the best thing.
+ *
+ *
+ * Ways to fix this:
+ *	How do parents work in this module?
+ *
+ * Good questions to ask?
+ *  What does mustache do?
+ *
+ * If that sucks, what can I do without that?
+ *
+ * -------------------------------------------- */
+
+#if 1
 	{
 		.name = "two level table",
 		.desc = "two level table | key value test",
@@ -449,15 +453,20 @@ RenderTest r[] =
 		 "		<th>Population</th>\n"
 		 "	</thead>\n"
 		 "	<tbody>\n"
+#if 0
 		 "	{{# cities.metadata }}\n"
 		 "		<li>Population: {{ .population }}</li>\n"  
 		 "		<li>Claim to Fame: {{ cities.metadata.claim to fame }}</li>\n"
 		 "	{{/ cities.metadata }}\n"
+#endif
 		 "	</tbody>\n"
 		 "	</table>\n"
 		 "{{/ cities }}\n"
 		 "</body>\n"
 		 "</html>\n"
+		,
+
+#if 0
 		.renSrc =
 		 "<html>\n"
 		 "<head>\n"
@@ -486,6 +495,7 @@ RenderTest r[] =
 		 "</body>\n"
 		 "</html>\n"
 		,
+#endif
 
 		.renCmp = 
 		 "<html>\n"
@@ -731,7 +741,6 @@ TEST( render )
 			EPRINTF( "Failed to set render source correctly at test #%d", set );
 		}
 
-#if 1	
 		//Retrieve rendered source and do something with it
 		dest = bf_data( render_rendered( &R ) ); 
 		destlen = bf_written ( render_rendered( &R )); 
@@ -759,10 +768,11 @@ TEST( render )
 		//Free everything
 		render_free( &R );
 #endif
-#endif
 
 		lt_free( t );
 		set ++, rt ++;
+
+		getchar();
 	}
 
 	return 0;
