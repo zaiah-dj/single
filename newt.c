@@ -19,14 +19,14 @@
 	
 
 #if 1
-#define SIGGO()
+ #define SIGGO()
 #else
-#define SIGGO() \
+ #define SIGGO() \
 	proc_block( b, a, z, t, my )
 #endif
 
 #if 0
-#define SHOW_MARKER(m) \
+ #define SHOW_MARKER(m) \
 	fprintf( stderr, "{ " ); \
 	fprintf( stderr, "action = %c,", m->action ); \
 	fprintf( stderr, "parent = " ); \
@@ -36,7 +36,7 @@
 	fprintf( stderr, "sentinel = %d,", m->sentinel ); \
 	fprintf( stderr, "}\n" )
 #else
-#define SHOW_MARKER(m) \
+ #define SHOW_MARKER(m) \
 	fprintf( stderr, "{ " ); \
 	fprintf( stderr, "action = %c, ", m->action ); \
 	fprintf( stderr,  "level = %d, ", m->level ); \

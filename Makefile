@@ -11,6 +11,9 @@ CFLAGS = -g -Wall -Wno-unused -Werror -std=c99 $(COMPLAIN) -DSQLITE3_PATH="\"ven
 CC=gcc
 
 #if 0
+# Profiling
+INVOKE=time valgrind --tool=callgrind --dsymutil=yes
+
 # Packaging
 IGNORE = archive src tests
 IGNCLEAN = "sqlite3.o"
