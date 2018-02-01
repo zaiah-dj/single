@@ -25,6 +25,8 @@ PKGFILE = $(ARCHIVEDIR)/$(NAME).$(VERSION).tar.${ARCHIVEFMT}
 #Phony targets 
 .PHONY: main clean debug leak run other
 
+indy:
+	gcc -DSQROOGE_H newt.c single.c -o newt
 
 #Primary target
 main: build 

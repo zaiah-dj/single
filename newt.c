@@ -1,6 +1,60 @@
 #include "single.h"
 #include "simpletables.h"
+
 #define MARKDUMPS
+
+#define SIG(term) \
+	int term( uint8_t *b, int *a, int *z, Marker **p, Table *t, Marker **my )
+
+#if 1
+#define SIGGO()
+#else
+#define SIGGO() \
+	proc_block( b, a, z, t, my )
+#endif
+
+#if 0
+#define SHOW_MARKER(m) \
+	fprintf( stderr, "{ " ); \
+	fprintf( stderr, "action = %c,", m->action ); \
+	fprintf( stderr, "parent = " ); \
+	( !m->parent ) ? write(2, "NULL", 4) : write(2, m->parent, m->psize); \
+	fprintf( stderr, "blob   = " ); \
+	( !m->blob ) ? write( 2, "NULL", 4) : write(2, m->blob, m->bsize); \
+	fprintf( stderr, "sentinel = %d,", m->sentinel ); \
+	fprintf( stderr, "}\n" )
+#else
+#define SHOW_MARKER(m) \
+	fprintf( stderr, "{ " ); \
+	fprintf( stderr, "action = %c, ", m->action ); \
+	fprintf( stderr,  "level = %d, ", m->level ); \
+	fprintf( stderr,  "index = %3d, ", m->index ); \
+	fprintf( stderr, "parent = " ); \
+	( !m->parent ) ? write(2, "NULL", 4) : write(2, m->parent, m->psize); \
+	fprintf( stderr, ", blob = " ); \
+	( !m->blob ) ? write( 2, "NULL", 4) : write(2, "FILL", 4); \
+	fprintf( stderr, ", sentinel = %d,", m->sentinel ); \
+	fprintf( stderr, "}\n" )
+#endif
+
+#ifndef SIGDYN
+ #define REALLOC_M(src) \
+	(*src)++; \
+	(*src)->sentinel = 1
+#else
+ #define REALLOC_M(src) \
+	Marker *dest = realloc( src, ++( *z ) * sizeof(Marker)); \
+	if ( !dest ) \
+		return 0; \
+	else  \
+	{ \
+		src = dest; \
+		memset( &src[ (*z - 1)], 0, sizeof(Marker) ); \
+		src = &src[ (*z - 1) ]; \
+		src->sentinel = 1; \
+	}
+#endif
+
 
 const LiteKv MT[] = {
 	{ INT_KEY( 1 )    , TEXT_VALUE( "Wash the dog." )  },
@@ -40,23 +94,25 @@ const LiteKv MT[] = {
 	{ LKV_LAST } 
 };
 
+
 typedef struct Marker 
 {
 	uint8_t *blob,    // Block between active terms.
 					*parent;  // Parent block of text, if I'm within some kind of table
-	int      bsize,   // Size of blob / block
-					 psize,   // Size of parent block
-					 action,  // Actions are no longer predefined, but they go here
-					 type,    // ?
-					 index;   // Where in the table is the value found
 	struct   Marker
 					*pmarker; // An easier way to do the non-recursive parent thing...
+	int      bsize,   // Size of blob / block
+					 psize,   // Size of parent block
+					 level,   // Where in a table's depth am I?
+					 action,  // Actions are no longer predefined, but they go here
+					 type,    // ?
+					 index,   // Where in the table is the value found
+					 sentinel;// The last item in the set
 } Marker;
 
 
-
 //This is the signature for text processing blocks.
-int proc_block( uint8_t *b, int *a, Marker *my )
+SIG( proc_block )
 {
 	fprintf( stderr, "Got a " );
 	write( 2, b, 1 );
@@ -65,93 +121,157 @@ int proc_block( uint8_t *b, int *a, Marker *my )
 	//Should return false, true, and continue?
 }
 
-int left_curly_brace_block( uint8_t *b, int *a, Table *t, Marker *my )
+SIG( left_curly_brace_block )
 {
-	proc_block( b, a, my );
+	SIGGO();
 	if ( !*a ) {
 		*a = 1;
 		return 0;
 	}
 	else {
 		*a = 2;
+		(*my)->action = *b;
+		(*my)->blob = NULL;
+		(*my)->parent = NULL;
+		(*my)->sentinel = 0;
+		REALLOC_M( my );
 		return 1;
 	}
 	return 0;
 }
 
-int right_curly_brace_block( uint8_t *b, int *a, Table *t, Marker *my )
+
+SIG( right_curly_brace_block )
 {
-	proc_block( b, a, my );
+	SIGGO();
 	if ( *a == 2 ) {
 		*a = 1;
 		return 0;
 	}
-	else ( *a == 1 ) {
+	else if ( *a == 1 ) {
 		*a = 0;
+		(*my)->action = *b;
+		(*my)->blob = b + 1;
+		(*my)->bsize = 2;
+		(*my)->sentinel = 0;
+		REALLOC_M( my );
 		return 0;
 	}
 	return 0;
 }
 
-int pound_block( uint8_t *b, int *a, Table *t, Marker *my )
-{
-	proc_block( b, a, my );
 
+SIG( pound_block )
+{
+	SIGGO();
 	if ( *a == 2 ) {
-		my->action = 1; // Mark the action as a loop.
+		(*my)->action = *b; // Mark the action as a loop.
 		uint8_t *c = b;
 		int ind = 0, cc = 0; 
 		while ( *c && *c != '}' ) c++, cc++;
 		c = trim( b, " #\t", cc, &cc );
-		my->index = lt_get_long_i( t, c, cc );
-		my->parent = c;
+		(*my)->index = lt_get_long_i( t, c, cc );
+		
+		//I can differentiate between parents here.
+		(*my)->parent = c;
+		(*my)->psize = cc;
+		(*my)->sentinel = 0;
+		*p = *my;
 
 		#ifdef MARKDUMPS
 		fprintf( stderr, "pound_block: " );
 		write(2,"'",1);write( 2, c, cc );write(2,"'",1);
-		fprintf( stderr, " index: %d\n", my->index );
+		fprintf( stderr, " index: %d\n", (*my)->index );
 		#endif
+
+		REALLOC_M( my );
 	}
 	return 0;
 }
 
-int period_block( uint8_t *b, int *a, Table *t, Marker *my )
+SIG( period_block )
 {
-	proc_block( b, a, my );
+	SIGGO();
 	if ( *a == 2 ) {
-		my->action = 2;
+		(*my)->action = *b;
+		(*my)->parent = (*p)->parent;
+		(*my)->psize = (*p)->psize;
+
 		uint8_t *c = b;
 		int ind = 0, cc = 0; 
 		while ( *c && *c != '}' ) c++, cc++;
 		c = trim( b, " #\t", cc, &cc );
-		my->index = lt_get_long_i( t, c, cc );
+
+		int ss = 0;
+		uint8_t s[ 1024 ] = {0};
+		memcpy( &s[ ss ] , (*my)->parent, (*my)->psize ); 
+		ss += (*my)->psize;
+		memcpy( &s[ ss ], ".", 1 );
+		ss += 1;
+		memcpy( &s[ ss ] , c, cc );
+		ss += cc;
+		fprintf( stderr, "...uh: " );
+		write( 2, s, ss );
+		fprintf( stderr, "\n" );
+
+#error \
+	"All parents should really have a trailing period.  That makes sense...\n"
+
+		(*my)->index = lt_get_long_i( t, s, ss );
+		(*my)->blob = NULL;
+		(*my)->bsize = 0;	
+		(*my)->sentinel = 0;
+
+		//allocatee another reference
+		REALLOC_M( my );
 	}
 	return 0;
 }
 
-int slash_block( uint8_t *b, int *a, Table *t, Marker *my )
+SIG( slash_block ) 
 {
-	proc_block( b, a, my );
+	SIGGO();
+	if ( *a == 2 ) {
+		(*my)->action = *b;
+		uint8_t *c = b;
+		int cc = 0;
+		while ( *c && *c != '}' ) c++, cc++;
+		c = trim( b, " /\t", cc, &cc );
+		(*my)->sentinel = 0;
+		(*my)->index = -1;
+		(*my)->blob = NULL;
+		REALLOC_M(my);
+	}
 	return 0;
 }
 
-int exclamation_block( uint8_t *b, int *a, Table *t, Marker *my )
+SIG( exclamation_block )
 {
-	proc_block( b, a, my );
+	SIGGO();
+	(*my)->sentinel = 0;
+	(*my)->action = *b;
+	REALLOC_M(my);
 	return 0;
 }
 
-int squiggly_block( uint8_t *b, int *a, Table *t, Marker *my )
+SIG( squiggly_block ) 
 {
-	proc_block( b, a, my );
+	SIGGO();
+	(*my)->sentinel = 0;
+	(*my)->action = *b;
+	REALLOC_M(my);
 	return 0;
 }
 
-int quote_block( uint8_t *b, int *a, Table *t, Marker *my )
+SIG( quote_block )
 {
-	proc_block( b, a, my );
+	SIGGO();
+	(*my)->sentinel = 0;
+	(*my)->action = *b;
+	REALLOC_M(my);
 	return 0;
 }
+
 
 int main (int argc, char *argv[])
 {
@@ -171,7 +291,7 @@ int main (int argc, char *argv[])
 	;
 
 	//Text processing functions
-	int (*pbArr[256])( uint8_t *, int *, Table *, Marker * ) = {
+	SIG((*pbArr[256])) = {
 	#if 1
 		 ['{' ] = left_curly_brace_block
 		,['}' ] = right_curly_brace_block
@@ -181,7 +301,6 @@ int main (int argc, char *argv[])
 		,['~' ] = squiggly_block	
 		,['.' ] = period_block	
 		,['"' ] = quote_block	
-	#else
 	#endif
 	};
 
@@ -190,20 +309,38 @@ int main (int argc, char *argv[])
 	lt_dump( t );
 
 	//Marker
+	#ifndef SIGDYN
+	Marker m[ 100 ] = { 0 };
+	Marker *maf = m;
+	#else
 	Marker *maf = malloc( sizeof(Marker) );
 	memset( maf, 0, sizeof(Marker) ); 
+	#endif
+
+	if ( !maf ) {
+		fprintf( stderr, "Trouble reallocating markers...\n" );
+		return 0;
+	}
 
 	//Move through the unsigned character data	
 	uint8_t *b = (uint8_t *)block;
-	int act = 0;
+	Marker *parent = NULL;
+	int act = 0, bct = 0;
 	while ( *b ) {
 		if ( pbArr[ *b ] ) {
-			pbArr[ *b ]( b, &act, t, maf );
+			pbArr[ *b ]( b, &act, &bct, &parent, t, &maf );
 		}
 		b++;	
 	}
+
+#if 1
+	//Let's see what the marker looks like...
+	maf = m;
+	while ( !maf->sentinel ) {
+		SHOW_MARKER( maf );
+		maf++;
+	}	
+#endif
 }
 
-/*Compile me with:
- * gcc -Wall -DSQROOGE_H single.c newt.c -o newt
- */
+/*Compile me with: gcc -Wall -DSQROOGE_H single.c newt.c -o newt*/
