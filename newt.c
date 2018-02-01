@@ -6,6 +6,18 @@
 #define SIG(term) \
 	int term( uint8_t *b, int *a, int *z, Marker **p, Table *t, Marker **my )
 
+#define COPYHASH(src, ssize, p, psize, v, vsize, cnt) \
+	memcpy( &src[ ssize ] , p, psize );  \
+	ssize += psize; \
+	if (cnt > -1) { \
+		char misc[10] = {0}; \
+		snprintf( misc, 9, ".%d", cnt ); \
+		memcpy( &src[ ssize ], misc, strlen(misc) ); ssize+=strlen(misc); \
+	} \
+	memcpy( &src[ ss ] , v, vsize ); \
+	ssize += vsize;
+	
+
 #if 1
 #define SIGGO()
 #else
@@ -41,6 +53,14 @@
  #define REALLOC_M(src) \
 	(*src)++; \
 	(*src)->sentinel = 1
+
+ #define SETBLOBMOVE(b, sz) \
+	(*(*my)->bsb)->blob = b; \
+	(*(*my)->bsb)->size = sz; \
+	(*(*my)->bsb)->sentinel = 0; \
+	(*(*my)->bsb)++; \
+	(*(*my)->bsb)->sentinel = 1
+
 #else
  #define REALLOC_M(src) \
 	Marker *dest = realloc( src, ++( *z ) * sizeof(Marker)); \
@@ -53,6 +73,13 @@
 		src = &src[ (*z - 1) ]; \
 		src->sentinel = 1; \
 	}
+
+ #define SETBLOBMOVE( blob, size ) \
+	(*(*my)->bsb)->blob = 0; \
+	(*(*my)->bsb)->size = 0; \
+	(*(*my)->bsb)->sentinel = 0; \
+	(*(*my)->bsb)++; \
+	(*(*my)->bsb)->sentinel = 1;
 #endif
 
 
@@ -95,6 +122,14 @@ const LiteKv MT[] = {
 };
 
 
+typedef struct Shim
+{
+	uint8_t *blob;
+	int      size,
+					 sentinel;
+} Shim;
+
+
 typedef struct Marker 
 {
 	uint8_t *blob,    // Block between active terms.
@@ -108,6 +143,7 @@ typedef struct Marker
 					 type,    // ?
 					 index,   // Where in the table is the value found
 					 sentinel;// The last item in the set
+	Shim    *bsb[100];// Blobs and sizes, less space...
 } Marker;
 
 
@@ -175,6 +211,7 @@ SIG( pound_block )
 		//I can differentiate between parents here.
 		(*my)->parent = c;
 		(*my)->psize = cc;
+		(*my)->type = lt_rettype( t, 0, (*my)->index );
 		(*my)->sentinel = 0;
 		*p = *my;
 
@@ -197,32 +234,58 @@ SIG( period_block )
 		(*my)->parent = (*p)->parent;
 		(*my)->psize = (*p)->psize;
 
+		int pind = (*p)->index;
 		uint8_t *c = b;
-		int ind = 0, cc = 0; 
+		uint8_t s[ 2048 ] = { 0 };
+		int ind = 0, cc = 0, ss = 0; 
 		while ( *c && *c != '}' ) c++, cc++;
 		c = trim( b, " #\t", cc, &cc );
 
-		int ss = 0;
-		uint8_t s[ 1024 ] = {0};
-		memcpy( &s[ ss ] , (*my)->parent, (*my)->psize ); 
-		ss += (*my)->psize;
-		memcpy( &s[ ss ], ".", 1 );
-		ss += 1;
-		memcpy( &s[ ss ] , c, cc );
-		ss += cc;
-		fprintf( stderr, "...uh: " );
-		write( 2, s, ss );
-		fprintf( stderr, "\n" );
+		//No parent, look for .key or .val (move through a table with no tables)
+		if ( !(*my)->parent ) {
+			#if 0
+			int isKey = 0;
+			if ( (isKey = memcmp(".key", c, cc)) == 0 ) || memcmp(".val", c, cc) == 0 )
+			{
+				int side = (isKey) ? 0 : 1;
+				//Loop through table entry
+				while ( lt_get( side, ... ) != 0 ) {
+					SETBLOBMOVE( c, cc );
+				}
+			}
+			#endif
+		}
+		//Parent, look for children, or .key or .val
+		else {
+			COPYHASH( s, ss, (*my)->parent, (*my)->psize, c, cc, -1 );
+			fprintf( stderr, "hash : " );write( 2, s, ss );fprintf( stderr, "\n" );
 
-#error \
-	"All parents should really have a trailing period.  That makes sense...\n"
+			//This depends on type...
+			(*my)->index = lt_get_long_i( t, s, ss );
 
-		(*my)->index = lt_get_long_i( t, s, ss );
+			if ( (*my)->index == -1 ) {
+				fprintf( stderr, "hash2 amount of values: %d\n", lt_counti( t, (*p)->index ));
+				for ( int x = 0; x < lt_counti( t, (*p)->index); x++ ) {
+					ss = 0;
+					memset( s, 0, sizeof( s ));
+					COPYHASH( s, ss, (*my)->parent, (*my)->psize, c, cc, x );
+					fprintf( stderr, "hash2: " );write( 2, s, ss );fprintf( stderr, "\n" );
+					//(*my)->index = lt_get_long_i( t, s, ss );
+					//SETBLOBMOVE();
+				}
+				//optionally loop through until reaching the end...
+			}
+			else {
+				//I only found one value, save the reference to it 
+				SETBLOBMOVE(NULL, 0);
+			}
+		}
+
+		//If the parent element is a table, then I most likely need to loop
 		(*my)->blob = NULL;
 		(*my)->bsize = 0;	
 		(*my)->sentinel = 0;
 
-		//allocatee another reference
 		REALLOC_M( my );
 	}
 	return 0;

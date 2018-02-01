@@ -1,0 +1,46 @@
+mapping should save all references in memory...
+
+moving through should be "rebuilding" the src buffer with the right params
+
+period:
+	.key, .val = save both sides...
+	.x = look for a sibling
+
+slash:
+	end a loop and unset any parent reference
+
+pound:
+	start a loop and set parent reference
+
+}:
+	end processing, perhaps set the blob again?
+
+{:
+	start processing, set no blob
+
+excl:
+	should have been negation
+
+squig:
+	made up
+
+quote:
+	test how this works
+
+
+
+//1. 
+use **char or **uint8_t, since everything turns to text anyway
+problem is, I need size
+*using Shim, a structure that keeps track of all the pointers
+
+//2. 
+since this still has to be done in two steps anyway, why not
+look up the HASH at the first step and save that in an array of ints... (can get quite long without being problematic.  AND, the hash SHOULD be saved somewhere, so it could just be transferring pointers...)
+
+//3.
+LiteRecord or LiteTable
+These values are already initialized in the Table.  Still 8 bytes, and no new alloc needed (-1 at the end of array if no malloc is wanted)
+
+
+template_go( Marker *m, ... )
