@@ -52,7 +52,6 @@
  * -------------------------------------- */
 
 
-
 //Pull random lines from an array of const char *s
 #define RND_TEXT() \
 	LOREMIPSUM[ (rand_number() % (sizeof( LOREMIPSUM ) / sizeof( const char *))) ]
@@ -68,6 +67,16 @@
  #define SPACE_TEST "sister_cities"
 #endif
 
+
+//All tests go here
+#define TABLE_SINGLE
+#define TABLE_DOUBLE
+#if 0
+#define TABLE_NONE
+#define TABLE_KEYVALUE
+#define TABLE_KEYVALUEEMB
+#define TABLE_MULTI
+#endif
 
 typedef struct 
 {
@@ -99,6 +108,7 @@ LiteKv NoTable[] = {
 };
 
 
+#if 0
 //
 LiteKv ST[] = {
 	{ TEXT_KEY( "ashor" )  , TABLE_VALUE( )         },
@@ -132,6 +142,7 @@ LiteKv MT[] = {
 		{ TRM() },
 	{ LKV_LAST } 
 };
+#endif
 
 
 LiteKv SingleTable[] = {
@@ -177,7 +188,7 @@ LiteKv DoubleTableAlpha[] = {
 			{ TEXT_KEY( "parent_state" ), TEXT_VALUE( "CA" ) },
 			{ TEXT_KEY( "metadata" ), TABLE_VALUE( )         },
 				//Pay attention to this, I'd like to embed uint8_t data here (I think Lua can handle this)
-				{ TEXT_KEY( "claim to fame" ), TEXT_VALUE( "The Real Silicon Valley" ) },
+				{ TEXT_KEY( "claim_to_fame" ), TEXT_VALUE( "The Real Silicon Valley" ) },
 				{ TEXT_KEY( "skyline" ), BLOB_VALUE( "CA" ) },
 				{ TEXT_KEY( "population" ), INT_VALUE( 870887 ) },
 				{ TRM() },
@@ -187,7 +198,7 @@ LiteKv DoubleTableAlpha[] = {
 			{ TEXT_KEY( "city" ), BLOB_VALUE( "New York" ) },
 			{ TEXT_KEY( "parent_state" ), TEXT_VALUE( "NY" ) },
 			{ TEXT_KEY( "metadata" ), TABLE_VALUE( )         },
-				{ TEXT_KEY( "claim to fame" ), TEXT_VALUE( "The Greatest City on Earth" ) },
+				{ TEXT_KEY( "claim_to_fame" ), TEXT_VALUE( "The Greatest City on Earth" ) },
 				{ TEXT_KEY( "skyline" ), BLOB_VALUE( "CA" ) },
 				{ TEXT_KEY( "population" ), INT_VALUE( 19750000 ) },
 				{ TRM() },
@@ -197,7 +208,7 @@ LiteKv DoubleTableAlpha[] = {
 			{ TEXT_KEY( "city" ), BLOB_VALUE( "Raleigh" ) },
 			{ TEXT_KEY( "parent_state" ), TEXT_VALUE( "NC" ) },
 			{ TEXT_KEY( "metadata" ), TABLE_VALUE( )         },
-				{ TEXT_KEY( "claim to fame" ), TEXT_VALUE( "Silicon Valley of the South" ) },
+				{ TEXT_KEY( "claim_to_fame" ), TEXT_VALUE( "Silicon Valley of the South" ) },
 				{ TEXT_KEY( "skyline" ), BLOB_VALUE( "CA" ) },
 				{ TEXT_KEY( "population" ), INT_VALUE( 350001 ) },
 				{ TRM() },
@@ -326,7 +337,7 @@ RenderTest r[] =
 	//.renSrc = the input that the test will use for find and replace
 	//.renCmp = the constant to compare against to make sure that rendering worked
 	//.values = the Table to use for values (these tests do not test any parsing)
-#if 0
+#ifdef TABLE_NONE
 	{
 		.name = "mixed_keys",
 		.desc = "Mixed keys",
@@ -357,6 +368,8 @@ RenderTest r[] =
 		 "</html>\n"
 	},
 #endif
+
+#ifdef TABLE_SINGLE
 	//one table
 	{
 		.name = "one level table",
@@ -402,32 +415,9 @@ RenderTest r[] =
 		 "</body>\n"
 		 "</html>\n"
 	},
+#endif
 
-
-/* -------------------------------------------- *
- * Render does not currently handle nested tables.
- *
- * If A)
- * 	the dev does not spell out the whole hash
- * 	( x.y.z ) vs ( .z ) - then the module will
- * 	have to look at multiple sets of keys.
- *
- * 	when specificity is needed, use the entire
- * 	hash.  otherwise, moving backwards and 
- * 	checking parents is the best thing.
- *
- *
- * Ways to fix this:
- *	How do parents work in this module?
- *
- * Good questions to ask?
- *  What does mustache do?
- *
- * If that sucks, what can I do without that?
- *
- * -------------------------------------------- */
-
-#if 1
+#ifdef TABLE_DOUBLE
 	{
 		.name = "two level table",
 		.desc = "two level table | key value test",
@@ -453,42 +443,10 @@ RenderTest r[] =
 		 "		<th>Population</th>\n"
 		 "	</thead>\n"
 		 "	<tbody>\n"
-#if 0
-		 "	{{# cities.metadata }}\n"
+		 "	{{# .metadata }}\n"
 		 "		<li>Population: {{ .population }}</li>\n"  
 		 "		<li>Claim to Fame: {{ cities.metadata.claim to fame }}</li>\n"
-		 "	{{/ cities.metadata }}\n"
-#endif
-		 "	</tbody>\n"
-		 "	</table>\n"
-		 "{{/ cities }}\n"
-		 "</body>\n"
-		 "</html>\n"
-		,
-
-#if 0
-		.renSrc =
-		 "<html>\n"
-		 "<head>\n"
-		 "</head>\n"
-		 "<body>\n"
-		 "{{# cities }}\n"
-		 "	<h2>{{ .city }}</h2>\n"
-		 "	<p>\n"
-		 "    {{ .city }} is a city in {{ .parent_state }}.\n" 
-		 "	</p>\n"
-		 "	<table>\n"
-		 "	<thead>\n"
-		 "		<th>Skyline</th>\n"
-		 "		<th>Population</th>\n"
-		 "	</thead>\n"
-		 "	<tbody>\n"
-		 "	{{# cities.metadata }}\n"
-		 "    <tr>\n"
-		 "			<td>{{ .population }}</td>\n"  
-		 "			<td>{{ .claim to fame }}</td>\n"
-		 "    </tr>\n"
-		 "	{{/ cities.metadata }}\n"
+		 "	{{/ .metadata }}\n"
 		 "	</tbody>\n"
 		 "	</table>\n"
 		 "{{/ cities }}\n"
@@ -555,7 +513,7 @@ RenderTest r[] =
 	},
 #endif
 
-#if 0
+#ifdef TABLE_MULTI
 	{
 		.name = "two level table",
 		.desc = "two level table | key value test",
@@ -656,15 +614,16 @@ RenderTest r[] =
 	},
 #endif
 
-
-#if 0
+#ifdef TABLE_KEYVALUE
 	//key and value vs actual values
 	{
 		.name = "key and value",
 		.desc = "key and value",
 		.values = DoubleTable 
 	},
+#endif
 
+#ifdef TABLE_KEYVALUEEMB
 	//key and value embedded
 	{
 		.name = "key and value embedded",
@@ -672,6 +631,7 @@ RenderTest r[] =
 		.values = MultiLevelTable 
 	},
 #endif
+
 	//sentinel...
 	{ .sentinel = 1 }
 };
@@ -719,10 +679,6 @@ TEST( render )
 		//Print the table (if it crashes here, you have bigger problems)
 		lt_dump( t ); 
 
-		//What does the total count return (that's the entire reason why that pointer trans takes
-		//place the way it does.
-		//fprintf( stderr, "there are a total of %d elements in this table:\n", lt_countall( t ) );
-#if 1
 		//Run the test via the render thing
 		if ( !render_init( &R, t ) ) {
 			EPRINTF( "Failed to iniitalize render module at test #%d", set );
@@ -734,8 +690,9 @@ TEST( render )
 		}
 
 		//Dump the map? (is useful to see what's what)
-		//render_dump_mark( &R );
+		render_dump_mark( &R );
 
+#if 0
 		//Start replacing things
 		if ( !render_render( &R ) ) {
 			EPRINTF( "Failed to set render source correctly at test #%d", set );
@@ -764,15 +721,13 @@ TEST( render )
 			write( 2, dest, destlen );
 			//EPRINTF( "Finished result did not match expected result" );
 		}
+#endif
 
 		//Free everything
 		render_free( &R );
-#endif
-
 		lt_free( t );
 		set ++, rt ++;
-
-		getchar();
+		fprintf( stderr, "\n" );
 	}
 
 	return 0;

@@ -867,7 +867,7 @@ struct Option
 
 
 #ifndef RENDER_H
-enum 
+enum
 { /*...*/
 	RAW = 0,
 	NEGLOOP,
@@ -876,6 +876,7 @@ enum
 	STUB,
 	DIRECT
 };
+
 
 typedef struct
 { 
