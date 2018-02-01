@@ -138,7 +138,6 @@ typedef struct Marker
 					*pmarker; // An easier way to do the non-recursive parent thing...
 	int      bsize,   // Size of blob / block
 					 psize,   // Size of parent block
-					 level,   // Where in a table's depth am I?
 					 action,  // Actions are no longer predefined, but they go here
 					 type,    // ?
 					 index,   // Where in the table is the value found
@@ -226,6 +225,35 @@ SIG( pound_block )
 	return 0;
 }
 
+
+SIG( dollar_block )
+{
+	if ( *a == 2 ) {
+		(*my)->action = *b;
+		(*my)->parent = (*p)->parent;
+		(*my)->psize = (*p)->psize;
+
+		int pind = (*p)->index;
+		uint8_t *c = b;
+		uint8_t s[ 2048 ] = { 0 };
+		int ind = 0, cc = 0, ss = 0; 
+		while ( *c && *c != '}' ) c++, cc++;
+		c = trim( b, " $\t", cc, &cc );
+
+		#if 0
+		int isKey = 0;
+		if ( (isKey = memcmp("$key", c, cc)) == 0 ) || memcmp("$val", c, cc) == 0 )
+		{
+			int side = (isKey) ? 0 : 1;
+			//Loop through table entry
+			while ( lt_get( side, ... ) != 0 ) {
+				SETBLOBMOVE( c, cc );
+			}
+		}
+		#endif
+	}
+}
+
 SIG( period_block )
 {
 	SIGGO();
@@ -241,22 +269,8 @@ SIG( period_block )
 		while ( *c && *c != '}' ) c++, cc++;
 		c = trim( b, " #\t", cc, &cc );
 
-		//No parent, look for .key or .val (move through a table with no tables)
-		if ( !(*my)->parent ) {
-			#if 0
-			int isKey = 0;
-			if ( (isKey = memcmp(".key", c, cc)) == 0 ) || memcmp(".val", c, cc) == 0 )
-			{
-				int side = (isKey) ? 0 : 1;
-				//Loop through table entry
-				while ( lt_get( side, ... ) != 0 ) {
-					SETBLOBMOVE( c, cc );
-				}
-			}
-			#endif
-		}
-		//Parent, look for children, or .key or .val
-		else {
+		//A parent should always exist
+		if ( (*my)->parent ) {
 			COPYHASH( s, ss, (*my)->parent, (*my)->psize, c, cc, -1 );
 			fprintf( stderr, "hash : " );write( 2, s, ss );fprintf( stderr, "\n" );
 

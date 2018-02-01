@@ -38,9 +38,88 @@ problem is, I need size
 since this still has to be done in two steps anyway, why not
 look up the HASH at the first step and save that in an array of ints... (can get quite long without being problematic.  AND, the hash SHOULD be saved somewhere, so it could just be transferring pointers...)
 
+processing puts all hashes in one place
+fnr moves through Markers like before... 
+	no action = write the unproc blob
+	looping action = lt_geti( t, i ) and write resultant type
+
 //3.
 LiteRecord or LiteTable
 These values are already initialized in the Table.  Still 8 bytes, and no new alloc needed (-1 at the end of array if no malloc is wanted)
 
+fnr moves through Markers:
+	no action = write unproc blob
+	looping action = write blob to bigger blob
 
-template_go( Marker *m, ... )
+
+//pointers and depth
+
+{{ a }} -> direct ref
+{{ #aa }} ... {{ /aa }} -> loop between here for x amount of times
+[ {{ #aa }} ... 
+	{{ #bb }} ... {{ /bb }} 
+		{{ /aa }}     ] -> loop between everything but notice the recursion
+
+
+the last example:
+#aa = 
+{
+	blob    = ... ( whatever comes betweeen '#aa }}' and  '{{ #bb' )
+	bsize   = size of blob length
+	parent  = "aa", 
+	psize   = size of parent length
+	pmarker = ?
+	action  = ?
+	type    = [ whatever... ]
+	index   = ???
+}
+
+#bb = {
+
+}
+
+
+a more realistic example:
+{{ #aa }}
+<h2>{{ .b }}</h2>
+{{ #bb }}
+	zoom
+	{{ .dd }}
+{{ /bb }}
+<footer>{{ .d }}</footer>
+{{ /aa }}
+
+<h2>etc</h2>
+	zoom
+	001
+	zoom
+	002
+	zoom
+	003
+<footer>daemon</footer>
+
+<h2>shame</h2>
+	zoom
+	001
+	zoom
+	002
+	zoom
+	003
+<footer>chicken</footer>
+
+<h2>greed</h2>
+	zoom
+	001
+	zoom
+	002
+	zoom
+	003
+<footer>railo</footer>
+
+
+To easily do this may mean using a child member (uint8_t *)...
+The spot between is a child node of some sort now, and doesn't have to be redone each time...
+Blob is a fair type to use (can't remember how big it is...)
+
+
+Nothing should matter, I'll have to run multiple times (for now), but get used to rewinding and whatnot..., pretty easy...
