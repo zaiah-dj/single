@@ -39,7 +39,6 @@
  #define SHOW_MARKER(m) \
 	fprintf( stderr, "{ " ); \
 	fprintf( stderr, "action = %c, ", m->action ); \
-	fprintf( stderr,  "level = %d, ", m->level ); \
 	fprintf( stderr,  "index = %3d, ", m->index ); \
 	fprintf( stderr, "parent = " ); \
 	( !m->parent ) ? write(2, "NULL", 4) : write(2, m->parent, m->psize); \
@@ -155,6 +154,7 @@ SIG( proc_block )
 	return 0;
 	//Should return false, true, and continue?
 }
+
 
 SIG( left_curly_brace_block )
 {
@@ -382,7 +382,7 @@ int main (int argc, char *argv[])
 	};
 
 	//Table
-	Table *t = convert_lkv( MT );
+	Table *t = convert_lkv( (LiteKv *)MT );
 	lt_dump( t );
 
 	//Marker
