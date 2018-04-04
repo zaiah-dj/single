@@ -71,8 +71,8 @@
 //All tests go here
 #define TABLE_SINGLE
 #define TABLE_DOUBLE
-#if 0
 #define TABLE_NONE
+#if 0
 #define TABLE_KEYVALUE
 #define TABLE_KEYVALUEEMB
 #define TABLE_MULTI
@@ -339,8 +339,8 @@ RenderTest r[] =
 	//.values = the Table to use for values (these tests do not test any parsing)
 #ifdef TABLE_NONE
 	{
-		.name = "mixed_keys",
-		.desc = "Mixed keys",
+		.name = "no_table",
+		.desc = "Template values with no tables.",
 		.values = NoTable, 
 		.renSrc =
 		 "<html>\n"
@@ -453,7 +453,6 @@ RenderTest r[] =
 		 "</body>\n"
 		 "</html>\n"
 		,
-#endif
 
 		.renCmp = 
 		 "<html>\n"
@@ -677,7 +676,8 @@ TEST( render )
 		}
 
 		//Print the table (if it crashes here, you have bigger problems)
-		lt_dump( t ); 
+		if ( 0 ) 
+			lt_dump( t ); 
 
 		//Run the test via the render thing
 		if ( !render_init( &R, t ) ) {
@@ -690,9 +690,9 @@ TEST( render )
 		}
 
 		//Dump the map? (is useful to see what's what)
-		render_dump_mark( &R );
+		if ( 0 ) 
+			render_dump_mark( &R );
 
-#if 0
 		//Start replacing things
 		if ( !render_render( &R ) ) {
 			EPRINTF( "Failed to set render source correctly at test #%d", set );
@@ -707,6 +707,10 @@ TEST( render )
 			EPRINTF( "Templating failed somewhere.  Not sure where...\n" );
 		}
 
+#if 0
+		write( 2, dest, destlen );
+		getchar();
+#else
 		//Check rendered result against what should be
 		if ( memcmp( rt->renCmp, dest, destlen ) == 0 ) {
 			fprintf( stderr, "SUCCESS: Final matches expected!\n" );

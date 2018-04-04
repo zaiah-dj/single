@@ -28,13 +28,14 @@ PKGFILE = $(ARCHIVEDIR)/$(NAME).$(VERSION).tar.${ARCHIVEFMT}
 #Phony targets 
 .PHONY: main clean debug leak run other
 
-indy:
-	gcc -DSQROOGE_H newt.c single.c -o newt
-
 #Primary target
 main: build 
 main:
 	@printf ''>/dev/null	
+
+#Create a new templating engine.
+newte:
+	gcc -DSQROOGE_H newt.c single.c -o newt
 
 #Build a shared object	
 build: single.o

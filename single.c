@@ -19,7 +19,6 @@ Package a way to build tests here.
 
 */
 #include "single.h"
-#define RENDER_DEBUG_H
 
 //This flag is here to control how table counts work...
 

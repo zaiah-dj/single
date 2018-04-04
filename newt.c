@@ -367,6 +367,10 @@ int main (int argc, char *argv[])
 	#endif
 	;
 
+	fprintf( stderr, "\nBlock before pre-rendering looks like:\n" );
+	fprintf( stderr, "=======================================\n" );
+	write( 2, block, sizeof(block));
+
 	//Text processing functions
 	SIG((*pbArr[256])) = {
 	#if 1
@@ -383,6 +387,8 @@ int main (int argc, char *argv[])
 
 	//Table
 	Table *t = convert_lkv( (LiteKv *)MT );
+	fprintf( stderr, "\nTable to render from looks like:\n" );
+	fprintf( stderr, "=======================================\n" );
 	lt_dump( t );
 
 	//Marker
@@ -413,11 +419,17 @@ int main (int argc, char *argv[])
 #if 1
 	//Let's see what the marker looks like...
 	maf = m;
+	fprintf( stderr, "\nContent pointers look like:\n" );
+	fprintf( stderr, "=======================================\n" );
 	while ( !maf->sentinel ) {
 		SHOW_MARKER( maf );
 		maf++;
 	}	
 #endif
+
+
+	fprintf( stderr, "\nBlock after rendering looks like:\n" );
+	fprintf( stderr, "=======================================\n" );
 }
 
 /*Compile me with: gcc -Wall -DSQROOGE_H single.c newt.c -o newt*/
