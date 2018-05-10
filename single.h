@@ -1,4 +1,30 @@
-/*single.h*/
+/*
+ * single.h
+ * --------
+ *
+ *  This library has gotten big.  It handles most basic utilities. 
+ *  Let's start with errors.
+ *
+ *  There are two ways to report errors from the library.  A third one is being worked on to make it easier for embedded libraries to do their thing.
+ *
+ *  1) There is a member called error of type int on all functions that use a specific struct.  
+ *  This can be used to do either sstrerror() or something similar.
+ *  Compile with -DERRV_H to get this behavior.
+ *
+ *
+ *  2) The simplest way to report errors involves using a structure type that makes all of the structs much larger.  
+ *  The 'error' member present in each structure is there and also a member named 'errmsg'.  
+ *  The length of this message can be changed at compile time via ERRV_LENGTH.
+ * 	No compile options are needed for this behavior.
+ *
+ *
+ *  *) The lightest version will just return a status from the function (true or false nine times out of ten).
+ *  An errno like number is used to tell what exactly occurred.  It's a static variable.  This would be the lightest solution.
+ *  Compile with -DERR_H to get this behavior.
+ *  This is not done yet.
+ *
+ *
+ * */
 //Start with includes, not all modules need all headers
 #ifndef _WIN32
  #define _POSIX_C_SOURCE 200809L
@@ -103,6 +129,10 @@
 	fprintf(stderr, "Size of %-22s: %ld\n", #k, sizeof(k));
 
 #ifndef ERR_H
+ #ifndef ERRV_H
+	#define ERRV_LENGTH 2048
+ #endif
+
  #if 1
   #define err(n, ...) (( fprintf(stderr, __VA_ARGS__) ? 0 : 0 ) || fprintf( stderr, "\n" ) ? n : n)
   #define berr(n, c) fprintf(stderr, "%s\n", __errors[ c ] ) ? n : n
@@ -156,12 +186,14 @@
   hash_long( dest, (unsigned char *)src, strlen((char *)src), len )
 #endif
 
+
 #ifndef PARSELY_H
  #define PARSER_MAXMATCH_LEN 127
  #define PARSER_MOD 31 
  #define PARSER_MATCH_CATCH 1 << 1
  #define PARSER_NEGATE_MATCH 1 << 0
 #endif
+
 
 #ifndef TAB_H
  #define LT_POLYMORPH_BUFLEN 2048
@@ -693,10 +725,10 @@ enum
 	ERR_FILE_READ_ERROR,
 	ERR_FILE_CLOSE,
 #endif
+#ifndef FILES_H
+#endif
 	ERR_ERR_INDEX_MAX,
 };
-
-
 
 
 #ifndef MIME_H
@@ -707,6 +739,7 @@ typedef struct
 } Mime; 
 #endif
 
+
 #ifndef BUFF_H
 typedef struct 
 {
@@ -714,9 +747,29 @@ typedef struct
   int size;
   int written;
   int fixed;
+ #ifndef ERR_H
   int error;
+	#ifndef ERRV_H
+	char  errmsg[ ERRV_LENGTH ];
+	#endif 
+ #endif
 } Buffer;
 #endif
+
+
+#ifndef FILES_H
+typedef struct 
+{
+	struct stat sb;
+ #ifndef ERR_H
+  int error;
+	#ifndef ERRV_H
+	char  errmsg[ ERRV_LENGTH ];
+	#endif 
+ #endif
+} FileInfo;
+#endif
+
 
 #ifndef PARSELY_H
 typedef struct 
@@ -739,9 +792,15 @@ typedef struct
        *catch,      //If you found *word, skip all other characters until you find this 
        *negate;     //If you found *word, skip *catch until you find this
   }              words[31];
+ #ifndef ERR_H
+  int error;
+	#ifndef ERRV_H
+	char  errmsg[ ERRV_LENGTH ];
+	#endif 
+ #endif
 } Parser;
-
 #endif
+
 
 #ifndef TAB_H
 //Define a type polymorph with a bunch of things to help type inference
@@ -784,18 +843,23 @@ typedef struct
                 index  ,     //Index to current element
                 count  ,     //Elements in table
                 *rCount;     //Elements in current table 
-  int           error  ;     //An error occurred, read it...
-  int           mallocd;     //An error occurred, read it...
-  int           srcmallocd;  //An error occurred, read it...
-  int           size   ;     //Size of newly trimmed key or pointer
-  int           cptr;        //Table will stop here
-  int           start  ,     //Table bounds are here if "lt_within" is used
+  int           mallocd,     //An error occurred, read it...
+                srcmallocd,  //An error occurred, read it...
+                size   ,     //Size of newly trimmed key or pointer
+                cptr   ,     //Table will stop here
+                start  ,     //Table bounds are here if "lt_within" is used
                 end    ,
                 buflen ;
   unsigned char *src   ;     //Source for when you need it
   unsigned char *buf   ;     //Pointer for trimmed keys and values
   LiteKv        *head  ;     //Pointer to the first element
   LiteTable     *current;    //Pointer to the first element
+ #ifndef ERR_H
+  int error;
+	#ifndef ERRV_H
+	char  errmsg[ ERRV_LENGTH ];
+	#endif 
+ #endif
   
 } Table;
 
@@ -862,6 +926,12 @@ struct Option
 	_Bool (*callback)(char **av, Value *v, char *err);
 	_Bool set;  /*If set is not bool, it can define the order of demos*/
 	_Bool sentinel;
+ #ifndef ERR_H
+  int error;
+	#ifndef ERRV_H
+	char  errmsg[ ERRV_LENGTH ];
+	#endif 
+ #endif
 };
 #endif
 
@@ -900,6 +970,12 @@ typedef struct
   
   Parser  *p;
   char     buf[RENDER_MAX_BUF_SIZE];
+ #ifndef ERR_H
+  int error;
+	#ifndef ERRV_H
+	char  errmsg[ ERRV_LENGTH ];
+	#endif 
+ #endif
  #ifdef RENDER_VERBOSE
   char     errbuf[ 4096 ];
  #endif
@@ -988,18 +1064,23 @@ typedef struct
 
 typedef struct 
 {
-  const char   *filename;
-  const char   *sql;
-  const char   *table;
-  char   *qname;  //Name of query
+  char   *filename,
+         *sql,
+         *table,
+         *qname;  //Name of query
   sqlite3      *db;
   sqlite3_stmt *stmt;
-  int error;
   /*Try to start using FLAGS*/
   _Bool         read_started;
   Buffer        header;  
   Buffer        results;  
   Table         kvt;
+ #ifndef ERR_H
+  int error;
+	#ifndef ERRV_H
+	char  errmsg[ ERRV_LENGTH ];
+	#endif 
+ #endif
 } Database;
 
 #endif
@@ -1009,6 +1090,12 @@ typedef struct
 {
 	struct timespec rand_ts;
 	char   buf[RAND_BUF_SIZE];
+ #ifndef ERR_H
+  int error;
+	#ifndef ERRV_H
+	char  errmsg[ ERRV_LENGTH ];
+	#endif 
+ #endif
 } Random;
 #endif
 
@@ -1031,13 +1118,19 @@ typedef struct
   timespec    start,     
               end;      
 	const char *label; 
+	LiteTimetype  type;     
+	char        ts_string[1024];
  #ifdef DEBUG_H 
   const char *file;        
 	int         linestart,   
               lineend;	  
  #endif
-	LiteTimetype  type;     
-	char        ts_string[1024];
+ #ifndef ERR_H
+  int error;
+	#ifndef ERRV_H
+	char  errmsg[ ERRV_LENGTH ];
+	#endif 
+ #endif
 } Timer;
 #endif
 
@@ -1050,6 +1143,12 @@ typedef struct
          size,  //Size of something
 	         it;
 	uint8_t chr;  //Character found
+ #ifndef ERR_H
+  int error;
+	#ifndef ERRV_H
+	char  errmsg[ ERRV_LENGTH ];
+	#endif 
+ #endif
 } Mem ;
 #endif
 
@@ -1099,6 +1198,12 @@ typedef struct
        srvaddrlen;     //Server
 	size_t addrsize;     //Address information size
 	void *ssl_ctx  ;                  /* If SSL is in use, use this */
+ #ifndef ERR_H
+  int error;
+	#ifndef ERRV_H
+	char  errmsg[ ERRV_LENGTH ];
+	#endif 
+ #endif
 } 
 Socket;
 #endif
@@ -1134,14 +1239,14 @@ typedef struct
                     recvd, 
                      sent;  //Total bytes sent or received
   uint8_t          errbuf[2048];  //For error messages when everything may fail
-#if 0
+ #if 0
   int          request_fd;  
   int         response_fd;
-#endif
-#ifdef NW_BUFF_FIXED
+ #endif
+ #ifdef NW_BUFF_FIXED
   uint8_t        request_[NW_MAX_BUFFER_SIZE];
   uint8_t       response_[NW_MAX_BUFFER_SIZE];
-#endif
+ #endif
   uint8_t        *request;
   uint8_t       *response;
 	Buffer       _request;
@@ -1151,13 +1256,19 @@ typedef struct
 	int          send_retry;/*5*/
 	int          *socket_fd;  //Pointer to parent socket?
 	struct pollfd   *client;  //Pointer to currently being served client
-#ifndef NW_DISABLE_LOCAL_USERDATA
+ #ifndef NW_DISABLE_LOCAL_USERDATA
 	void          *userdata;
-#endif
+ #endif
 	//This allows nw to cut connections that have been on too long
 	struct timespec start;
 	struct timespec end;
 	int      status; 
+ #ifndef ERR_H
+  int error;
+	#ifndef ERRV_H
+	char  errmsg[ ERRV_LENGTH ];
+	#endif 
+ #endif
 } Recvr;
 
 

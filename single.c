@@ -24,6 +24,7 @@ Package a way to build tests here.
 
 static const unsigned int lt_hash = 31;
 
+#ifndef ERR_H
 static const char *__errors[] = 
 {
   [ERR_NONE] = "No errors",
@@ -116,7 +117,7 @@ static const char *__errors[] =
 #endif
 	[ERR_ERR_INDEX_MAX]        = "No errors",
 };
-
+#endif
 
 #ifndef UTIL_H
 //lf_         - an iterator for reading files sequentially
@@ -324,6 +325,11 @@ unsigned char *trim (uint8_t *msg, char *trim, int len, int *nlen)
 	*nlen = nl;
 	return m;
 }
+
+
+#ifndef ERR_H 
+#endif
+
 
 #ifndef OPT_H
 //Set values when the user asks for them
