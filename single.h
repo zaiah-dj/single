@@ -22,6 +22,13 @@
  *  An errno like number is used to tell what exactly occurred.  It's a static variable.  This would be the lightest solution.
  *  Compile with -DERR_H to get this behavior.
  *  This is not done yet.
+ * 
+ *  Right now, there are three macros that handle actualy returning errors:
+ *
+ *  err( ) - Handles message output and returns a status (or simply returns a status)
+ *  serr( ) - Handles message output and returns a status using the appropriate struct member.  ( e.g. assuming I've initialized Buffer *b somewhere, serr() will use b->errmsg to hold the error string.
+ *  perr( ) - Will use a defined program name to report errors and error messages.
+ *
  *
  *
  * */
@@ -133,6 +140,7 @@
 	#define ERRV_LENGTH 2048
  #endif
 
+	//Static error handling (like errno)
  #if 0
   #define err(n, ...) (( fprintf(stderr, __VA_ARGS__) ? 0 : 0 ) || fprintf( stderr, "\n" ) ? n : n)
   #define berr(n, c) fprintf(stderr, "%s\n", __errors[ c ] ) ? n : n
@@ -145,7 +153,13 @@
   #define perr(n, ...) ( fprintf(stderr, "%s: ", PROGRAM_NAME ) ? 0 : 0 ) || (( fprintf(stderr, __VA_ARGS__ ) ? 0 : 0 ) || fprintf( stderr, "\n" ) ? n : n )
  #endif
 
+	//the option to add \n should be somewhere too
  #if 1
+  #define err(n, ...) (( fprintf(stderr, __VA_ARGS__) ? 0 : 0 ) || fprintf( stderr, "\n" ) ? n : n)
+  #define serr(n, s, ...) ((s->error = n ) ? 0 : 0 ) || ( snprintf(s->errmsg, ERRV_LENGTH - 1, __SingleLibErrors[ n ], __VA_ARGS__ ) ? n : n ) 
+ #endif
+
+ #if 0
   #define err(n, ...) 0
   #define berr(n, ...) 0
   #define perr(n, c) ( fprintf(stderr, "%s", PROGRAM_NAME) ? 0 : 0 ) || ( fprintf(stderr, "%s\n", __SingleLibErrors[ c ] ) ? n : n )
@@ -747,6 +761,15 @@ typedef struct
 } Mime; 
 #endif
 
+
+#ifndef ERR_H
+typedef struct
+{
+	int error;
+	char name[2048];
+	char err[2048];
+} Err;
+#endif
 
 #ifndef BUFF_H
 typedef struct 
@@ -1431,9 +1454,9 @@ int sq_reader_find (Database *, const char *colname) ;
 _Bool sq_close (Database *);
 int sq_find (Database *, const char *);
 void print_db (Database *) ;
-_Bool sq_create_oneshot (const char *, const char *) ;
-int sq_insert_oneshot (const char *, const char *, const SQWrite *) ;
-uint8_t *sq_read_oneshot(const char *, const char *, int) ;
+_Bool sq_create_oneshot (const char *, const char *, char *) ;
+int sq_insert_oneshot (const char *, const char *, const SQWrite *, char *) ;
+uint8_t *sq_read_oneshot(const char *, const char *, int, char *) ;
 int sq_get_query_size ( sqlite3_stmt *stmt ) ;
 _Bool sq_setval (SQWrite *j, uint8_t *p, int len) ;
 void sq_write_print (Database *, SQWrite *) ;

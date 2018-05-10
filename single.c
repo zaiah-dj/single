@@ -2923,7 +2923,7 @@ static int32_t Lmemtok (const void *a, const uint8_t *tokens, int32_t sz, int32_
 
 
 //Opens and creates a new database if it does not exist and closes it
-_Bool sq_create_oneshot (const char *filename, const char *sql) 
+_Bool sq_create_oneshot (const char *filename, const char *sql, char *err) 
 {
 	int rc, t = 0, a = 0;
 	sqlite3 *db = NULL;
@@ -2988,15 +2988,16 @@ _Bool sq_create_oneshot (const char *filename, const char *sql)
 		sqlite3_finalize(stmt);
 
 	//close database
-	if (sqlite3_close(db) != SQLITE_OK)
-		return berr(0, ERR_DB_CLOSE);
+	if (sqlite3_close(db) != SQLITE_OK) {
+		return ERR_DB_CLOSE; //berr(0, ERR_DB_CLOSE);
+	}
 	return 1;	
 }
 
 
 
 //Do an insert
-int sq_insert_oneshot (const char *filename, const char *sql, const SQWrite *w) 
+int sq_insert_oneshot (const char *filename, const char *sql, const SQWrite *w, char *err) 
 {
 	int rc, pos = 1;
 	sqlite3 *db = NULL;
@@ -3077,7 +3078,7 @@ int sq_get_query_size ( sqlite3_stmt *stmt ) {
 
 
 //Read data and return a reference to it
-uint8_t *sq_read_oneshot (const char *filename, const char *sql, int limit) 
+uint8_t *sq_read_oneshot (const char *filename, const char *sql, int limit, char *err) 
 {
 	//Define common things
 	int rc;
@@ -3486,6 +3487,17 @@ _Bool sq_open (Database *gb, const char *filename)
 }
 
 
+void *sq_destroy( void *p, void *q, void *r ) {
+	return NULL;
+}
+
+//set error
+//set error message
+//print error message (maybe)
+//include file and line when necessary
+//print extra args
+//bookkeeping
+
 
 //Executes a SQL statement
 _Bool sq_exec (Database *gb, const char *sql) 
@@ -3504,7 +3516,8 @@ _Bool sq_exec (Database *gb, const char *sql)
 		if ((rc = sqlite3_prepare_v2(gb->db, buf, -1, &gb->stmt, 0)) != SQLITE_OK)
 		{
 			sq_free( gb );
-			return berr(0, ERR_DB_PREPARE_STMT);
+			//return berr(0, ERR_DB_PREPARE_STMT);
+			return serr( ERR_DB_PREPARE_STMT, gb, NULL );
 		}
 
 		//Step to commit the record
@@ -3512,7 +3525,9 @@ _Bool sq_exec (Database *gb, const char *sql)
 		{
 			sqlite3_finalize(gb->stmt);
 			sq_free( gb );
-			return berr(0, ERR_DB_STEP);	
+			//return berr(0, ERR_DB_STEP);	
+
+			return serr( ERR_DB_STEP, gb, NULL );
 		}
 
 		//Move up the indicator
@@ -3567,7 +3582,7 @@ _Bool sq_close (Database *gb)
 	bf_free( &gb->header );
 	bf_free( &gb->results );
 	free( gb->qname );
-	return (sqlite3_close(gb->db) != SQLITE_OK) ? berr(0, ERR_DB_CLOSE) : 1;
+	return (sqlite3_close(gb->db) != SQLITE_OK) ? serr(ERR_DB_CLOSE, gb, NULL ) : 1;
 }
 
 
@@ -3581,7 +3596,7 @@ _Bool sq_read (Database *gb, const char *sql)
 		if (sqlite3_prepare_v2(gb->db, sql, -1, &gb->stmt, 0) != SQLITE_OK) 
 		{
 			sq_free( gb );
-			return berr(0, ERR_DB_PREPARE_STMT);
+			return serr(ERR_DB_PREPARE_STMT, gb, NULL);
 		}
 		gb->read_started = 1;
 	}
@@ -3702,7 +3717,7 @@ _Bool sq_reader_start (Database *gb, const char *sql, const SQWrite *w)
 
 	if (sqlite3_prepare_v2(gb->db, sql, -1, &gb->stmt, 0) != SQLITE_OK) {
 		sq_free( gb );
-		return berr(0, ERR_DB_PREPARE_STMT);
+		return serr(ERR_DB_PREPARE_STMT, gb, NULL);
 	}
 
 	//Loop and bind each value if you gave it something
