@@ -133,14 +133,22 @@
 	#define ERRV_LENGTH 2048
  #endif
 
- #if 1
+ #if 0
   #define err(n, ...) (( fprintf(stderr, __VA_ARGS__) ? 0 : 0 ) || fprintf( stderr, "\n" ) ? n : n)
   #define berr(n, c) fprintf(stderr, "%s\n", __errors[ c ] ) ? n : n
   #define perr(n, ...) ( fprintf(stderr, "%s: ", PROGRAM_NAME ) ? 0 : 0 ) || (( fprintf(stderr, __VA_ARGS__ ) ? 0 : 0 ) || fprintf( stderr, "\n" ) ? n : n )
- #else
+ #endif
+
+ #if 0
+  #define err(n, ...) (( fprintf(stderr, __VA_ARGS__) ? 0 : 0 ) || fprintf( stderr, "\n" ) ? n : n)
+  #define berr(n, c) fprintf(stderr, "%s\n", __errors[ c ] ) ? n : n
+  #define perr(n, ...) ( fprintf(stderr, "%s: ", PROGRAM_NAME ) ? 0 : 0 ) || (( fprintf(stderr, __VA_ARGS__ ) ? 0 : 0 ) || fprintf( stderr, "\n" ) ? n : n )
+ #endif
+
+ #if 1
   #define err(n, ...) 0
   #define berr(n, ...) 0
-  #define perr(n, c) fprintf(stderr, PROGRAM_NAME, fprintf(stderr, "%s\n", __errors[ c ] ) ? n : n
+  #define perr(n, c) ( fprintf(stderr, "%s", PROGRAM_NAME) ? 0 : 0 ) || ( fprintf(stderr, "%s\n", __SingleLibErrors[ c ] ) ? n : n )
  #endif
 #endif
 

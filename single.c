@@ -25,7 +25,7 @@ Package a way to build tests here.
 static const unsigned int lt_hash = 31;
 
 #ifndef ERR_H
-static const char *__errors[] = 
+static const char *__SingleLibErrors[] = 
 {
   [ERR_NONE] = "No errors",
 
@@ -327,10 +327,6 @@ unsigned char *trim (uint8_t *msg, char *trim, int len, int *nlen)
 }
 
 
-#ifndef ERR_H 
-#endif
-
-
 #ifndef OPT_H
 //Set values when the user asks for them
 static _Bool opt_set_value (char **av, Value *v, char type, char *err) 
@@ -561,7 +557,7 @@ uint8_t *bf_data (Buffer *b) {
 
 //Write out errors
 const char *bf_err (Buffer *b) {
-	return __errors[b->error];
+	return __SingleLibErrors[b->error];
 }
 
 
@@ -1455,7 +1451,7 @@ void lt_clearerror (Table *t)
 const char *lt_strerror (Table *t)
 {
 	//Paranoid bounds checking
-	return ( t->error > -1 && t->error < ERR_LT_INDEX_MAX) ? __errors[ t->error ] : NULL; 
+	return ( t->error > -1 && t->error < ERR_LT_INDEX_MAX) ? __SingleLibErrors[ t->error ] : NULL; 
 }
 
 
