@@ -162,7 +162,7 @@ TestArg tests[] =
 	ARG( socket, 0 ),
 #endif
 #ifndef SQROOGE_H 
-	ARG( sqrooge, 1 ),
+	ARG( sqrooge, 0 ),
 #endif
 #ifndef TAB_H
 	ARG( tab, 0 ),
