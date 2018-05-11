@@ -52,7 +52,15 @@ static const char *__SingleLibErrors[] =
  
 #ifndef SQROOGE_H
   [ERR_DB_OPEN]         = "Failed to open database." ,
+  [ERR_DB_UNINITIALIZED]= "Attempt to open uninitialized database." ,
+  [ERR_DB_NO_QUERY]     = "No SQL query specified." ,
   [ERR_DB_CLOSE]        = "Failed to close database." ,
+  [ERR_DB_COLUMN_MAX]   = "Current library does not support more than 127 columns." ,
+  [ERR_DB_COLUMN_ADD]   = "Failed to add column [%s] to header." ,
+  [ERR_DB_ZERO_TERM]    = "Failed to add zero terminator to header." ,
+  [ERR_DB_ADD_VALUE]    = "Failed to add value to result set." ,
+  [ERR_DB_ADD_TERM]     = "Failed to add %s terminator to result set." ,
+  [ERR_DB_RESULT_INIT]  = "Failed to initialized result set." ,
   [ERR_DB_PREPARE_STMT] = "Failed to prepare database statement: %s" ,
   [ERR_DB_BIND_VALUE]   = "Failed to bind value at position %d in statement '%s'" ,
   [ERR_DB_STEP]         = "Failed to execute statement." ,
@@ -3396,13 +3404,13 @@ static int sq_sqlite3_column_blob (sqlite3_stmt *stmt, int col, uint8_t *msg) {
 }
 
 
-/*Get size of items in columns everything*/
+//Get size of items in columns everything
 static int sz_sqlite3_column_any (sqlite3_stmt *stmt, int col, uint8_t *msg) {
 	return sqlite3_column_bytes(stmt, col); 
 }
 
 
-/*Handles serializing everything*/
+//Handles serializing everything
 static int pr_sqlite3_column_int (sqlite3_stmt *stmt, int col, uint8_t *msg) {
 	fprintf(stderr, "%d\n", sqlite3_column_int(stmt, col)); 
 	return 1;
@@ -3425,27 +3433,22 @@ static int pr_sqlite3_column_blob (sqlite3_stmt *stmt, int col, uint8_t *msg) {
 }
 
 
-
-
-
-
-
-/*Write a date*/
-void sq_getdate (char *datebuf) {
-	struct tm *tm;
+//Write a date
+void sq_getdate (char *datebuf) 
+{
+	struct tm *tm = NULL;
 	time_t t = time(NULL);
 
-	/*Get the current date and time*/
-	if (!(tm = localtime(&t)))
-		return;
+	//Get the current date and time
+	if ( !(tm = localtime(&t)) ) return;
 
-	strftime(datebuf, 256, "%a, %d %b %Y %T %z", tm);
+	strftime( datebuf, 256, "%a, %d %b %Y %T %z", tm );
 }
 
 
-
-/*Initialize a database structure*/
-_Bool sq_init (Database *gb) {
+//Initialize a database structure
+_Bool sq_init (Database *gb) 
+{
 	memset(gb, 0, sizeof(Database));
 	gb->filename = NULL;
 	gb->sql      = NULL;
@@ -3462,8 +3465,8 @@ _Bool sq_init (Database *gb) {
 }
 
 
-/*Open a database and leave it open*/
-_Bool sq_open (Database *gb, const char *filename) 
+//Open a database and leave it open
+_Bool sq_open (Database *gb, const char *filename)
 {
 	//Initialize this
 	memset(gb, 0, sizeof(Database));
@@ -3474,29 +3477,150 @@ _Bool sq_open (Database *gb, const char *filename)
 	gb->filename = NULL;
 
 	//Then open the database and return a handle
-	if (sqlite3_open(filename, &gb->db) != SQLITE_OK)  
-	{
-		fprintf(stderr, "%s\n", sqlite3_errmsg(gb->db) );
-		return 0;
-	}
+	if ( sqlite3_open(filename, &gb->db) != SQLITE_OK )
+		return serr( ERR_DB_OPEN, gb, sqlite3_errmsg(gb->db) );
 
-#ifdef SQ_VERBOSE
-	fprintf( stderr, "Opening SQLITE database: %s\n", filename );
-#endif
+	VPRINT( "Opening SQLITE database: %s\n", filename );
 	return 1;
 }
 
 
-void *sq_destroy( void *p, void *q, void *r ) {
+//Destroy
+void *sq_destroy( void *p ) 
+{
+	Database *gb = (Database *)p;
+	( gb->stmt ) ? sqlite3_finalize( gb->stmt ) : 0;
+	sq_free( (Database *)gb );
 	return NULL;
 }
 
-//set error
-//set error message
-//print error message (maybe)
-//include file and line when necessary
-//print extra args
-//bookkeeping
+
+//there should be a max of two SQL query execution functions
+//but really there should just be one.
+int sq_ex ( Database *gb, const char *sql, const char *name, const SQWrite *w, int save )
+{
+	int len = 0;
+	int rc = 0; 
+	int pos = 1;
+	const char *pq = NULL;
+	SQInsert *stack = NULL;
+	VPRINT( "Database: %p, SQL stmt: %s, name: %s, Writer: %p\n", 
+		(void *)gb, sql, name, (void *)w );
+
+	//Shutdown empty queries.
+	if ( !sql ) 
+		return serr( ERR_DB_NO_QUERY, gb, NULL );	
+
+	//Shutdown empty databases.
+	if ( !gb ) 
+		return serr( ERR_DB_UNINITIALIZED, gb, NULL );	
+
+	//Trim the received query
+	pq = ( char * )trim( (uint8_t *)sql, " \t\n\r", strlen( sql ), &len );			
+
+	//Run any other statement
+	if ( !memchr( "sS", *pq, 2 ) ) 
+	{
+		stack = sq_inserters[0];
+
+		//Bind any arguments
+		if ( w ) 
+		{
+			while ( !w->sentinel ) 
+			{
+				VPRINT( "Attempting to bind argument of type '%s' at %d to statement %s\n", 
+					SQ_TYPE(w->type), pos, sql );
+
+				if ( !stack[w->type].fp (gb->stmt, pos, w) )
+					return serr( ERR_DB_BIND_VALUE, gb, pos, sql ); 
+				
+				w++, pos++;
+			}
+		}
+	}
+	//Run selects
+	else
+	{
+		//Set the hash table's source to point the buffer's data
+		char *columnNames[127] = { NULL };
+		int columnInts[127]    = { 0 };
+		int pos         = 0,
+		    columnCount = 0,
+		    bfw         = 0, 
+		    a           = 0, 
+		    title       = 0; 
+		uint8_t *src    = NULL;
+		Parser q = { .words={
+			{ (char *)sqlite3_E },
+			{ (char *)sqlite3_C },
+			{ (char *)sqlite3_N },
+			{ NULL }
+		}};
+
+		//Initialize buffers and tables for result set
+		if ( !bf_init( &gb->header, NULL, 1 ) || !bf_init( &gb->results, NULL, 1 ) )
+			return serr( ERR_DB_RESULT_INIT, gb, NULL );
+
+		//Initialize a Table for result viewing 
+		if ( !lt_init( &gb->kvt, NULL, 1024 ) )
+			return serr( ERR_DB_RESULT_INIT, gb, NULL );
+	
+		//Start reading
+		if ( !sq_reader_start ( (Database *)gb, pq, !w ? nullw : w ) )
+			return serr( ERR_DB_RESULT_INIT, gb, NULL );
+
+		//Unless there are a ton of columns, we should be fine with this.
+		if (( columnCount = sqlite3_column_count( gb->stmt )) > 127 )
+			return serr( ERR_DB_COLUMN_MAX, gb, NULL );
+		
+		//Add each of the keys to the top of the table
+		for (int len=0, i=0; i < columnCount; i++ ) {
+			uint8_t *name = (uint8_t *)sqlite3_column_name(gb->stmt, i);
+	
+			//Fail if we couldn't add a column.
+			if ( !bf_append( &gb->header, name, ( len = strlen( (char *)name ) )) )
+				return serr( ERR_DB_COLUMN_ADD, gb, name );
+
+			if ( !bf_append( &gb->header, (uint8_t *)"\0", 1 ) )
+				return serr( ERR_DB_ZERO_TERM, gb, NULL );
+
+			columnInts[ i ] = pos;
+			pos += len + 1;
+		}
+
+		//Set the column names?
+		for (int i=0; i < columnCount; i++ ) {
+			columnNames[i] = (char *)&(&db->header)->buffer[ columnInts[i] ];	
+		}
+
+		//This expects just one file
+		for ( int dc; sq_reader_continue( (Database *)gb ) ; )
+		{
+			//If there were no results, no need to save anything, but it's not a failure
+			if ( !( dc = sqlite3_data_count(gb->stmt) ) )
+				return 1; //lt_free( &db->header ); sq_close( (Database *)gb );
+
+			//Using a hash table is such a good call
+			for (int len=0, i=0; i < dc; i++ )
+			{
+				//All of the templates could go together here if you were so inclined
+				//len    = sqlite3_column_bytes(db->stmt, i);
+				uint8_t *b = (uint8_t *)sqlite3_column_blob(gb->stmt, i); 
+				uint8_t *c = (i == (dc - 1)) ? (uint8_t *)sqlite3_N : (uint8_t *)sqlite3_C;
+
+				//Add value to buffer
+				if ( !bf_append( &gb->results, b, sqlite3_column_bytes(gb->stmt, i)) )
+					return serr( ERR_DB_ADD_VALUE, gb, NULL );
+
+				//Add terminator to buffer
+				if ( !bf_append( &db->results, c, sqlite3_L ) ) 
+					return serr( ERR_DB_ADD_TERM, gb, (i == (dc - 1)) ? "row" : "column" ); 
+			}
+		}
+	}
+	
+	return 0;
+}
 
 
 //Executes a SQL statement
@@ -3518,7 +3642,6 @@ _Bool sq_exec (Database *gb, const char *sql)
 		if ((rc = sqlite3_prepare_v2(gb->db, buf, -1, &gb->stmt, 0)) != SQLITE_OK)
 		{
 			sq_free( gb );
-			//return berr(0, ERR_DB_PREPARE_STMT);
 			return serr( ERR_DB_PREPARE_STMT, gb, NULL );
 		}
 
@@ -3527,8 +3650,6 @@ _Bool sq_exec (Database *gb, const char *sql)
 		{
 			sqlite3_finalize(gb->stmt);
 			sq_free( gb );
-			//return berr(0, ERR_DB_STEP);	
-
 			return serr( ERR_DB_STEP, gb, NULL );
 		}
 
@@ -3549,17 +3670,20 @@ _Bool sq_exec_complex (Database *gb, const char *sql, const SQWrite *w)
 {
 	int rc, pos = 1;
 	SQInsert *stack = sq_inserters[0];
+	VPRINT( "Database: %p, SQL statement: %s, SQWrite %p\n", gb, sql, w );
 
 	//Prepare
-	if ((rc = sqlite3_prepare_v2(gb->db, sql, -1, &gb->stmt, 0)) != SQLITE_OK) {
-		fprintf(stderr, "errerr: %s\n", sqlite3_errmsg(gb->db));
-		return 0; //err(NULL, ERR_DB_PREPARE_STMT);
-	}
+	if ( (rc = sqlite3_prepare_v2(gb->db, sql, -1, &gb->stmt, 0)) != SQLITE_OK )
+		return serr( ERR_DB_PREPARE_STMT, gb, sqlite3_errmsg(gb->db) );
 
 	//Loop and bind each value
 	while (!w->sentinel) {
-		if (!stack[w->type].fp (gb->stmt, pos, w))
-			return 0;
+		VPRINT( "Attempting to bind argument of type '%s' at %d to statement %s\n", 
+			SQ_TYPE(w->type), pos, sql );
+
+		if ( !stack[w->type].fp (gb->stmt, pos, w) ) {
+			return serr( ERR_DB_BIND_VALUE, gb, pos, sql ); 
+		}	
 		w++, pos++;
 	}
 
@@ -3576,7 +3700,9 @@ _Bool sq_exec_complex (Database *gb, const char *sql, const SQWrite *w)
 
 	return 1;
 }
-/*Close a database and finalize any prepared statement*/
+
+
+//Close a database and finalize any prepared statement
 _Bool sq_close (Database *gb) 
 {
 	(gb->stmt) ? sqlite3_finalize(gb->stmt) : 0;
@@ -3588,8 +3714,7 @@ _Bool sq_close (Database *gb)
 }
 
 
-
-/*Starts reading from a set of results, subsequent calls will get next result*/
+//Starts reading from a set of results, subsequent calls will get next result
 _Bool sq_read (Database *gb, const char *sql) 
 {
 	(gb->stmt) ? sqlite3_finalize(gb->stmt) : 0;
@@ -3612,7 +3737,7 @@ _Bool sq_read (Database *gb, const char *sql)
 
 
 
-/*Finds a specific value in a row of an open database handle*/
+//Finds a specific value in a row of an open database handle
 int sq_find (Database *gb, const char *colname) {
 	int cc = sqlite3_data_count(gb->stmt);
 	for (int i=0; i<cc; i++)  {
@@ -3628,6 +3753,38 @@ const char *sq_strerror ( Database *db )
 {
 	return NULL; //stupid_error_map[ db->error ].msg;
 } 
+
+
+#if 0
+//static void stop repeating yourself, clown
+static int sq_prepare_bind_and_execute (Database *gb, int type, const SQWrite *w) 
+{
+	//Varialbes
+	int rc = 0;
+	int pos = 0;
+	SQInsert *stack = NULL;
+
+	//Prepare
+	rc = sqlite3_prepare_v2(gb->db, sql, -1, &gb->stmt, 0);
+	if ( rc != SQLITE_OK )
+		return ERR_DB_PREPARE_STMT;
+
+	//Loop and bind
+	while ( !w->sentinel ) 
+	{
+		VPRINT( "Attempting to bind argument of type '%s' at %d to statement %s\n", 
+			SQ_TYPE(w->type), pos, sql );
+
+		if ( !stack[ w->type ].fp (gb->stmt, pos, w) ) {
+			return serr( ERR_DB_BIND_VALUE, gb, pos, sql ); 
+		}
+		w++, pos++;
+	}
+	
+
+	//return error codes and let the function handle the macros
+}
+#endif
 
 
 //just prints one row
@@ -3721,7 +3878,7 @@ _Bool sq_reader_start (Database *gb, const char *sql, const SQWrite *w)
 		gb->stmt = NULL;
 	}	
 
-	if (sqlite3_prepare_v2(gb->db, sql, -1, &gb->stmt, 0) != SQLITE_OK) {
+	if ( sqlite3_prepare_v2(gb->db, sql, -1, &gb->stmt, 0) != SQLITE_OK ) {
 		sq_free( gb );
 		return serr(ERR_DB_PREPARE_STMT, gb, NULL);
 	}
