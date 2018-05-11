@@ -50,11 +50,11 @@ static const char *__SingleLibErrors[] =
 #ifndef RENDER_H 
 #endif
  
-#ifndef SQROOGE_H 
+#ifndef SQROOGE_H
   [ERR_DB_OPEN]         = "Failed to open database." ,
   [ERR_DB_CLOSE]        = "Failed to close database." ,
-  [ERR_DB_PREPARE_STMT] = "Failed to prepare database statement." ,
-  [ERR_DB_BIND_VALUE]   = "Failed to bind value." ,
+  [ERR_DB_PREPARE_STMT] = "Failed to prepare database statement: %s" ,
+  [ERR_DB_BIND_VALUE]   = "Failed to bind value at position %d in statement '%s'" ,
   [ERR_DB_STEP]         = "Failed to execute statement." ,
   [ERR_DB_BIND_LONG]    = "Error binding SQL %s at position %d: %s." ,
 #endif
@@ -3502,6 +3502,8 @@ void *sq_destroy( void *p, void *q, void *r ) {
 //Executes a SQL statement
 _Bool sq_exec (Database *gb, const char *sql) 
 {
+	VPRINT( "Got SQL statement: %s\n", sql );
+
 	/*Finalize if not already done*/
 	(gb->stmt) ? sqlite3_finalize(gb->stmt) : 0;
 
@@ -3678,21 +3680,25 @@ _Bool sq_insert (Database *gb, const char *sql, const SQWrite *w)
 	SQInsert *stack = sq_inserters[0];
 
 	//Prepare
-	if ((rc = sqlite3_prepare_v2(gb->db, sql, -1, &gb->stmt, 0)) != SQLITE_OK) {
-		fprintf(stderr, "errerr: %s\n", sqlite3_errmsg(gb->db));
-		return 0; //err(NULL, ERR_DB_PREPARE_STMT);
+	rc = sqlite3_prepare_v2(gb->db, sql, -1, &gb->stmt, 0);
+	if ( rc != SQLITE_OK ) {
+		return serr( ERR_DB_PREPARE_STMT, gb, sqlite3_errmsg(gb->db) ); 
 	}
 
 	//Loop and bind each value
 	while (!w->sentinel) {
-		if (!stack[w->type].fp (gb->stmt, pos, w))
-			return 0;
+		VPRINT( "Attempting to bind argument of type '%s' at %d to statement %s\n", 
+			SQ_TYPE(w->type), pos, sql );
+
+		if ( !stack[ w->type ].fp (gb->stmt, pos, w) ) {
+			return serr( ERR_DB_BIND_VALUE, gb, pos, sql ); 
+		}
 		w++, pos++;
 	}
 
 	//Step and execute
-	if ((rc = sqlite3_step(gb->stmt)) != SQLITE_DONE) {
-		return 0;//err(NULL, ERR_DB_STEP);
+	if ( (rc = sqlite3_step(gb->stmt)) != SQLITE_DONE ) {
+		return serr( ERR_DB_STEP, gb, NULL );
 	}
 
 	//Finalize statement

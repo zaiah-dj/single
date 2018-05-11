@@ -2,3 +2,26 @@
 .*.swp
 .*.swo
 *.stackdump
+
+# Any leftover SQLite3 database files
+*.db
+
+# Any binary images
+*.jpg
+*.gif
+*.bmp
+*.png
+*.tif
+
+# Maybe even audio images
+*.mp3
+*.wav
+*.flac
+*.ogg
+
+# And video
+*.mpg
+*.mkv
+*.webm
+*.vid
+*.avi

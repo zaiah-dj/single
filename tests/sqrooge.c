@@ -56,15 +56,54 @@ const unsigned int bs_jpg_len = 523;
 
 //let's get intense with testing again
 struct SqItem {
-	const char *name, *sql;
+	const char *testName; 
+	const char *tableName;
+	const char *sql;
 	SQWrite sq[10];
 	int sentinel;
 } sq_items[] = 
 {
 	{ 
-	.name = "create"
+	.testName = "create"
+ ,.tableName = "info"
  ,.sql = ""
-		"CREATE TABLE info ( "
+		"CREATE TABLE %s ( "
+		" fname  TEXT, "
+		" mname  TEXT, "
+		" lname  TEXT, "
+		" id     INTEGER, "
+		" addr   TEXT, "
+		" email  TEXT, "
+		" datem  DATETIME, "
+		" avatar BLOB  "
+		" );"
+ ,.sq   = { { .sentinel = 1 } }
+	},
+
+	//inserts via the SQWrite struct should work ith both numeric and alpha arguments
+	{ 
+	.testName = "insert via structure"
+ ,.tableName = "info"
+ ,.sql = "INSERT INTO %s VALUES ( ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8 )"
+ ,.sq  = {
+			 { SQ_TXT, .v.c = "Antonio" } 
+			,{ SQ_TXT, .v.c = "Ramar" } 
+			,{ SQ_TXT, .v.c = "Collins" } 
+			,{ SQ_FLT, .v.f = 3234 } 
+			,{ SQ_TXT, .v.c = "2762 Burlington Ave N, St. Pete, FL" } 
+			,{ SQ_TXT, .v.c = "ramar.collins@gmail.com" } 
+			,{ SQ_DTE }
+			,{ SQ_BLB, .v.d = bs_jpg, .len = 523 } 
+			,{ .sentinel = 1 }
+		}
+	},
+
+#if 0
+	{ 
+	.name = "create sequential"
+ ,.sql = ""
+		"CREATE TABLE infoSeq ( "
+		" seq_id INTEGER PRIMARY KEY AUTOINCREMENT, "
 		" fname  TEXT, "
 		" mname  TEXT, "
 		" lname  TEXT, "
@@ -75,13 +114,12 @@ struct SqItem {
 		" avatar BLOB  "
 		" );"
  ,.sq   = { { .sentinel = 1 } }
-	
 	},
 
 	//inserts via the SQWrite struct should work ith both numeric and alpha arguments
 	{ 
-	.name = "insert via structure"
- ,.sql = ""
+	.name = "insert via structure sequential"
+ ,.sql = "INSERT INTO infoSeq VALUES ( ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8 )"
 #if 1
  ,.sq  = {
 			 { SQ_TXT, .v.c = "Antonio" } 
@@ -104,6 +142,7 @@ struct SqItem {
 	"	SELECT TOP 1 FROM info "
  ,.sq   = { { .sentinel = 1 } }
 	},
+#endif
 
 	//get a query with three records
 
@@ -122,28 +161,62 @@ TEST( sqrooge )
 	//Loop through all the test results
 	struct SqItem *items = sq_items;		
 
-	while ( !items->sentinel ) {
-		fprintf( stderr, "Testing '%s'\n", items->name );
-		Database db;
+	//Always delete whatever file was created.
+	if ( unlink( TEST_DB_NAME ) == -1 )
+		fprintf( stderr, "%s\n", strerror( errno ) );
 
+	//Loop through all tests
+	while ( !items->sentinel ) {
+		fprintf( stderr, "Testing '%s'\n", items->testName );
+		Database db;
+		char sqlQuery[ 2048 ] = {0};
+
+		//Write a new string based on the data that is there.
+		snprintf( sqlQuery, 2048, items->sql, items->tableName );
+
+		//Open database every time.
 		if ( !sq_open( &db, TEST_DB_NAME ) ) {
 			fprintf( stderr, "%s\n", db.errmsg );
 			break;	
 		}
-
-		if ( !items->sq ) {
-			if ( !sq_exec( &db, items->sql ) ) {
+	
+		//Either execute or insert depending on data in the test 
+		if ( items->sq->sentinel ) {
+			if ( !sq_exec( &db, sqlQuery ) ) {
 				fprintf( stderr, "%s\n", db.errmsg );
 				break;	
 			}
 		}
 		else {
-			if ( !sq_insert( &db, items->sql, items->sq ) ) {
+			if ( !sq_insert( &db, sqlQuery, items->sq ) ) {
 				fprintf( stderr, "%s\n", db.errmsg );
 				break;	
 			}
 		}
-		
+
+		//0. Reset buffer for SQL statement.
+		memset( sqlQuery, 0, 2048 );
+		snprintf( sqlQuery, 2048, "SELECT * FROM %s", items->tableName );
+
+		//1. Do a select that would pull back what I expect 
+		if ( !sq_save( &db, sqlQuery, "results", NULL ) ) {
+			fprintf( stderr, "%s\n", db.errmsg );
+			break;	
+		}
+
+		//2. Dump table to a big string
+		while ( 0 ) { 
+			;
+		}
+
+		//3. Use memcmp to compare what came back.
+		if ( memcmp( (int*)1, (int*)1, 1 ) == 0 )
+			0;
+		else {
+
+		}
+
+		//Close the database each time.	
 		if ( !sq_close( &db ) ) {
 			fprintf( stderr, "%s\n", db.errmsg );
 			break;	
@@ -152,11 +225,14 @@ TEST( sqrooge )
 		items++;	
 	}
 
+#if 0
+	//Delete should always happen after the fact...
 	//Always delete whatever file was created.
 	if ( unlink( TEST_DB_NAME ) == -1 ) {
 		fprintf( stderr, "%s\n", strerror( errno ) );
 		return 0;
 	}
+#endif
 	return 0;
 }
 

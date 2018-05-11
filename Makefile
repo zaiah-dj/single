@@ -5,9 +5,9 @@ PREFIX = /usr/local
 MANPREFIX = ${PREFIX}/share/man
 DFLAGS = -DNW_VERBOSE
 PICTYPE=-fPIC
-#CFLAGS = -g -Wall -Wno-unused -Werror -std=c99 $(COMPLAIN) -fsanitize=address -fsanitize-undefined-trap-on-error  -DSQLITE3_PATH="\"vendor/sqlite3.h\""
+#CFLAGS = -g -Wall -Wno-unused -Werror -std=c99 $(COMPLAIN) -fsanitize=address -fsanitize-undefined-trap-on-error  -DSQLITE3_PATH="\"vendor/sqlite3.h\"" -DERRLNO_H
 #CC=clang
-CFLAGS = -g -Wall -Wno-unused -Werror -std=c99 $(COMPLAIN) -DSQLITE3_PATH="\"vendor/sqlite3.h\"" #-DDEBUG_H
+CFLAGS = -g -Wall -Wno-unused -Werror -std=c99 $(COMPLAIN) -DSQLITE3_PATH="\"vendor/sqlite3.h\"" -DERRLNO_H -DDEBUG_H
 CC=gcc
 
 #if 0
@@ -32,6 +32,10 @@ PKGFILE = $(ARCHIVEDIR)/$(NAME).$(VERSION).tar.${ARCHIVEFMT}
 main: build 
 main:
 	@printf ''>/dev/null	
+
+#Exec
+exec:
+	valgrind ./single-test --sqrooge 2>&1 | less
 
 #Create a new templating engine.
 newte:

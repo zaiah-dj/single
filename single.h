@@ -29,7 +29,9 @@
  *  serr( ) - Handles message output and returns a status using the appropriate struct member.  ( e.g. assuming I've initialized Buffer *b somewhere, serr() will use b->errmsg to hold the error string.
  *  perr( ) - Will use a defined program name to report errors and error messages.
  *
- *
+ *  Line numbers can also be compiled in and out when bugs are tricky.  
+ *  Admittedly, this is mostly for my own purposes, but it can be useful outside of testing.
+ *  Use -DERRLNO_H to enable line number and function macros as part of error messages.
  *
  * */
 //Start with includes, not all modules need all headers
@@ -136,33 +138,73 @@
 	fprintf(stderr, "Size of %-22s: %ld\n", #k, sizeof(k));
 
 #ifndef ERR_H
+	//TODO: There isn't a great way to solve the vararg problem.  
+	//I've pasted a test program below to illustrate how
+	//difficult it can get to do this right.
+	#if 0
+			#include <stdio.h>
+
+			#define VA(...) \
+				fprintf( stderr, "va args is '%s' long\n", ##__VA_ARGS__ ) 
+
+			int main (int argc, char *argv[] ) {
+				//how long is va args here?
+				VA( "aasdfsadf", "cbcdfef" );
+				//how about here?
+				VA( " " );
+				//and here?
+				VA( NULL );
+				//how about here?
+				VA( );
+			}
+	#endif
+
+	//TODO: the option to add \n should be somewhere too
  #ifndef ERRV_H
 	#define ERRV_LENGTH 2048
  #endif
 
-	//Static error handling (like errno)
- #if 0
-  #define err(n, ...) (( fprintf(stderr, __VA_ARGS__) ? 0 : 0 ) || fprintf( stderr, "\n" ) ? n : n)
-  #define berr(n, c) fprintf(stderr, "%s\n", __errors[ c ] ) ? n : n
-  #define perr(n, ...) ( fprintf(stderr, "%s: ", PROGRAM_NAME ) ? 0 : 0 ) || (( fprintf(stderr, __VA_ARGS__ ) ? 0 : 0 ) || fprintf( stderr, "\n" ) ? n : n )
- #endif
+	//TODO: I can compile with line numbers using the following #define, but
+	//I may also want to compile without char errmsg[] in the library's structs.
+	//I say all this to say that the same logic below will be needed in that conditional as well.
+ #ifdef ERRLNO_H
+  #define err(n, ...) ( \
+		( fprintf( stderr, __VA_ARGS__ ) ? 0 : 0 ) || \
+		(	fprintf( stderr, "\n" ) ? n : n ) \
+	)
 
- #if 0
-  #define err(n, ...) (( fprintf(stderr, __VA_ARGS__) ? 0 : 0 ) || fprintf( stderr, "\n" ) ? n : n)
-  #define berr(n, c) fprintf(stderr, "%s\n", __errors[ c ] ) ? n : n
-  #define perr(n, ...) ( fprintf(stderr, "%s: ", PROGRAM_NAME ) ? 0 : 0 ) || (( fprintf(stderr, __VA_ARGS__ ) ? 0 : 0 ) || fprintf( stderr, "\n" ) ? n : n )
- #endif
+	//Uses s->error as a temporary hold for current buffer length.
+  #define serr(n, s, ...) ( \
+		((s->error = snprintf(s->errmsg, ERRV_LENGTH - 1, "[%s:%d, %s] ", __FILE__, __LINE__, __func__ )) ? 0 : 0 ) || \
+		( snprintf(&s->errmsg[ s->error ], ERRV_LENGTH - 1, __SingleLibErrors[ n ], __VA_ARGS__ ) ? 0 : 0 ) || \
+		((s->error = n) ? 0 : 0 ) \
+	)
 
-	//the option to add \n should be somewhere too
- #if 1
+  #define perr(n, c) ( \
+		( fprintf(stderr, "%s", PROGRAM_NAME) ? 0 : 0 ) || \
+		( fprintf(stderr, "%s\n", __SingleLibErrors[ c ] ) ? n : n ) \
+	)
+
+ #else
+  #define err(n, ...) ( \
+		( fprintf( stderr, __VA_ARGS__ ) ? 0 : 0 ) || \
+		(	fprintf( stderr, "\n" ) ? n : n ) \
+	)
+
+  #define serr(n, s, ...) ( \
+		((s->error = n) ? 0 : 0 ) || \
+		( snprintf(s->errmsg, ERRV_LENGTH - 1, __SingleLibErrors[ n ], __VA_ARGS__ ) ? n : n ) \
+	)
+
+  #define perr(n, c) ( \
+		( fprintf(stderr, "%s", PROGRAM_NAME) ? 0 : 0 ) || \
+		( fprintf(stderr, "%s\n", __SingleLibErrors[ c ] ) ? n : n ) \
+	)
+#if 0
   #define err(n, ...) (( fprintf(stderr, __VA_ARGS__) ? 0 : 0 ) || fprintf( stderr, "\n" ) ? n : n)
   #define serr(n, s, ...) ((s->error = n ) ? 0 : 0 ) || ( snprintf(s->errmsg, ERRV_LENGTH - 1, __SingleLibErrors[ n ], __VA_ARGS__ ) ? n : n ) 
- #endif
-
- #if 0
-  #define err(n, ...) 0
-  #define berr(n, ...) 0
   #define perr(n, c) ( fprintf(stderr, "%s", PROGRAM_NAME) ? 0 : 0 ) || ( fprintf(stderr, "%s\n", __SingleLibErrors[ c ] ) ? n : n )
+#endif
  #endif
 #endif
 
@@ -192,6 +234,10 @@
   write( 2, d, len ); \
   write( 2, "'", 1 ); \
   write( 2, "\n", 1 )
+
+ #define VPRINT(...) \
+	fprintf( stderr, "[%s:%d @%s]", __FILE__, __LINE__, __func__ ); \
+	fprintf( stderr, __VA_ARGS__ )
 #else
   #define PATH( a )
 	#define SUSP(...)
@@ -199,6 +245,7 @@
   #define SHOWDATA(...)
 	#define SHOWBDATA(a,b, ...) 
 	#define ENCAPS( d, len )
+	#define VPRINT(...)
 #endif
 
 
@@ -1020,6 +1067,8 @@ enum {
 	SQL_JUICY,
 };
 
+#define SQ_TYPE(n) \
+	( n >= SQ_INT && n <= SQ_DTE ) ? sq_names[ n ] : "unknown"
 
 #if 0
 static const char *sq_names[] = {
