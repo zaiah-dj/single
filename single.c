@@ -3518,45 +3518,70 @@ int sq_ex ( Database *gb, const char *sql, const char *name, const SQWrite *w, i
 	//Trim the received query
 	pq = ( char * )trim( (uint8_t *)sql, " \t\n\r", strlen( sql ), &len );			
 
+VPRINT( "%c\n", *pq );
+
+	//Prepare
+	if ( (rc = sqlite3_prepare_v2(gb->db, sql, -1, &gb->stmt, 0)) != SQLITE_OK )
+		return serr( ERR_DB_PREPARE_STMT, gb, sqlite3_errmsg(gb->db) );
+
 	//Run any other statement
+
 	if ( !memchr( "sS", *pq, 2 ) ) 
 	{
+		VPRINT( "%s\n", "EXECUTE OTHER THAN SELECT" );
 		stack = sq_inserters[0];
 
 		//Bind any arguments
-		if ( w ) 
-		{
-			while ( !w->sentinel ) 
-			{
-				VPRINT( "Attempting to bind argument of type '%s' at %d to statement %s\n", 
-					SQ_TYPE(w->type), pos, sql );
+		while ( w && !w->sentinel ) {
+			VPRINT( "Attempting to bind argument of type '%s' at %d to statement %s\n", 
+				SQ_TYPE(w->type), pos, sql );
 
-				if ( !stack[w->type].fp (gb->stmt, pos, w) )
-					return serr( ERR_DB_BIND_VALUE, gb, pos, sql ); 
-				
-				w++, pos++;
-			}
+			if ( !stack[w->type].fp (gb->stmt, pos, w) )
+				return serr( ERR_DB_BIND_VALUE, gb, pos, sql );
+			
+			w++, pos++;
 		}
-	}
-	//Run selects
-	else
-	{
-		//Set the hash table's source to point the buffer's data
-		char *columnNames[127] = { NULL };
-		int columnInts[127]    = { 0 };
-		int pos         = 0,
-		    columnCount = 0,
-		    bfw         = 0, 
-		    a           = 0, 
-		    title       = 0; 
-		uint8_t *src    = NULL;
-		Parser q = { .words={
-			{ (char *)sqlite3_E },
-			{ (char *)sqlite3_C },
-			{ (char *)sqlite3_N },
-			{ NULL }
-		}};
 
+		//Step and execute
+		if ( (rc = sqlite3_step(gb->stmt)) != SQLITE_DONE )
+			return serr( ERR_DB_STEP, gb, NULL );
+
+		//Finalize statement
+		if (gb->stmt) {
+			sqlite3_finalize(gb->stmt);
+			gb->stmt = NULL;
+		}
+
+		//Everything was good, we just did nothing.
+		return 1;
+	}
+
+	//Set the hash table's source to point the buffer's data
+	char *columnNames[127] = { NULL };
+	int columnInts[127]    = { 0 },
+			columnCount = 0,
+			bfw         = 0, 
+			a           = 0, 
+			title       = 0; 
+	pos         = 0;
+	uint8_t *src    = NULL;
+	Parser q = { .words={
+		{ (char *)sqlite3_E },
+		{ (char *)sqlite3_C },
+		{ (char *)sqlite3_N },
+		{ NULL }
+	}};
+
+	//Start reading
+	if ( !sq_reader_start ( (Database *)gb, pq, !w ? nullw : w ) )
+		return serr( ERR_DB_RESULT_INIT, gb, NULL );
+
+	//Unless there are a ton of columns, we should be fine with this.
+	if (( columnCount = sqlite3_column_count( gb->stmt )) > 127 )
+		return serr( ERR_DB_COLUMN_MAX, gb, NULL );
+
+	if ( save ) 
+	{
 		//Initialize buffers and tables for result set
 		if ( !bf_init( &gb->header, NULL, 1 ) || !bf_init( &gb->results, NULL, 1 ) )
 			return serr( ERR_DB_RESULT_INIT, gb, NULL );
@@ -3564,19 +3589,11 @@ int sq_ex ( Database *gb, const char *sql, const char *name, const SQWrite *w, i
 		//Initialize a Table for result viewing 
 		if ( !lt_init( &gb->kvt, NULL, 1024 ) )
 			return serr( ERR_DB_RESULT_INIT, gb, NULL );
-	
-		//Start reading
-		if ( !sq_reader_start ( (Database *)gb, pq, !w ? nullw : w ) )
-			return serr( ERR_DB_RESULT_INIT, gb, NULL );
-
-		//Unless there are a ton of columns, we should be fine with this.
-		if (( columnCount = sqlite3_column_count( gb->stmt )) > 127 )
-			return serr( ERR_DB_COLUMN_MAX, gb, NULL );
 		
 		//Add each of the keys to the top of the table
 		for (int len=0, i=0; i < columnCount; i++ ) {
 			uint8_t *name = (uint8_t *)sqlite3_column_name(gb->stmt, i);
-	
+
 			//Fail if we couldn't add a column.
 			if ( !bf_append( &gb->header, name, ( len = strlen( (char *)name ) )) )
 				return serr( ERR_DB_COLUMN_ADD, gb, name );
@@ -3590,7 +3607,7 @@ int sq_ex ( Database *gb, const char *sql, const char *name, const SQWrite *w, i
 
 		//Set the column names?
 		for (int i=0; i < columnCount; i++ ) {
-			columnNames[i] = (char *)&(&db->header)->buffer[ columnInts[i] ];	
+			columnNames[i] = (char *)&(&gb->header)->buffer[ columnInts[i] ];	
 		}
 
 		//This expects just one file
@@ -3613,12 +3630,64 @@ int sq_ex ( Database *gb, const char *sql, const char *name, const SQWrite *w, i
 					return serr( ERR_DB_ADD_VALUE, gb, NULL );
 
 				//Add terminator to buffer
-				if ( !bf_append( &db->results, c, sqlite3_L ) ) 
+				if ( !bf_append( &gb->results, c, sqlite3_L ) ) 
 					return serr( ERR_DB_ADD_TERM, gb, (i == (dc - 1)) ? "row" : "column" ); 
 			}
 		}
+
+		//Mark the end
+		bf_append( &gb->results, (uint8_t *)"\0", 1 );
+		src = bf_data( &gb->results );
+		bfw = bf_written( &gb->results );
+		memset( &src[ bfw - ( sqlite3_L + 1 ) ], '3', sqlite3_L );
+
+		//Set everything needed for parsing
+		pr_prepare( &q );
+
+		//Add a query name (free it later)
+		if ( name ) 
+		{
+			gb->qname = malloc( strlen( name ) + 1 );
+			memset( gb->qname, 0, strlen( name ) + 1 );
+			memcpy( gb->qname, name, strlen( name ) );
+			//gb->qname[ strlen( name ) ] = '\0';
+			lt_addblobkey( &gb->kvt, (uint8_t *)gb->qname, strlen( name ) );
+			lt_descend( &gb->kvt );
+		}
+
+		lt_addintkey( &gb->kvt, title );
+		lt_descend( &gb->kvt );
+	//}
+		
+		//Loop through all and put them in a malloc'd area.
+		while ( pr_next( &q, src, bfw ) )
+		{
+			lt_addblobkey( &gb->kvt, (uint8_t *)columnNames[a], strlen( columnNames[a] ));
+			lt_addblobvalue( &gb->kvt, &src[ q.prev ], q.size );
+			lt_finalize ( &gb->kvt );
+			( a == columnCount - 1 ) ? a = 0 : a++;
+
+			if ( !q.word )
+				break;
+			else if ( *q.word == '3' )
+			{
+				lt_ascend( &gb->kvt );
+				break;
+			}
+			else if ( *q.word == '{' ) 
+			{
+				lt_ascend( &gb->kvt );
+				lt_addintkey( &gb->kvt, ++title );
+				lt_descend( &gb->kvt );
+			}
+		}
+
+		if ( name ) {
+			lt_ascend( &gb->kvt );
+		}
+
+		lt_lock( &gb->kvt );
 	}
-	
 	return 0;
 }
 
@@ -3955,6 +4024,8 @@ int sq_save (Database *db, const char *query, const char *name, const SQWrite *w
 			fprintf( stderr, "sql_wrap: Failed to execute complex query.\n" );
 			return 0;
 		}
+
+		
 	}
 	//Run selects
 	else

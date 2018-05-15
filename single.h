@@ -732,6 +732,8 @@ enum
 	ERR_DB_COLUMN_MAX,
 	ERR_DB_COLUMN_ADD,
 	ERR_DB_ZERO_TERM,
+	ERR_DB_ADD_TERM,
+	ERR_DB_ADD_VALUE,
 	ERR_DB_RESULT_INIT,
 	ERR_DB_PREPARE_STMT,
 	ERR_DB_BIND_VALUE,
@@ -1502,6 +1504,7 @@ Buffer *render_rendered (Render *r);
 _Bool sq_init (Database *);
 _Bool sq_open (Database *, const char *filename) ;
 _Bool sq_exec (Database *, const char *sql) ;
+int sq_ex ( Database *gb, const char *sql, const char *name, const SQWrite *w, int save );
 _Bool sq_insert (Database *, const char *sql, const SQWrite *w);
 _Bool sq_reader_start (Database *, const char *sql, const SQWrite *w) ;
 _Bool sq_reader_continue (Database *) ;

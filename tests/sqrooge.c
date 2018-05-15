@@ -80,6 +80,7 @@ struct SqItem {
  ,.sq   = { { .sentinel = 1 } }
 	},
 
+#if 0
 	//inserts via the SQWrite struct should work ith both numeric and alpha arguments
 	{ 
 	.testName = "insert via structure"
@@ -98,7 +99,6 @@ struct SqItem {
 		}
 	},
 
-#if 0
 	{ 
 	.name = "create sequential"
  ,.sql = ""
@@ -182,15 +182,17 @@ TEST( sqrooge )
 	
 		//Either execute or insert depending on data in the test 
 		if ( items->sq->sentinel ) {
-			if ( !sq_exec( &db, sqlQuery ) ) {
+			VPRINT( "EXECUTE TEST" );
+			if ( !sq_ex( &db, sqlQuery, NULL, NULL, 0 ) ) {
 				fprintf( stderr, "%s\n", db.errmsg );
 				break;	
 			}
 		}
 		else {
-			if ( !sq_insert( &db, sqlQuery, items->sq ) ) {
+			//if ( !sq_insert( &db, sqlQuery, items->sq ) ) {
+			if ( !sq_ex( &db, sqlQuery, "inserted", items->sq, 0 ) ) {
 				fprintf( stderr, "%s\n", db.errmsg );
-				break;	
+				break;
 			}
 		}
 
@@ -199,7 +201,8 @@ TEST( sqrooge )
 		snprintf( sqlQuery, 2048, "SELECT * FROM %s", items->tableName );
 
 		//1. Do a select that would pull back what I expect 
-		if ( !sq_save( &db, sqlQuery, "results", NULL ) ) {
+		VPRINT( "EXECUTE MEMCMP CHECK" );
+		if ( !sq_ex( &db, sqlQuery, "results", NULL, 1 ) ) {
 			fprintf( stderr, "%s\n", db.errmsg );
 			break;	
 		}
