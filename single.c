@@ -24,6 +24,8 @@ Package a way to build tests here.
 
 static const unsigned int lt_hash = 31;
 
+unsigned int __lt_int = 0;
+
 #ifndef ERR_H
 static const char *__SingleLibErrors[] = 
 {
@@ -61,7 +63,7 @@ static const char *__SingleLibErrors[] =
   [ERR_DB_ADD_VALUE]    = "Failed to add value to result set." ,
   [ERR_DB_ADD_TERM]     = "Failed to add %s terminator to result set." ,
   [ERR_DB_RESULT_INIT]  = "Failed to initialized result set." ,
-  [ERR_DB_PREPARE_STMT] = "Failed to prepare database statement: %s" ,
+  [ERR_DB_PREPARE_STMT] = "Failed to prepare database statement: %s. %s." ,
   [ERR_DB_BIND_VALUE]   = "Failed to bind value at position %d in statement '%s'" ,
   [ERR_DB_STEP]         = "Failed to execute statement." ,
   [ERR_DB_BIND_LONG]    = "Error binding SQL %s at position %d: %s." ,
@@ -1466,7 +1468,7 @@ const char *lt_strerror (Table *t)
 //Initiailizes a table data structure
 Table *lt_init (Table *t, LiteKv *k, int size) 
 {
-	SHOWDATA( "\n\tWorking with root table %p\n", t );
+	SHOWDATA( "Working with root table %p\n", t );
 
 	//Calculate optimal modulus for hashing
 	if ( size <= 63 )
@@ -2183,6 +2185,7 @@ void lt_printt (Table *t)
 }
 
 
+#if 0
 //Dump a table
 void lt_dump (Table *t) 
 {
@@ -2198,7 +2201,37 @@ void lt_dump (Table *t)
 		level += ( vt == LITE_NUL ) ? -1 : (vt == LITE_TBL) ? 1 : 0;
 	}
 }
+#endif
 
+
+//Dump all values in a table.
+int __lt_dump ( LiteKv *kv, int i, void *p )
+{
+	VPRINT( "kv at __lt_dump: %p", kv );
+	LiteType vt = kv->value.type;
+	int *level = (int *)p;
+	fprintf ( stderr, "[%-5d] %s", i, &"\t\t\t\t\t\t\t\t\t\t"[ 10 - *level ]);
+	lt_printindex( kv, *level );
+	*level += ( vt == LITE_NUL ) ? -1 : (vt == LITE_TBL) ? 1 : 0;
+	return 1;
+}
+
+
+//Write a real simple function to iterate through everything
+//void lt_complex_exec (Table *t, int (*fp)( LiteType t, LiteValue *k, LiteValue *v, int i, void *p ) )
+int lt_complex_exec (Table *t, void *p, int (*fp)( LiteKv *kv, int i, void *p ) )
+{
+	int level = 0;	
+
+	//Loop through each index
+	for (int i=0, status=0; i <= t->index; i++) {
+		//VPRINT( "kv at __lt_dump: %p", (t->head + i ));
+		if ( (status = fp( (t->head + i), i, p )) == 0 ) {
+			return 0;
+		}
+	}
+	return 1;
+}
 
 //Print a set of values at a particular index
 static void lt_printindex (LiteKv *tt, int ind)
@@ -3497,13 +3530,15 @@ void *sq_destroy( void *p )
 
 //there should be a max of two SQL query execution functions
 //but really there should just be one.
-int sq_ex ( Database *gb, const char *sql, const char *name, const SQWrite *w, int save )
+int sq_ex ( Database *gb, const char *sql, const char *name, const SQWrite *w, int retBlankTable )
 {
 	int len = 0;
 	int rc = 0; 
 	int pos = 1;
 	const char *pq = NULL;
 	SQInsert *stack = NULL;
+	struct { char *names[127]; int count, ints[127]; } col = { 0 };
+	
 	VPRINT( "Database: %p, SQL stmt: %s, name: %s, Writer: %p\n", 
 		(void *)gb, sql, name, (void *)w );
 
@@ -3516,12 +3551,18 @@ int sq_ex ( Database *gb, const char *sql, const char *name, const SQWrite *w, i
 		return serr( ERR_DB_UNINITIALIZED, gb, NULL );	
 
 	//Trim the received query
-	pq = ( char * )trim( (uint8_t *)sql, " \t\n\r", strlen( sql ), &len );			
+	pq = ( char * )trim( (uint8_t *)sql, " \t\n\r", strlen( sql ), &len );
 
 	//Run any other statement
 	if ( !memchr( "sS", *pq, 2 ) ) 
 	{
 		stack = sq_inserters[0];
+
+		if ((rc = sqlite3_prepare_v2(gb->db, pq, -1, &gb->stmt, 0)) != SQLITE_OK)
+		{
+			sq_free( gb );
+			return serr( ERR_DB_PREPARE_STMT, gb, sqlite3_errmsg( gb->db ) );
+		}
 
 		//Bind any arguments
 		if ( w ) 
@@ -3537,89 +3578,135 @@ int sq_ex ( Database *gb, const char *sql, const char *name, const SQWrite *w, i
 				w++, pos++;
 			}
 		}
+
+		return 1;
 	}
-	//Run selects
-	else
-	{
-		//Set the hash table's source to point the buffer's data
-		char *columnNames[127] = { NULL };
-		int columnInts[127]    = { 0 };
-		int pos         = 0,
-		    columnCount = 0,
-		    bfw         = 0, 
-		    a           = 0, 
-		    title       = 0; 
-		uint8_t *src    = NULL;
-		Parser q = { .words={
-			{ (char *)sqlite3_E },
-			{ (char *)sqlite3_C },
-			{ (char *)sqlite3_N },
-			{ NULL }
-		}};
 
-		//Initialize buffers and tables for result set
-		if ( !bf_init( &gb->header, NULL, 1 ) || !bf_init( &gb->results, NULL, 1 ) )
-			return serr( ERR_DB_RESULT_INIT, gb, NULL );
+	//Run other queries and save if asked
+	//Set the hash table's source to point the buffer's data
+	uint8_t *src    = NULL;
+	int bfw  = 0, 
+			a    = 0, 
+			title= 0;
+	Parser q = { .words={
+		{ (char *)sqlite3_E },
+		{ (char *)sqlite3_C },
+		{ (char *)sqlite3_N },
+		{ NULL }
+	}};
 
-		//Initialize a Table for result viewing 
-		if ( !lt_init( &gb->kvt, NULL, 1024 ) )
-			return serr( ERR_DB_RESULT_INIT, gb, NULL );
+	//Initialize buffers and tables for result set
+	if ( !bf_init( &gb->header, NULL, 1 ) || !bf_init( &gb->results, NULL, 1 ) )
+		return serr( ERR_DB_RESULT_INIT, gb, NULL );
+
+	//Initialize a Table for result viewing 
+	if ( !lt_init( &gb->kvt, NULL, 1024 ) )
+		return serr( ERR_DB_RESULT_INIT, gb, NULL );
+
+	//Start reading
+	if ( !sq_reader_start ( (Database *)gb, pq, !w ? nullw : w ) )
+		return serr( ERR_DB_RESULT_INIT, gb, NULL );
+
+	//Unless there are a ton of columns, we should be fine with this.
+	if (( col.count = sqlite3_column_count( gb->stmt )) > 127 )
+		return serr( ERR_DB_COLUMN_MAX, gb, NULL );
 	
-		//Start reading
-		if ( !sq_reader_start ( (Database *)gb, pq, !w ? nullw : w ) )
-			return serr( ERR_DB_RESULT_INIT, gb, NULL );
+	//Add each of the keys to the top of the table
+	for (int len=0, i=0; i < col.count; i++ ) {
+		uint8_t *name = (uint8_t *)sqlite3_column_name(gb->stmt, i);
 
-		//Unless there are a ton of columns, we should be fine with this.
-		if (( columnCount = sqlite3_column_count( gb->stmt )) > 127 )
-			return serr( ERR_DB_COLUMN_MAX, gb, NULL );
-		
-		//Add each of the keys to the top of the table
-		for (int len=0, i=0; i < columnCount; i++ ) {
-			uint8_t *name = (uint8_t *)sqlite3_column_name(gb->stmt, i);
-	
-			//Fail if we couldn't add a column.
-			if ( !bf_append( &gb->header, name, ( len = strlen( (char *)name ) )) )
-				return serr( ERR_DB_COLUMN_ADD, gb, name );
+		//Fail if we couldn't add a column.
+		if ( !bf_append( &gb->header, name, ( len = strlen( (char *)name ) )) )
+			return serr( ERR_DB_COLUMN_ADD, gb, name );
 
-			if ( !bf_append( &gb->header, (uint8_t *)"\0", 1 ) )
-				return serr( ERR_DB_ZERO_TERM, gb, NULL );
+		if ( !bf_append( &gb->header, (uint8_t *)"\0", 1 ) )
+			return serr( ERR_DB_ZERO_TERM, gb, NULL );
 
-			columnInts[ i ] = pos;
-			pos += len + 1;
-		}
+		col.ints[ i ] = pos;
+		pos += len + 1;
+	}
 
-		//Set the column names?
-		for (int i=0; i < columnCount; i++ ) {
-			columnNames[i] = (char *)&(&db->header)->buffer[ columnInts[i] ];	
-		}
+	//Set the column names?
+	for (int i=0; i < col.count; i++ )
+		col.names[i] = (char *)&(&gb->header)->buffer[ col.ints[i] ];	
 
-		//This expects just one file
-		for ( int dc; sq_reader_continue( (Database *)gb ) ; )
+	//This expects just one file
+	//VPRINT( "for (int dc; sq_reader_continue(...) ):READ" );getchar();
+	for ( int dc; sq_reader_continue( (Database *)gb ) ; ) {
+		//If there were no results, no need to save anything, but it's not a failure
+		if ( !( dc = sqlite3_data_count(gb->stmt) ) )
+			return 1; //lt_free( &db->header ); sq_close( (Database *)gb );
+
+		//Using a hash table is such a good call
+		for (int i=0; i < dc; i++ )
 		{
-			//If there were no results, no need to save anything, but it's not a failure
-			if ( !( dc = sqlite3_data_count(gb->stmt) ) )
-				return 1; //lt_free( &db->header ); sq_close( (Database *)gb );
+			//All of the templates Could go together here if you were so inclined
+			int len    = sqlite3_column_bytes(gb->stmt, i);
+			uint8_t *b = (uint8_t *)sqlite3_column_blob(gb->stmt, i); 
+			uint8_t *c = (i == (dc - 1)) ? (uint8_t *)sqlite3_N : (uint8_t *)sqlite3_C;
 
-			//Using a hash table is such a good call
-			for (int len=0, i=0; i < dc; i++ )
-			{
-				//All of the templates could go together here if you were so inclined
-				//len    = sqlite3_column_bytes(db->stmt, i);
-				uint8_t *b = (uint8_t *)sqlite3_column_blob(gb->stmt, i); 
-				uint8_t *c = (i == (dc - 1)) ? (uint8_t *)sqlite3_N : (uint8_t *)sqlite3_C;
+			//Add value to buffer
+			if ( !bf_append( &gb->results, b, len) )
+				return serr( ERR_DB_ADD_VALUE, gb, NULL );
 
-				//Add value to buffer
-				if ( !bf_append( &gb->results, b, sqlite3_column_bytes(gb->stmt, i)) )
-					return serr( ERR_DB_ADD_VALUE, gb, NULL );
-
-				//Add terminator to buffer
-				if ( !bf_append( &db->results, c, sqlite3_L ) ) 
-					return serr( ERR_DB_ADD_TERM, gb, (i == (dc - 1)) ? "row" : "column" ); 
-			}
+			//Add terminator to buffer
+			if ( !bf_append( &gb->results, c, sqlite3_L ) ) 
+				return serr( ERR_DB_ADD_TERM, gb, (i == (dc - 1)) ? "row" : "column" );
 		}
 	}
-	
-	return 0;
+
+	//Check results to see if anything has been written
+	if ( !bf_written( &gb->results ) && retBlankTable )
+		return 1;
+
+	//Mark the end
+	bf_append( &gb->results, (uint8_t *)"\0", 1 );
+	src = bf_data( &gb->results );
+	bfw = bf_written( &gb->results );
+	memset( &src[ bfw - ( sqlite3_L + 1 ) ], '3', sqlite3_L );
+
+	//Set everything needed for parsing
+	pr_prepare( &q );
+
+	//Add a query name (free it later)
+	if ( name ) {
+		gb->qname = malloc( strlen( name ) + 1 );
+		memset( gb->qname, 0, strlen( name ) + 1 );
+		memcpy( gb->qname, name, strlen( name ) );
+		lt_addblobkey( &gb->kvt, (uint8_t *)gb->qname, strlen( name ) );
+		lt_descend( &gb->kvt );
+	}
+
+	//TODO: Why is this run?
+	lt_addintkey( &gb->kvt, title );
+	lt_descend( &gb->kvt );
+
+	//Loop through all and put them in a malloc'd area.
+	while ( pr_next( &q, src, bfw ) ) {
+		lt_addblobkey( &gb->kvt, (uint8_t *)col.names[a], strlen( col.names[a] ));
+		lt_addblobvalue( &gb->kvt, &src[ q.prev ], q.size );
+		lt_finalize ( &gb->kvt );
+		( a == col.count - 1 ) ? a = 0 : a++;
+
+		if ( !q.word )
+			break;
+		else if ( *q.word == '3' ) {
+			lt_ascend( &gb->kvt );
+			break;
+		}
+		else if ( *q.word == '{' ) {
+			lt_ascend( &gb->kvt );
+			lt_addintkey( &gb->kvt, ++title );
+			lt_descend( &gb->kvt );
+		}
+	}
+
+	if ( name ) {
+		lt_ascend( &gb->kvt );
+	}
+
+	lt_lock( &gb->kvt );
+	return 1;
 }
 
 
@@ -4113,7 +4200,6 @@ int sq_save (Database *db, const char *query, const char *name, const SQWrite *w
 	}
 
 	lt_lock( &db->kvt );
-	//lt_printall ( &db->kvt );
 	return 1;	
 }
 #endif

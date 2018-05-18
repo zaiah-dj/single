@@ -3,6 +3,8 @@
 #include "harness-test-data.c"
 #include <stdlib.h>
 
+#define BUFLEN 8192 
+
 //#define BUFFER_H
 //#define JSON_H
 #define FILES_H 
@@ -19,25 +21,25 @@
 /*Pretty print left side values*/
 #define LPRINTF( ... ) \
 	memset( buf, 0, sizeof( buf ) ) ; \
-	snprintf( buf, 2048, __VA_ARGS__ ) ; \
+	snprintf( buf, BUFLEN, __VA_ARGS__ ) ; \
 	fprintf( stderr, "%-60s", buf )
 
 /*Pretty print right side values*/
 #define RPRINTF( ... ) \
 	memset( buf, 0, sizeof( buf ) ) ; \
-	snprintf( buf, 2048, __VA_ARGS__ ) ; \
+	snprintf( buf, BUFLEN, __VA_ARGS__ ) ; \
 	fprintf( stderr, "%10s\n", buf )
 
 /*Pretty print headers for tests */
 #define HPRINTF( ... ) \
 	memset( buf, 0, sizeof( buf ) ) ; \
-	snprintf( buf, 2048, __VA_ARGS__ ) ; \
+	snprintf( buf, BUFLEN, __VA_ARGS__ ) ; \
 	fprintf( stderr, "%s\n====================\n", buf )
 
 /*Pretty print error messages*/
 #define EPRINTF( ... ) \
 	memset( buf, 0, sizeof( buf ) ) ; \
-	snprintf( buf, 2048, __VA_ARGS__ ) ; \
+	snprintf( buf, BUFLEN, __VA_ARGS__ ) ; \
 	fprintf( stderr, "ERROR: %s\n", buf )
 
 /*Test definition so I don't have to remember the declaration for each new test*/
@@ -112,10 +114,10 @@
 
 
 /*Buffer for formatted text*/
-static char buf[ 2048 ];
+static char buf[ BUFLEN ];
 
 /*Buffer for filenames*/
-static char filename[ 2048 ];
+static char filename[ BUFLEN ];
 
 /*Stauts of test calls*/
 static int status;

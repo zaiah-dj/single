@@ -2,6 +2,11 @@
 
 #define TEST_DB_NAME "testDbName.db"
 
+static const char *_sqlite3_C = "}}}}}}}}}";
+static const char *_sqlite3_N = "{{{{{{{{{";
+static const char *_sqlite3_E = "333333333";
+static const int   _sqlite3_L = 9;
+
 // a binary file
 unsigned char bs_jpg[] = {
   0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01,
@@ -59,6 +64,7 @@ struct SqItem {
 	const char *testName; 
 	const char *tableName;
 	const char *sql;
+	const char *cmp;
 	SQWrite sq[10];
 	int sentinel;
 } sq_items[] = 
@@ -66,6 +72,7 @@ struct SqItem {
 	{ 
 	.testName = "create"
  ,.tableName = "info"
+ ,.cmp = NULL 
  ,.sql = ""
 		"CREATE TABLE %s ( "
 		" fname  TEXT, "
@@ -84,6 +91,7 @@ struct SqItem {
 	{ 
 	.testName = "insert via structure"
  ,.tableName = "info"
+ ,.cmp = NULL 
  ,.sql = "INSERT INTO %s VALUES ( ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8 )"
  ,.sq  = {
 			 { SQ_TXT, .v.c = "Antonio" } 
@@ -98,6 +106,14 @@ struct SqItem {
 		}
 	},
 
+	//Select from the table we just created (should have just one row...)
+	{ 
+	.testName = "select test"
+ ,.tableName = "info"
+ ,.cmp = "Antonio|Collins|"
+ ,.sql = "SELECT fname, lname FROM %s"
+ ,.sq   = { { .sentinel = 1 } }
+	},
 #if 0
 	{ 
 	.name = "create sequential"
@@ -156,25 +172,59 @@ struct SqItem {
 	{ .sentinel = 1 }
 };
 
+
+int lt_makestr ( LiteKv *kv, int i, void *p )
+{
+	Buffer *b = ( Buffer * )p;
+	int w = bf_written( b );
+	//need a way to differentiate between new rows...	
+	switch ( kv->value.type ) {
+		case LITE_INT:	
+		case LITE_FLT:	
+			break;
+		case LITE_TXT:	
+			bf_append( b, kv->value.v.vblob.blob, kv->value.v.vblob.size );
+			bf_append( b, (uint8_t *)"|", 1 );
+			break;
+		case LITE_BLB:	
+			bf_append( b, kv->value.v.vblob.blob, kv->value.v.vblob.size );
+			bf_append( b, (uint8_t *)"|", 1 );
+			break;
+		case LITE_NUL:	
+		case LITE_USR:	
+		case LITE_TBL:	
+		case LITE_TRM:	
+		case LITE_NOD:	
+		case LITE_NON:
+			break;	
+	}	
+	return 1;	
+}
+
 TEST( sqrooge )
 {
 	//Loop through all the test results
 	struct SqItem *items = sq_items;		
+	char buf [ 2048 ];
 
 	//Always delete whatever file was created.
+	VPRINT( "Deleting file: " TEST_DB_NAME "\n" );
 	if ( unlink( TEST_DB_NAME ) == -1 )
 		fprintf( stderr, "%s\n", strerror( errno ) );
 
 	//Loop through all tests
 	while ( !items->sentinel ) {
-		fprintf( stderr, "Testing '%s'\n", items->testName );
 		Database db;
 		char sqlQuery[ 2048 ] = {0};
+		Buffer b;
+		bf_init( &b, NULL, 1024 ); 
+		fprintf( stderr, "Testing '%s'\n", items->testName );
 
 		//Write a new string based on the data that is there.
 		snprintf( sqlQuery, 2048, items->sql, items->tableName );
 
 		//Open database every time.
+		VPRINT( "!sq_open( &db, " TEST_DB_NAME " )" ); 
 		if ( !sq_open( &db, TEST_DB_NAME ) ) {
 			fprintf( stderr, "%s\n", db.errmsg );
 			break;	
@@ -182,38 +232,43 @@ TEST( sqrooge )
 	
 		//Either execute or insert depending on data in the test 
 		if ( items->sq->sentinel ) {
-			if ( !sq_exec( &db, sqlQuery ) ) {
-				fprintf( stderr, "%s\n", db.errmsg );
-				break;	
+			//if ( !sq_ex( &db, sqlQuery, "results", NULL, 1 ) ) {
+			if ( !memchr( "sS", *sqlQuery, 2 ) ) {
+				VPRINT( "sq_exec( &db, %s)", sqlQuery ); 
+				if ( !sq_exec( &db, sqlQuery ) ) {
+					fprintf( stderr, "%s\n", db.errmsg );
+					break;	
+				}
+			}
+			else {
+				VPRINT( "sq_save( &db, %s, 'results', NULL )", sqlQuery ); 
+				if ( !sq_save( &db, sqlQuery, "results", NULL ) ) {
+					fprintf( stderr, "%s\n", db.errmsg );
+					break;	
+				}
 			}
 		}
 		else {
+			VPRINT( "sq_insert( &db, %s, %p )", sqlQuery, items->sq ); 
+			//if ( !sq_ex( &db, sqlQuery, "insert", items->sq, 0 ) ) {
 			if ( !sq_insert( &db, sqlQuery, items->sq ) ) {
 				fprintf( stderr, "%s\n", db.errmsg );
 				break;	
 			}
 		}
 
-		//0. Reset buffer for SQL statement.
-		memset( sqlQuery, 0, 2048 );
-		snprintf( sqlQuery, 2048, "SELECT * FROM %s", items->tableName );
-
-		//1. Do a select that would pull back what I expect 
-		if ( !sq_save( &db, sqlQuery, "results", NULL ) ) {
-			fprintf( stderr, "%s\n", db.errmsg );
-			break;	
-		}
-
-		//2. Dump table to a big string
-		while ( 0 ) { 
-			;
-		}
-
-		//3. Use memcmp to compare what came back.
-		if ( memcmp( (int*)1, (int*)1, 1 ) == 0 )
-			0;
-		else {
-
+		//Dump table to a big string and compare results this way
+		fprintf( stderr, "String to compare: %d\n", bf_written( &db.results ) );
+		if ( bf_written( &db.results ) > 0 && items->cmp ) {
+			//compare two strings (or blobs - cuz some things will have blobs)
+			lt_complex_exec( &db.kvt, (void *)&b, lt_makestr ); 
+			//fprintf( stderr, "string: " )write( 2, bf_data( &b), bf_written( &b ));;fprintf( stderr, "\n" );
+			if ( memcmp( items->cmp, bf_data(&b), strlen(items->cmp) ) == 0 ) {
+				RPRINTF( "SUCCESS - Results dumped correctly");
+			}
+			else {
+				RPRINTF( "FAILED" );
+			}	
 		}
 
 		//Close the database each time.	
@@ -222,6 +277,7 @@ TEST( sqrooge )
 			break;	
 		}	
 
+		//fprintf( stderr, "Press enter to go to the next test...\n" );getchar();
 		items++;	
 	}
 

@@ -1,18 +1,18 @@
 * sql bugs
-	3689 - 
+	change sq_exec, sq_insert and sq_save to sq_ex or sq_base.  one function to do all sql evaluation.   
+	SELECT - put all results in a table
+	CREATE/INSERT/DELETE... - tell me what happened in a table
+	
+	- using while loop to break up big queries hasn't been tested (and would it even work?)
+	- differentiate between SELECT and SAVEPOINT
+	 OR  
+	- run all queries the same way, and check if arguments need to be bound everytime, because that's probably the case
+	- how exactly do I tell my function pointer what another row looks like?
 
 
-*	not for nothing, go is the best idea...
-	templating
-	ssl
-	multithreading
-	database support
-	even C binding is all included and well thought out	
 
-	I still have to debug all of mine...
+* network
+	how do I integrate SSL / TLS?
+	
 
-
-- rendering/templating
-
-- this job sucks... 
-	so want to leave...	
+* there are bugs and other things, but this is most of the work... after those two problems are solved...

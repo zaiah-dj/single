@@ -267,6 +267,8 @@
 #ifndef TAB_H
  #define LT_POLYMORPH_BUFLEN 2048
  #define LT_MAX_HASH 7 
+ #define lt_dump(t) \
+	lt_complex_exec( t, &__lt_int, __lt_dump )
  #define lt_blob_at( t, i ) \
  	lt_ret( t, LITE_BLB, i )->vblob
  #define lt_blobdata_at( t, i ) \
@@ -732,6 +734,8 @@ enum
 	ERR_DB_COLUMN_MAX,
 	ERR_DB_COLUMN_ADD,
 	ERR_DB_ZERO_TERM,
+	ERR_DB_ADD_VALUE,
+	ERR_DB_ADD_TERM,
 	ERR_DB_RESULT_INIT,
 	ERR_DB_PREPARE_STMT,
 	ERR_DB_BIND_VALUE,
@@ -1452,7 +1456,11 @@ LiteType lt_add (Table *, int, LiteType, int, float, char *,
 Table *lt_init (Table *, LiteKv *, int) ;
 void lt_printall ( Table *t );
 void lt_finalize (Table *t) ;
-void lt_dump (Table *t) ;
+int __lt_dump ( LiteKv *kv, int i, void *p );
+unsigned int __lt_int;
+//void lt_dump (Table *t) ;
+//void lt_complex_exec (Table *t, int (*fp)( LiteType t, LiteValue *k, LiteValue *v, void *p ) );
+int lt_complex_exec (Table *t, void *p, int (*fp)( LiteKv *kv, int i, void *p ) );
 int lt_move(Table *t, int dir) ;
 static void lt_printindex (LiteKv *tt, int ind);
 LiteType lt_rettype( Table *t, int side, int index );
@@ -1502,6 +1510,7 @@ Buffer *render_rendered (Render *r);
 _Bool sq_init (Database *);
 _Bool sq_open (Database *, const char *filename) ;
 _Bool sq_exec (Database *, const char *sql) ;
+ int sq_ex ( Database *gb, const char *sql, const char *name, const SQWrite *w, int save );
 _Bool sq_insert (Database *, const char *sql, const SQWrite *w);
 _Bool sq_reader_start (Database *, const char *sql, const SQWrite *w) ;
 _Bool sq_reader_continue (Database *) ;
