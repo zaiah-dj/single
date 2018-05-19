@@ -1160,10 +1160,10 @@ typedef struct
          *qname;  //Name of query
   sqlite3      *db;
   sqlite3_stmt *stmt;
-  /*Try to start using FLAGS*/
+  //Try to start using FLAGS
   _Bool         read_started;
   Buffer        header;  
-  Buffer        results;  
+  Buffer        results;
   Table         kvt;
  #ifndef ERR_H
   int error;
@@ -1510,7 +1510,7 @@ Buffer *render_rendered (Render *r);
 _Bool sq_init (Database *);
 _Bool sq_open (Database *, const char *filename) ;
 _Bool sq_exec (Database *, const char *sql) ;
- int sq_ex ( Database *gb, const char *sql, const char *name, const SQWrite *w, int save );
+ int sq_lexec (Database *, const char *, const char *, const SQWrite *);
 _Bool sq_insert (Database *, const char *sql, const SQWrite *w);
 _Bool sq_reader_start (Database *, const char *sql, const SQWrite *w) ;
 _Bool sq_reader_continue (Database *) ;

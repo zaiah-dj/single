@@ -3530,18 +3530,27 @@ void *sq_destroy( void *p )
 
 //there should be a max of two SQL query execution functions
 //but really there should just be one.
-int sq_ex ( Database *gb, const char *sql, const char *name, const SQWrite *w, int retBlankTable )
+int sq_lexec ( Database *gb, const char *sql, const char *name, const SQWrite *w)
 {
 	int len = 0;
-	int rc = 0; 
+	int rc = 0;
 	int pos = 1;
+	int bfw = 0;
+	int	a = 0;
+	int	title= 0;
 	const char *pq = NULL;
-	SQInsert *stack = NULL;
+	SQInsert *stack = sq_inserters[0];
 	struct { char *names[127]; int count, ints[127]; } col = { 0 };
+	uint8_t *src = NULL;
+	Parser q = { 
+		.words={
+			{ (char *)sqlite3_E },
+			{ (char *)sqlite3_C },
+			{ (char *)sqlite3_N },
+			{ NULL }
+		}
+	};
 	
-	VPRINT( "Database: %p, SQL stmt: %s, name: %s, Writer: %p\n", 
-		(void *)gb, sql, name, (void *)w );
-
 	//Shutdown empty queries.
 	if ( !sql ) 
 		return serr( ERR_DB_NO_QUERY, gb, NULL );	
@@ -3551,50 +3560,30 @@ int sq_ex ( Database *gb, const char *sql, const char *name, const SQWrite *w, i
 		return serr( ERR_DB_UNINITIALIZED, gb, NULL );	
 
 	//Trim the received query
-	pq = ( char * )trim( (uint8_t *)sql, " \t\n\r", strlen( sql ), &len );
+	if ( !(pq = ( char * )trim( (uint8_t *)sql, " \t\n\r", strlen( sql ), &len )) )
+		return serr( ERR_DB_NO_QUERY, gb, NULL );	
 
-	//Run any other statement
-	if ( !memchr( "sS", *pq, 2 ) ) 
-	{
-		stack = sq_inserters[0];
+	//What's going on?
+	VPRINT( "Database: %p, SQL stmt: %s, name: %s, Writer: %p\n", 
+		(void *)gb, pq, name, (void *)w );
+	VPRINT( "Preparing statement: %s\n", pq );
+		
+	//Prepare
+	if ( (rc = sqlite3_prepare_v2(gb->db, pq, -1, &gb->stmt, 0)) != SQLITE_OK )
+		return serr( ERR_DB_PREPARE_STMT, gb, sqlite3_errmsg( gb->db ) );
 
-		if ((rc = sqlite3_prepare_v2(gb->db, pq, -1, &gb->stmt, 0)) != SQLITE_OK)
-		{
-			sq_free( gb );
-			return serr( ERR_DB_PREPARE_STMT, gb, sqlite3_errmsg( gb->db ) );
-		}
+	//Bind first (if any need)
+		while (w && !w->sentinel) {
+			VPRINT( "Attempting to bind argument of type '%s' "
+				"at %d to statement %s\n", SQ_TYPE(w->type), pos, pq );
 
-		//Bind any arguments
-		if ( w ) 
-		{
-			while ( !w->sentinel ) 
-			{
-				VPRINT( "Attempting to bind argument of type '%s' at %d to statement %s\n", 
-					SQ_TYPE(w->type), pos, sql );
-
-				if ( !stack[w->type].fp (gb->stmt, pos, w) )
-					return serr( ERR_DB_BIND_VALUE, gb, pos, sql ); 
-				
-				w++, pos++;
+			if ( !stack[w->type].fp (gb->stmt, pos, w) ) {
+				return serr( ERR_DB_BIND_VALUE, gb, pos, pq ); 
 			}
+
+			w++, pos++;
 		}
-
-		return 1;
-	}
-
-	//Run other queries and save if asked
-	//Set the hash table's source to point the buffer's data
-	uint8_t *src    = NULL;
-	int bfw  = 0, 
-			a    = 0, 
-			title= 0;
-	Parser q = { .words={
-		{ (char *)sqlite3_E },
-		{ (char *)sqlite3_C },
-		{ (char *)sqlite3_N },
-		{ NULL }
-	}};
-
+		
 	//Initialize buffers and tables for result set
 	if ( !bf_init( &gb->header, NULL, 1 ) || !bf_init( &gb->results, NULL, 1 ) )
 		return serr( ERR_DB_RESULT_INIT, gb, NULL );
@@ -3608,9 +3597,29 @@ int sq_ex ( Database *gb, const char *sql, const char *name, const SQWrite *w, i
 		return serr( ERR_DB_RESULT_INIT, gb, NULL );
 
 	//Unless there are a ton of columns, we should be fine with this.
-	if (( col.count = sqlite3_column_count( gb->stmt )) > 127 )
+VPRINT( "column count\n" ); getchar();
+	if (( col.count = sqlite3_column_count( gb->stmt )) > 127 ) {
+		VPRINT( "too many columns for result set\n" );
 		return serr( ERR_DB_COLUMN_MAX, gb, NULL );
+	}
+	else if ( col.count == 0 ) {
+		VPRINT( "0 columns, so this is probably some other statement...\n" );
+		//This is probably some other type of statement.
+
+		//Step to commit the record
+		if ((rc = sqlite3_step(gb->stmt)) != SQLITE_DONE) 
+		{
+			sqlite3_finalize(gb->stmt);
+			sq_free( gb );
+			return serr( ERR_DB_STEP, gb, NULL );
+		}
+
+		//db->kvt and db->results should be set to NULL or something
+		return 1;
+	}
 	
+	VPRINT( ">1 columns, so this is probably a select. Preparing header...\n" );
+
 	//Add each of the keys to the top of the table
 	for (int len=0, i=0; i < col.count; i++ ) {
 		uint8_t *name = (uint8_t *)sqlite3_column_name(gb->stmt, i);
@@ -3625,30 +3634,32 @@ int sq_ex ( Database *gb, const char *sql, const char *name, const SQWrite *w, i
 		col.ints[ i ] = pos;
 		pos += len + 1;
 	}
-
+	
 	//Set the column names?
-	for (int i=0; i < col.count; i++ )
+	for (int i=0; i < col.count; i++ ) {
 		col.names[i] = (char *)&(&gb->header)->buffer[ col.ints[i] ];	
+	}
 
 	//This expects just one file
-	//VPRINT( "for (int dc; sq_reader_continue(...) ):READ" );getchar();
+	VPRINT( "Starting result streaming...\n" );getchar();
 	for ( int dc; sq_reader_continue( (Database *)gb ) ; ) {
+		#if 0
+		//Todo: this may be a bad idea...
 		//If there were no results, no need to save anything, but it's not a failure
 		if ( !( dc = sqlite3_data_count(gb->stmt) ) )
 			return 1; //lt_free( &db->header ); sq_close( (Database *)gb );
+		#endif
 
 		//Using a hash table is such a good call
-		for (int i=0; i < dc; i++ )
-		{
+		for (int i=0; i < (dc = sqlite3_data_count(gb->stmt)); i++ ) {
 			//All of the templates Could go together here if you were so inclined
 			int len    = sqlite3_column_bytes(gb->stmt, i);
 			uint8_t *b = (uint8_t *)sqlite3_column_blob(gb->stmt, i); 
 			uint8_t *c = (i == (dc - 1)) ? (uint8_t *)sqlite3_N : (uint8_t *)sqlite3_C;
 
-			//Add value to buffer
+			//Add value and terminator to buffer
 			if ( !bf_append( &gb->results, b, len) )
 				return serr( ERR_DB_ADD_VALUE, gb, NULL );
-
 			//Add terminator to buffer
 			if ( !bf_append( &gb->results, c, sqlite3_L ) ) 
 				return serr( ERR_DB_ADD_TERM, gb, (i == (dc - 1)) ? "row" : "column" );
@@ -3656,8 +3667,10 @@ int sq_ex ( Database *gb, const char *sql, const char *name, const SQWrite *w, i
 	}
 
 	//Check results to see if anything has been written
-	if ( !bf_written( &gb->results ) && retBlankTable )
+	if ( !bf_written( &gb->results ) ) {
+		VPRINT( "No rows in query contain data.\n" );
 		return 1;
+	}
 
 	//Mark the end
 	bf_append( &gb->results, (uint8_t *)"\0", 1 );

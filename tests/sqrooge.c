@@ -1,6 +1,8 @@
 /* why didn't I write this yet? */
 
 #define TEST_DB_NAME "testDbName.db"
+#define MAT(a,b) #a, a, b
+#define DAT(a) Data##a
 
 static const char *_sqlite3_C = "}}}}}}}}}";
 static const char *_sqlite3_N = "{{{{{{{{{";
@@ -58,8 +60,114 @@ unsigned char bs_jpg[] = {
 const unsigned int bs_jpg_len = 523;
 
 
+const char sqlTextCreateFirst[] = 
+"CREATE TABLE info_keep_empty ( "
+" fname  TEXT, "
+" mname  TEXT, "
+" lname  TEXT, "
+" id     INTEGER, "
+" addr   TEXT, "
+" email  TEXT, "
+" datem  DATETIME, "
+" avatar BLOB  "
+" );"
+;
+
+const char sqlTextCreate[] = 
+"CREATE TABLE info ( "
+" fname  TEXT, "
+" mname  TEXT, "
+" lname  TEXT, "
+" id     INTEGER, "
+" addr   TEXT, "
+" email  TEXT, "
+" datem  DATETIME, "
+" avatar BLOB  "
+" );"
+;
+
+const char sqlTextInsert[] = 
+"INSERT INTO info VALUES ( \"Julia\", \"Mayhem\", \"Roberts\", 6, \"Ahoskie, NC\", \"jljl3@yahoo.com\", 2010-09-10, 0 );"
+;
+
+const char sqlTextSelect[] = 
+"SELECT fname, lname FROM info;"
+;
+
+const char sqlTextSelectNoRows[] = 
+"SELECT * FROM info_keep_empty; "
+;
+
+const char sqlTextInsertBind[] = 
+"INSERT INTO info VALUES ( ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8 )"
+;
+
+const char sqlTextSelectBind[] = 
+"SELECT fname, id, lname FROM info WHERE id = ?1"  
+;
+
+const char sqlTextSelectBindMultiple[] = 
+"SELECT fname, id, lname FROM info WHERE id = ?1 AND lname = ?2"  
+;
+
+const char sqlTextNonExist[] = 
+"SELECT * FROM wallaby; "
+;
+
+const char sqlTextTransaction[] = 
+"BEGIN TRANSACTION;"
+"SELECT * FROM info;"
+"COMMIT;"
+;
+
+const char sqlTextDrop[] = 
+"DROP TABLE info; "
+;
+
+SQWrite DAT(sqlTextInsertBind) [] = {
+	 { SQ_TXT, .v.c = "Antonio" } 
+	,{ SQ_TXT, .v.c = "Ramar" } 
+	,{ SQ_TXT, .v.c = "Collins" } 
+	,{ SQ_FLT, .v.f = 3234 } 
+	,{ SQ_TXT, .v.c = "2762 Burlington Ave N, St. Pete, FL" } 
+	,{ SQ_TXT, .v.c = "ramar.collins@gmail.com" } 
+	,{ SQ_DTE }
+	,{ SQ_BLB, .v.d = bs_jpg, .len = 523 } 
+	,{ .sentinel = 1 }
+};
+
+SQWrite DAT(sqlTextSelectBind) [] = {
+	 { SQ_INT, .v.n = 1 } 
+	,{ .sentinel = 1 }
+};
+
+SQWrite DAT(sqlTextSelectBindMultiple) [] = {
+	 { SQ_INT, .v.n = 2 } 
+	,{ SQ_TXT, .v.c = "Roberts" } 
+	,{ .sentinel = 1 }
+};
+
+struct DubChar { 
+	const char *name, *stmt; 
+	SQWrite *bind;
+} dubchars[] = {
+	{ MAT(sqlTextCreateFirst, NULL) },
+	{ MAT(sqlTextCreate, NULL) },
+	{ MAT(sqlTextSelectNoRows, NULL) }, //will still return columns
+	{ MAT(sqlTextInsert, NULL) },
+	{ MAT(sqlTextInsertBind, DAT(sqlTextInsertBind)) },
+	{ MAT(sqlTextSelect, NULL)   },
+	{ MAT(sqlTextSelectBind, DAT(sqlTextSelectBind)) },
+	{ MAT(sqlTextSelectBindMultiple, DAT(sqlTextSelectBindMultiple)) },
+	{ MAT(sqlTextTransaction, NULL) },
+	{ MAT(sqlTextNonExist, NULL)   },
+	{ MAT(sqlTextDrop, NULL)   },
+	{ NULL, NULL }
+};
+
 
 //let's get intense with testing again
+#if 0
 struct SqItem {
 	const char *testName; 
 	const char *tableName;
@@ -171,6 +279,7 @@ struct SqItem {
 	//queries should work with or without ';'
 	{ .sentinel = 1 }
 };
+#endif
 
 
 int lt_makestr ( LiteKv *kv, int i, void *p )
@@ -204,14 +313,43 @@ int lt_makestr ( LiteKv *kv, int i, void *p )
 TEST( sqrooge )
 {
 	//Loop through all the test results
-	struct SqItem *items = sq_items;		
 	char buf [ 2048 ];
 
+#if 0
+	struct SqItem *items = sq_items;		
 	//Always delete whatever file was created.
 	VPRINT( "Deleting file: " TEST_DB_NAME "\n" );
 	if ( unlink( TEST_DB_NAME ) == -1 )
 		fprintf( stderr, "%s\n", strerror( errno ) );
+#endif
 
+	struct DubChar *t = dubchars;
+	char *title = rand_chars( 25 );
+	while ( t->name ) {
+		Database db;
+		VPRINT( "Testing: %s\n", t->name );
+		
+		//Open database every time.
+		VPRINT( "!sq_open( &db, " TEST_DB_NAME " )" ); 
+		if ( !sq_open( &db, TEST_DB_NAME ) ) {
+			fprintf( stderr, "%s\n", db.errmsg );
+		}
+
+		//Nice to just need the one function here... and macros can be there for convenience
+		VPRINT( "!sq_lexec( &db, sqlQuery, items->tableName, NULL ) )\n" );
+		if ( !sq_lexec( &db, t->stmt, "res", t->bind ) ) {
+			fprintf( stderr, "%s\n", db.errmsg );
+		}	
+
+		//Close the database each time.	
+		if ( !sq_close( &db ) ) {
+			fprintf( stderr, "%s\n", db.errmsg );
+		}
+		fprintf( stderr, "Press enter to go to the next test...\n" );getchar();
+		t++;
+	}
+
+#if 0
 	//Loop through all tests
 	while ( !items->sentinel ) {
 		Database db;
@@ -229,7 +367,17 @@ TEST( sqrooge )
 			fprintf( stderr, "%s\n", db.errmsg );
 			break;	
 		}
-	
+
+		//Nice to just need the one function here... and macros can be there for convenience
+		VPRINT( "!sq_lexec( &db, sqlQuery, items->tableName, NULL ) )\n" );
+		if ( !sq_lexec( &db, sqlQuery, items->tableName, NULL ) ) {
+			fprintf( stderr, "%s\n", db.errmsg );
+			exit(0);
+			return 0;
+		}	
+
+		fprintf( stderr, "Press enter to go to the next test...\n" );getchar();
+#if 0	
 		//Either execute or insert depending on data in the test 
 		if ( items->sq->sentinel ) {
 			//if ( !sq_ex( &db, sqlQuery, "results", NULL, 1 ) ) {
@@ -256,9 +404,11 @@ TEST( sqrooge )
 				break;	
 			}
 		}
-
+#endif
 		//Dump table to a big string and compare results this way
 		fprintf( stderr, "String to compare: %d\n", bf_written( &db.results ) );
+
+#if 0
 		if ( bf_written( &db.results ) > 0 && items->cmp ) {
 			//compare two strings (or blobs - cuz some things will have blobs)
 			lt_complex_exec( &db.kvt, (void *)&b, lt_makestr ); 
@@ -270,26 +420,26 @@ TEST( sqrooge )
 				RPRINTF( "FAILED" );
 			}	
 		}
+#endif
 
 		//Close the database each time.	
 		if ( !sq_close( &db ) ) {
 			fprintf( stderr, "%s\n", db.errmsg );
 			break;	
-		}	
+		}
 
-		//fprintf( stderr, "Press enter to go to the next test...\n" );getchar();
 		items++;	
 	}
+#endif
 
-#if 0
 	//Delete should always happen after the fact...
 	//Always delete whatever file was created.
 	if ( unlink( TEST_DB_NAME ) == -1 ) {
 		fprintf( stderr, "%s\n", strerror( errno ) );
 		return 0;
 	}
-#endif
-	return 0;
+
+	return 1;
 }
 
 

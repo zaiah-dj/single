@@ -37,6 +37,10 @@ main:
 exec:
 	valgrind ./single-test --sqrooge 2>&1 | less
 
+#sexec
+sexec:
+	./single-test --sqrooge 2>&1
+
 #Create a new templating engine.
 newte:
 	gcc -DSQROOGE_H newt.c single.c -o newt
