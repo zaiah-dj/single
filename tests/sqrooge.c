@@ -1,8 +1,9 @@
 /* why didn't I write this yet? */
 
 #define TEST_DB_NAME "testDbName.db"
-#define MAT(a,b) #a, a, b
+#define MAT(a,b) #a, a, Expected##a, b
 #define DAT(a) Data##a
+#define EXPECT(a) Expected##a
 
 static const char *_sqlite3_C = "}}}}}}}}}";
 static const char *_sqlite3_N = "{{{{{{{{{";
@@ -57,10 +58,10 @@ unsigned char bs_jpg[] = {
   0xa2, 0x5c, 0xe5, 0xe8, 0x8f, 0xff, 0xd9
 };
 
-const unsigned int bs_jpg_len = 523;
+static const unsigned int bs_jpg_len = 523;
 
 
-const char sqlTextCreateFirst[] = 
+static const char sqlTextCreateFirst[] = 
 "CREATE TABLE info_keep_empty ( "
 " fname  TEXT, "
 " mname  TEXT, "
@@ -73,7 +74,7 @@ const char sqlTextCreateFirst[] =
 " );"
 ;
 
-const char sqlTextCreate[] = 
+static const char sqlTextCreate[] = 
 "CREATE TABLE info ( "
 " fname  TEXT, "
 " mname  TEXT, "
@@ -86,45 +87,45 @@ const char sqlTextCreate[] =
 " );"
 ;
 
-const char sqlTextInsert[] = 
+static const char sqlTextInsert[] = 
 "INSERT INTO info VALUES ( \"Julia\", \"Mayhem\", \"Roberts\", 6, \"Ahoskie, NC\", \"jljl3@yahoo.com\", 2010-09-10, 0 );"
 ;
 
-const char sqlTextSelect[] = 
+static const char sqlTextSelect[] = 
 "SELECT fname, lname FROM info;"
 ;
 
-const char sqlTextSelectNoRows[] = 
+static const char sqlTextSelectNoRows[] = 
 "SELECT * FROM info_keep_empty; "
 ;
 
-const char sqlTextInsertBind[] = 
+static const char sqlTextInsertBind[] = 
 "INSERT INTO info VALUES ( ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8 )"
 ;
 
-const char sqlTextSelectBind[] = 
+static const char sqlTextSelectBind[] = 
 "SELECT fname, id, lname FROM info WHERE id = ?1"  
 ;
 
-const char sqlTextSelectBindMultiple[] = 
+static const char sqlTextSelectBindMultiple[] = 
 "SELECT fname, id, lname FROM info WHERE id = ?1 AND lname = ?2"  
 ;
 
-const char sqlTextNonExist[] = 
+static const char sqlTextNonExist[] = 
 "SELECT * FROM wallaby; "
 ;
 
-const char sqlTextTransaction[] = 
+static const char sqlTextTransaction[] = 
 "BEGIN TRANSACTION;"
 "SELECT * FROM info;"
 "COMMIT;"
 ;
 
-const char sqlTextDrop[] = 
+static const char sqlTextDrop[] = 
 "DROP TABLE info; "
 ;
 
-SQWrite DAT(sqlTextInsertBind) [] = {
+static SQWrite DAT(sqlTextInsertBind) [] = {
 	 { SQ_TXT, .v.c = "Antonio" } 
 	,{ SQ_TXT, .v.c = "Ramar" } 
 	,{ SQ_TXT, .v.c = "Collins" } 
@@ -136,19 +137,31 @@ SQWrite DAT(sqlTextInsertBind) [] = {
 	,{ .sentinel = 1 }
 };
 
-SQWrite DAT(sqlTextSelectBind) [] = {
+static SQWrite DAT(sqlTextSelectBind) [] = {
 	 { SQ_INT, .v.n = 1 } 
 	,{ .sentinel = 1 }
 };
 
-SQWrite DAT(sqlTextSelectBindMultiple) [] = {
+static SQWrite DAT(sqlTextSelectBindMultiple) [] = {
 	 { SQ_INT, .v.n = 2 } 
 	,{ SQ_TXT, .v.c = "Roberts" } 
 	,{ .sentinel = 1 }
 };
 
+static const char EXPECT(sqlTextCreateFirst)[] = "";
+static const char EXPECT(sqlTextCreate)[] = "";
+static const char EXPECT(sqlTextInsert)[] = "";
+static const char EXPECT(sqlTextSelect)[] = "";
+static const char EXPECT(sqlTextSelectNoRows)[] = "";
+static const char EXPECT(sqlTextInsertBind)[] = "";
+static const char EXPECT(sqlTextSelectBind)[] = "";
+static const char EXPECT(sqlTextSelectBindMultiple)[] = "";
+static const char EXPECT(sqlTextNonExist)[] = "";
+static const char EXPECT(sqlTextTransaction)[] = "";
+static const char EXPECT(sqlTextDrop)[] = "";
+
 struct DubChar { 
-	const char *name, *stmt; 
+	const char *name, *stmt, *expected;
 	SQWrite *bind;
 } dubchars[] = {
 	{ MAT(sqlTextCreateFirst, NULL) },
@@ -164,122 +177,6 @@ struct DubChar {
 	{ MAT(sqlTextDrop, NULL)   },
 	{ NULL, NULL }
 };
-
-
-//let's get intense with testing again
-#if 0
-struct SqItem {
-	const char *testName; 
-	const char *tableName;
-	const char *sql;
-	const char *cmp;
-	SQWrite sq[10];
-	int sentinel;
-} sq_items[] = 
-{
-	{ 
-	.testName = "create"
- ,.tableName = "info"
- ,.cmp = NULL 
- ,.sql = ""
-		"CREATE TABLE %s ( "
-		" fname  TEXT, "
-		" mname  TEXT, "
-		" lname  TEXT, "
-		" id     INTEGER, "
-		" addr   TEXT, "
-		" email  TEXT, "
-		" datem  DATETIME, "
-		" avatar BLOB  "
-		" );"
- ,.sq   = { { .sentinel = 1 } }
-	},
-
-	//inserts via the SQWrite struct should work ith both numeric and alpha arguments
-	{ 
-	.testName = "insert via structure"
- ,.tableName = "info"
- ,.cmp = NULL 
- ,.sql = "INSERT INTO %s VALUES ( ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8 )"
- ,.sq  = {
-			 { SQ_TXT, .v.c = "Antonio" } 
-			,{ SQ_TXT, .v.c = "Ramar" } 
-			,{ SQ_TXT, .v.c = "Collins" } 
-			,{ SQ_FLT, .v.f = 3234 } 
-			,{ SQ_TXT, .v.c = "2762 Burlington Ave N, St. Pete, FL" } 
-			,{ SQ_TXT, .v.c = "ramar.collins@gmail.com" } 
-			,{ SQ_DTE }
-			,{ SQ_BLB, .v.d = bs_jpg, .len = 523 } 
-			,{ .sentinel = 1 }
-		}
-	},
-
-	//Select from the table we just created (should have just one row...)
-	{ 
-	.testName = "select test"
- ,.tableName = "info"
- ,.cmp = "Antonio|Collins|"
- ,.sql = "SELECT fname, lname FROM %s"
- ,.sq   = { { .sentinel = 1 } }
-	},
-#if 0
-	{ 
-	.name = "create sequential"
- ,.sql = ""
-		"CREATE TABLE infoSeq ( "
-		" seq_id INTEGER PRIMARY KEY AUTOINCREMENT, "
-		" fname  TEXT, "
-		" mname  TEXT, "
-		" lname  TEXT, "
-		" id     INTEGER, "
-		" addr   TEXT, "
-		" email  TEXT, "
-		" datem  TEXT, "
-		" avatar BLOB  "
-		" );"
- ,.sq   = { { .sentinel = 1 } }
-	},
-
-	//inserts via the SQWrite struct should work ith both numeric and alpha arguments
-	{ 
-	.name = "insert via structure sequential"
- ,.sql = "INSERT INTO infoSeq VALUES ( ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8 )"
-#if 1
- ,.sq  = {
-			 { SQ_TXT, .v.c = "Antonio" } 
-			,{ SQ_TXT, .v.c = "Ramar" } 
-			,{ SQ_TXT, .v.c = "Collins" } 
-			,{ SQ_TXT, .v.f = 3234 } 
-			,{ SQ_TXT, .v.c = "2762 Burlington Ave N, St. Pete, FL" } 
-			,{ SQ_TXT, .v.c = "ramar.collins@gmail.com" } 
-			,{ SQ_DTE }
-			,{ SQ_BLB, .v.d = bs_jpg, .len = 523 } 
-			,{ .sentinel = 1 }
-		}
-#endif
-	},
-
-	//get a query with one record 
-	{
-	.name = "getSingleRecord"
- ,.sql  = ""
-	"	SELECT TOP 1 FROM info "
- ,.sq   = { { .sentinel = 1 } }
-	},
-#endif
-
-	//get a query with three records
-
-	//get a query with 100 records
-
-	//get a query with no records (does it crash, etc?)
-
-	//select should work
-
-	//queries should work with or without ';'
-	{ .sentinel = 1 }
-};
-#endif
 
 
 int lt_makestr ( LiteKv *kv, int i, void *p )
@@ -312,19 +209,10 @@ int lt_makestr ( LiteKv *kv, int i, void *p )
 
 TEST( sqrooge )
 {
-	//Loop through all the test results
 	char buf [ 2048 ];
-
-#if 0
-	struct SqItem *items = sq_items;		
-	//Always delete whatever file was created.
-	VPRINT( "Deleting file: " TEST_DB_NAME "\n" );
-	if ( unlink( TEST_DB_NAME ) == -1 )
-		fprintf( stderr, "%s\n", strerror( errno ) );
-#endif
-
 	struct DubChar *t = dubchars;
-	char *title = rand_chars( 25 );
+
+	//Loop through all the test results
 	while ( t->name ) {
 		Database db;
 		VPRINT( "Testing: %s\n", t->name );
@@ -348,89 +236,6 @@ TEST( sqrooge )
 		fprintf( stderr, "Press enter to go to the next test...\n" );getchar();
 		t++;
 	}
-
-#if 0
-	//Loop through all tests
-	while ( !items->sentinel ) {
-		Database db;
-		char sqlQuery[ 2048 ] = {0};
-		Buffer b;
-		bf_init( &b, NULL, 1024 ); 
-		fprintf( stderr, "Testing '%s'\n", items->testName );
-
-		//Write a new string based on the data that is there.
-		snprintf( sqlQuery, 2048, items->sql, items->tableName );
-
-		//Open database every time.
-		VPRINT( "!sq_open( &db, " TEST_DB_NAME " )" ); 
-		if ( !sq_open( &db, TEST_DB_NAME ) ) {
-			fprintf( stderr, "%s\n", db.errmsg );
-			break;	
-		}
-
-		//Nice to just need the one function here... and macros can be there for convenience
-		VPRINT( "!sq_lexec( &db, sqlQuery, items->tableName, NULL ) )\n" );
-		if ( !sq_lexec( &db, sqlQuery, items->tableName, NULL ) ) {
-			fprintf( stderr, "%s\n", db.errmsg );
-			exit(0);
-			return 0;
-		}	
-
-		fprintf( stderr, "Press enter to go to the next test...\n" );getchar();
-#if 0	
-		//Either execute or insert depending on data in the test 
-		if ( items->sq->sentinel ) {
-			//if ( !sq_ex( &db, sqlQuery, "results", NULL, 1 ) ) {
-			if ( !memchr( "sS", *sqlQuery, 2 ) ) {
-				VPRINT( "sq_exec( &db, %s)", sqlQuery ); 
-				if ( !sq_exec( &db, sqlQuery ) ) {
-					fprintf( stderr, "%s\n", db.errmsg );
-					break;	
-				}
-			}
-			else {
-				VPRINT( "sq_save( &db, %s, 'results', NULL )", sqlQuery ); 
-				if ( !sq_save( &db, sqlQuery, "results", NULL ) ) {
-					fprintf( stderr, "%s\n", db.errmsg );
-					break;	
-				}
-			}
-		}
-		else {
-			VPRINT( "sq_insert( &db, %s, %p )", sqlQuery, items->sq ); 
-			//if ( !sq_ex( &db, sqlQuery, "insert", items->sq, 0 ) ) {
-			if ( !sq_insert( &db, sqlQuery, items->sq ) ) {
-				fprintf( stderr, "%s\n", db.errmsg );
-				break;	
-			}
-		}
-#endif
-		//Dump table to a big string and compare results this way
-		fprintf( stderr, "String to compare: %d\n", bf_written( &db.results ) );
-
-#if 0
-		if ( bf_written( &db.results ) > 0 && items->cmp ) {
-			//compare two strings (or blobs - cuz some things will have blobs)
-			lt_complex_exec( &db.kvt, (void *)&b, lt_makestr ); 
-			//fprintf( stderr, "string: " )write( 2, bf_data( &b), bf_written( &b ));;fprintf( stderr, "\n" );
-			if ( memcmp( items->cmp, bf_data(&b), strlen(items->cmp) ) == 0 ) {
-				RPRINTF( "SUCCESS - Results dumped correctly");
-			}
-			else {
-				RPRINTF( "FAILED" );
-			}	
-		}
-#endif
-
-		//Close the database each time.	
-		if ( !sq_close( &db ) ) {
-			fprintf( stderr, "%s\n", db.errmsg );
-			break;	
-		}
-
-		items++;	
-	}
-#endif
 
 	//Delete should always happen after the fact...
 	//Always delete whatever file was created.

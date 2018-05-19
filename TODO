@@ -1,14 +1,9 @@
 * sql bugs
-	change sq_exec, sq_insert and sq_save to sq_ex or sq_base.  one function to do all sql evaluation.   
-	SELECT - put all results in a table
-	CREATE/INSERT/DELETE... - tell me what happened in a table
-	
-	- using while loop to break up big queries hasn't been tested (and would it even work?)
-	- differentiate between SELECT and SAVEPOINT
-	 OR  
-	- run all queries the same way, and check if arguments need to be bound everytime, because that's probably the case
-	- how exactly do I tell my function pointer what another row looks like?
-
+	works much better...
+	- maybe write macros...	
+	- oneshots should be macros...
+	- write comparison part
+	- handle errors better (some things should return an error, make sure they are)  
 
 
 * network
