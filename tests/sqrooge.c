@@ -207,6 +207,7 @@ int lt_makestr ( LiteKv *kv, int i, void *p )
 	return 1;	
 }
 
+
 TEST( sqrooge )
 {
 	char buf [ 2048 ];
@@ -227,7 +228,11 @@ TEST( sqrooge )
 		VPRINT( "!sq_lexec( &db, sqlQuery, items->tableName, NULL ) )\n" );
 		if ( !sq_lexec( &db, t->stmt, "res", t->bind ) ) {
 			fprintf( stderr, "%s\n", db.errmsg );
-		}	
+		}
+
+		if ( !sq_l ( ) ) {
+			fprintf( stderr, "%s\n", db.errmsg );
+		}
 
 		//Close the database each time.	
 		if ( !sq_close( &db ) ) {

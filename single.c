@@ -1,4 +1,4 @@
-/*
+/* ------------------------------------------- * 
 single.c
 ========
 A two-file library for common things in C (and eventually C++)
@@ -17,7 +17,8 @@ TODO
 Package a tool to create documentation here.
 Package a way to build tests here.
 
-*/
+ * ------------------------------------------- */
+
 #include "single.h"
 
 //This flag is here to control how table counts work...
@@ -851,7 +852,7 @@ static const Mime mime[] = {
 };
 
 
-/*Get extension and find the filetype*/
+//Get extension and find the filetype
 const char *mtref (const char *mimename) {
 	int s = strlen(mimename);
 	for (int c = 0; c < (sizeof(mime)/sizeof(Mime)); c++) 
@@ -865,11 +866,14 @@ const char *mtref (const char *mimename) {
 	return mime[0].mimetype;
 }
 
+
+//Why is this here?
 const char *file_type_from_mime (const char *filename) {
 	return NULL;
 }
 
-/*Get extension and find the filetype*/
+
+//Get extension and find the filetype
 const char *mime_type_from_file (const char *filename) {
 	int i=0, j=0;
 	//Move back and find the extension, it should'nt be longer than 10 characters
@@ -2862,8 +2866,8 @@ static SQInsert sq_inserters[][7] = {
 		[SQLITE_BLOB]    = { .fp = sq_add_sqlite3_blob },
 		[SQ_DTE]         = { .fp = sq_add_sqlite3_dateint },
 		[SQLITE_NULL]    = { .fp = 0 },
-	},
-	{
+	}
+ ,{
 		[SQLITE_INTEGER] = { .fp = pr_add_sqlite3_int },
 		[SQLITE_FLOAT]   = { .fp = pr_add_sqlite3_double },
 		[SQLITE_TEXT]    = { .fp = pr_add_sqlite3_text },
@@ -3530,7 +3534,7 @@ void *sq_destroy( void *p )
 
 //there should be a max of two SQL query execution functions
 //but really there should just be one.
-int sq_lexec ( Database *gb, const char *sql, const char *name, const SQWrite *w)
+int sq_lexec ( Database *gb, const char *sql, const char *name, const SQWrite *w )
 {
 	int len = 0;
 	int rc = 0;
@@ -3573,16 +3577,15 @@ int sq_lexec ( Database *gb, const char *sql, const char *name, const SQWrite *w
 		return serr( ERR_DB_PREPARE_STMT, gb, sqlite3_errmsg( gb->db ) );
 
 	//Bind first (if any need)
-		while (w && !w->sentinel) {
-			VPRINT( "Attempting to bind argument of type '%s' "
-				"at %d to statement %s\n", SQ_TYPE(w->type), pos, pq );
+	while (w && !w->sentinel) {
+		VPRINT( "Attempting to bind argument of type '%s' "
+			"at %d to statement %s\n", SQ_TYPE(w->type), pos, pq );
 
-			if ( !stack[w->type].fp (gb->stmt, pos, w) ) {
-				return serr( ERR_DB_BIND_VALUE, gb, pos, pq ); 
-			}
+		if ( !stack[w->type].fp (gb->stmt, pos, w) )
+			return serr( ERR_DB_BIND_VALUE, gb, pos, pq ); 
 
-			w++, pos++;
-		}
+		w++, pos++;
+	}
 		
 	//Initialize buffers and tables for result set
 	if ( !bf_init( &gb->header, NULL, 1 ) || !bf_init( &gb->results, NULL, 1 ) )
