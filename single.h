@@ -268,7 +268,7 @@
  #define LT_POLYMORPH_BUFLEN 2048
  #define LT_MAX_HASH 7 
  #define lt_dump(t) \
-	lt_complex_exec( t, &__lt_int, __lt_dump )
+	lt_exec( t, &__lt_int, __lt_dump )
  #define lt_blob_at( t, i ) \
  	lt_ret( t, LITE_BLB, i )->vblob
  #define lt_blobdata_at( t, i ) \
@@ -1460,7 +1460,7 @@ int __lt_dump ( LiteKv *kv, int i, void *p );
 unsigned int __lt_int;
 //void lt_dump (Table *t) ;
 //void lt_complex_exec (Table *t, int (*fp)( LiteType t, LiteValue *k, LiteValue *v, void *p ) );
-int lt_complex_exec (Table *t, void *p, int (*fp)( LiteKv *kv, int i, void *p ) );
+int lt_exec (Table *t, void *p, int (*fp)( LiteKv *kv, int i, void *p ) );
 int lt_move(Table *t, int dir) ;
 static void lt_printindex (LiteKv *tt, int ind);
 LiteType lt_rettype( Table *t, int side, int index );

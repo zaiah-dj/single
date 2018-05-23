@@ -178,11 +178,16 @@ struct DubChar {
 	{ NULL, NULL }
 };
 
+typedef struct DbNext {
+	Buffer b;
+} DbNext;
+
 
 int lt_makestr ( LiteKv *kv, int i, void *p )
 {
-	Buffer *b = ( Buffer * )p;
-	int w = bf_written( b );
+	DbNext *n = ( DbNext * )p;
+	Buffer *b = &n->b;
+
 	//need a way to differentiate between new rows...	
 	switch ( kv->value.type ) {
 		case LITE_INT:	
@@ -216,6 +221,7 @@ TEST( sqrooge )
 	//Loop through all the test results
 	while ( t->name ) {
 		Database db;
+		struct DbNext dbnext;
 		VPRINT( "Testing: %s\n", t->name );
 		
 		//Open database every time.
@@ -230,7 +236,12 @@ TEST( sqrooge )
 			fprintf( stderr, "%s\n", db.errmsg );
 		}
 
-		if ( !sq_l ( ) ) {
+		//Do this to help test automation.
+		bf_init( &dbnext.b, NULL, 4 );
+
+		//Write all database results to something else 
+		//(col seperated by |, rows by \n
+		if ( !lt_exec( &db.kvt, &dbnext, lt_makestr  ) ) {
 			fprintf( stderr, "%s\n", db.errmsg );
 		}
 

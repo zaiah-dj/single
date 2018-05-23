@@ -2223,7 +2223,7 @@ int __lt_dump ( LiteKv *kv, int i, void *p )
 
 //Write a real simple function to iterate through everything
 //void lt_complex_exec (Table *t, int (*fp)( LiteType t, LiteValue *k, LiteValue *v, int i, void *p ) )
-int lt_complex_exec (Table *t, void *p, int (*fp)( LiteKv *kv, int i, void *p ) )
+int lt_exec (Table *t, void *p, int (*fp)( LiteKv *kv, int i, void *p ) )
 {
 	int level = 0;	
 
