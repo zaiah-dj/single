@@ -1,9 +1,10 @@
 /* why didn't I write this yet? */
 
 #define TEST_DB_NAME "testDbName.db"
-#define MAT(a,b) #a, a, Expected##a, b
+#define MAT(a,b) #a, a, Expected##a, Check##a, b
 #define DAT(a) Data##a
 #define EXPECT(a) Expected##a
+#define CHECK(a) Check##a
 
 static const char *_sqlite3_C = "}}}}}}}}}";
 static const char *_sqlite3_N = "{{{{{{{{{";
@@ -151,7 +152,7 @@ static SQWrite DAT(sqlTextSelectBindMultiple) [] = {
 static const char EXPECT(sqlTextCreateFirst)[] = "";
 static const char EXPECT(sqlTextCreate)[] = "";
 static const char EXPECT(sqlTextInsert)[] = "";
-static const char EXPECT(sqlTextSelect)[] = "";
+static const char EXPECT(sqlTextSelect)[] = "Julia|Roberts|";
 static const char EXPECT(sqlTextSelectNoRows)[] = "";
 static const char EXPECT(sqlTextInsertBind)[] = "";
 static const char EXPECT(sqlTextSelectBind)[] = "";
@@ -160,8 +161,20 @@ static const char EXPECT(sqlTextNonExist)[] = "";
 static const char EXPECT(sqlTextTransaction)[] = "";
 static const char EXPECT(sqlTextDrop)[] = "";
 
+static const char CHECK(sqlTextCreateFirst)[] = "";
+static const char CHECK(sqlTextCreate)[] = "";
+static const char CHECK(sqlTextInsert)[] = "";
+static const char CHECK(sqlTextSelect)[] = "";
+static const char CHECK(sqlTextSelectNoRows)[] = "";
+static const char CHECK(sqlTextInsertBind)[] = "";
+static const char CHECK(sqlTextSelectBind)[] = "";
+static const char CHECK(sqlTextSelectBindMultiple)[] = "";
+static const char CHECK(sqlTextNonExist)[] = "";
+static const char CHECK(sqlTextTransaction)[] = "";
+static const char CHECK(sqlTextDrop)[] = "";
+
 struct DubChar { 
-	const char *name, *stmt, *expected;
+	const char *name, *stmt, *expected, *check;
 	SQWrite *bind;
 } dubchars[] = {
 	{ MAT(sqlTextCreateFirst, NULL) },
@@ -178,11 +191,14 @@ struct DubChar {
 	{ NULL, NULL }
 };
 
+
+//Needed to track row, column and uint8_t block for SQL results.
 typedef struct DbNext {
 	Buffer b;
 } DbNext;
 
 
+//Use this to create a uint8_t block from SQL results.  Easy for comparing against a string.
 int lt_makestr ( LiteKv *kv, int i, void *p )
 {
 	DbNext *n = ( DbNext * )p;
@@ -215,8 +231,8 @@ int lt_makestr ( LiteKv *kv, int i, void *p )
 
 TEST( sqrooge )
 {
-	char buf [ 2048 ];
 	struct DubChar *t = dubchars;
+	char buf[2048]={0};
 
 	//Loop through all the test results
 	while ( t->name ) {
@@ -236,29 +252,58 @@ TEST( sqrooge )
 			fprintf( stderr, "%s\n", db.errmsg );
 		}
 
-		//Do this to help test automation.
-		bf_init( &dbnext.b, NULL, 4 );
-
-		//Write all database results to something else 
-		//(col seperated by |, rows by \n
-		if ( !lt_exec( &db.kvt, &dbnext, lt_makestr  ) ) {
-			fprintf( stderr, "%s\n", db.errmsg );
+		//Test differences
+		if ( strlen( t->expected ) > 0 ) {
+			bf_init( &dbnext.b, NULL, 4 );
+			//Write all database results to something else (col seperated by |, rows by \n
+			if ( !lt_exec( &db.kvt, &dbnext, lt_makestr ) ) {
+				fprintf( stderr, "%s\n", db.errmsg );
+				RPRINTF( "FAILED, Could not loop through result set" );
+			}
+			//Check if any other SQL queries need to be run in order to check.
+			if ( t->check && strlen(t->check) > 0 ) {
+				if ( !sq_lexec( &db, t->check, "check", NULL ) ) {
+					RPRINTF( "FAILED, Something is wrong with the check query..." );
+					return 0;
+				}
+			}
+			//Check for zero length (there was probably an error elsewhere)
+			if ( bf_written( &dbnext.b ) == 0 ) {
+				RPRINTF( "FAILED, No data written." );
+			}
+			//Copy to buffer
+			char tmp[ 2048 ] = { 0 };
+			int lim = ( bf_written( &dbnext.b ) > 2048 ) ? 2048 : bf_written( &dbnext.b );
+			memcpy( tmp, bf_data( &dbnext.b ), lim ); 
+			tmp[ lim ] = '\0';
+			//Check if both blocks are even.
+			if ( memcmp(t->expected, bf_data( &dbnext.b ), bf_written( &dbnext.b )) != 0 )
+				{ RPRINTF( "FAILED, '%s' != '%s'", t->expected, tmp ); }
+			else {
+				RPRINTF( "SUCCESS, '%s' == '%s'", t->expected, tmp );
+			}
+		}
+		else {
+			//I'd have to run a query to check against certain types of code...
+			RPRINTF( "SUCCESS!" );
 		}
 
 		//Close the database each time.	
 		if ( !sq_close( &db ) ) {
 			fprintf( stderr, "%s\n", db.errmsg );
 		}
-		fprintf( stderr, "Press enter to go to the next test...\n" );getchar();
+		//fprintf( stderr, "Press enter to go to the next test...\n" );getchar();
 		t++;
 	}
 
 	//Delete should always happen after the fact...
 	//Always delete whatever file was created.
+#if 1
 	if ( unlink( TEST_DB_NAME ) == -1 ) {
 		fprintf( stderr, "%s\n", strerror( errno ) );
 		return 0;
 	}
+#endif
 
 	return 1;
 }

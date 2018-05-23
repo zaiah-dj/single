@@ -3600,7 +3600,6 @@ int sq_lexec ( Database *gb, const char *sql, const char *name, const SQWrite *w
 		return serr( ERR_DB_RESULT_INIT, gb, NULL );
 
 	//Unless there are a ton of columns, we should be fine with this.
-VPRINT( "column count\n" ); getchar();
 	if (( col.count = sqlite3_column_count( gb->stmt )) > 127 ) {
 		VPRINT( "too many columns for result set\n" );
 		return serr( ERR_DB_COLUMN_MAX, gb, NULL );
@@ -3621,8 +3620,6 @@ VPRINT( "column count\n" ); getchar();
 		return 1;
 	}
 	
-	VPRINT( ">1 columns, so this is probably a select. Preparing header...\n" );
-
 	//Add each of the keys to the top of the table
 	for (int len=0, i=0; i < col.count; i++ ) {
 		uint8_t *name = (uint8_t *)sqlite3_column_name(gb->stmt, i);
@@ -3644,7 +3641,6 @@ VPRINT( "column count\n" ); getchar();
 	}
 
 	//This expects just one file
-	VPRINT( "Starting result streaming...\n" );getchar();
 	for ( int dc; sq_reader_continue( (Database *)gb ) ; ) {
 		#if 0
 		//Todo: this may be a bad idea...
