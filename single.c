@@ -77,9 +77,13 @@ static const char *__SingleLibErrors[] =
 	[ERR_LITE_TIMER_ERROR]        = "Timer error occurred!\n" ,
 #endif
 #ifndef OPT_H 
-	[ERR_LITE_OPT_EXPECTED_ANY]   = "Expected argument after flag %s\n" ,
-	[ERR_LITE_OPT_EXPECTED_STRING]= "Expected string after flag %s\n" ,
-	[ERR_LITE_OPT_EXPECTED_NUMBER]= "Expected number after flag %s\n" ,
+	[ERR_OPT_UNINITIALIZED]  = "Option module uninitialized\n",
+	[ERR_OPT_TOO_LONG]                  = "Option flag too long\n",
+	[ERR_OPT_UNEXPECTED_FLAG]           = "Received unexpected flag\n",
+	[ERR_OPT_UNEXPECTED_ARGUMENT]       = "Received unexpected argument\n",
+	[ERR_OPT_EXPECTED_ANY]              = "Expected argument after flag %s\n" ,
+	[ERR_OPT_EXPECTED_STRING]           = "Expected string after flag %s\n" ,
+	[ERR_OPT_EXPECTED_NUMBER]           = "Expected number after flag %s\n" ,
 #endif
 #ifndef SOCKET_H 
 #endif
@@ -432,11 +436,11 @@ Value opt_get (Option *opts, const char *flag)
 
 //Evaluate options that the user gave and die with a message
 _Bool opt_eval (Option *opts, int argc, char **av) {
-	/*Evaulate options*/
+	//Evaulate options
 	char buf[1024]={0};
-	while (*av) {
-		Option *o=opts;
-		while (!o->sentinel) {
+	while ( *av ) {
+		Option *o = opts;
+		while ( !o->sentinel ) {
 			//Find option, set boolean, and run a validator callback
 			if ((o->sht && strcmp(*av, o->sht) == 0) || (o->lng && strcmp(*av, o->lng) == 0)) {
 				o->set=1;

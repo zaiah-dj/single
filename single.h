@@ -749,10 +749,14 @@ enum
 #ifndef TIMER_H
 	ERR_LITE_TIMER_ERROR,
 #endif
-#ifndef OPTION_H 
-	ERR_LITE_OPT_EXPECTED_ANY,
-	ERR_LITE_OPT_EXPECTED_STRING,
-	ERR_LITE_OPT_EXPECTED_NUMBER,
+#ifndef OPT_H 
+	ERR_OPT_UNINITIALIZED,
+	ERR_OPT_TOO_LONG,
+	ERR_OPT_UNEXPECTED_FLAG,
+	ERR_OPT_UNEXPECTED_ARGUMENT,
+	ERR_OPT_EXPECTED_ANY,
+	ERR_OPT_EXPECTED_STRING,
+	ERR_OPT_EXPECTED_NUMBER,
 #endif
 #ifndef SOCKET_H 
 	ERR_LITE_SOCKET_EXPECTED_ANY,
@@ -1695,9 +1699,8 @@ const char *hash_long ( char *dest, const unsigned char *src, int len, int dlen 
 #ifndef OPT_H
 _Bool opt_usage (Option *, const char *, const char *, int);
 _Bool opt_eval (Option *opts, int argc, char **argv);
- //union opt_value *get(Option *opts, const char *name);	
 _Bool opt_set (Option *opts, const char *flag); 
 Value opt_get (Option *opts, const char *flag); 
-
+//union opt_value *get(Option *opts, const char *name);	
 #endif
 #endif

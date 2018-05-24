@@ -9,7 +9,7 @@
 //#define JSON_H
 #define FILES_H 
 //#define MEM_H 
-#define OPT_H
+//#define OPT_H
 #define PARSELY_H 
 #define RAND_H 
 //#define RENDER_H 
