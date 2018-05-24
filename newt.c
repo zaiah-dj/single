@@ -1,6 +1,8 @@
 #include "single.h"
 #include "simpletables.h"
 
+#define USELESS_DEFINE
+
 #define MARKDUMPS
 
 #define SIG(term) \
