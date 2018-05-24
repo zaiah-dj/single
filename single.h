@@ -1525,7 +1525,7 @@ void print_db (Database *) ;
 _Bool sq_create_oneshot (const char *, const char *, char *) ;
 int sq_insert_oneshot (const char *, const char *, const SQWrite *, char *) ;
 uint8_t *sq_read_oneshot(const char *, const char *, int, char *) ;
-int sq_get_query_size ( sqlite3_stmt *stmt ) ;
+//int sq_get_query_size ( sqlite3_stmt *stmt ) ;
 _Bool sq_setval (SQWrite *j, uint8_t *p, int len) ;
 void sq_write_print (Database *, SQWrite *) ;
 void sq_write_value_print (SQWrite *) ;
