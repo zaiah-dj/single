@@ -13,7 +13,7 @@
 #define PARSELY_H 
 #define RAND_H 
 //#define RENDER_H 
-#define SOCKET_H 
+//#define SOCKET_H 
 //#define SQROOGE_H 
 //#define TIMER_H 
 #define UTIL_H 

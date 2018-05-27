@@ -1,3 +1,9 @@
+	
+	1 blueprint
+	2 
+	3	
+
+
 * sql bugs
 	works much better...
 	- maybe write macros / oneshots should be macros...
@@ -5,12 +11,18 @@
 	- handle errors better (some things should return an error, make sure they are)  
 		t->error == t->statusExpected
 	x remove function pointer and replace with one static function that handles types
-	-	static int sq_add( sqlite3_stmt *stmt, int i, const SQWrite *w ): returns sqlite3_bind_* result...
+	x	static int sq_add( sqlite3_stmt *stmt, int i, const SQWrite *w ): returns sqlite3_bind_* result...
 		add another for mysql/postgres/etc...
+
 
 * network
 	how do I integrate SSL / TLS?
 	SSL / TLS context can be passed in via userdata, just gotta look at how it's done...
+
+
+* socket
+	SOCKET_SERVER, SOCKET_CLIENT can be used as shortcodes to socket init
+
 	
 * CLEAN UP!!!!
 	- lots of old sql functions, no longer needed, will cut at least 500 lines from the code base

@@ -33,13 +33,14 @@ static const char *__SingleLibErrors[] =
   [ERR_NONE] = "No errors",
 
 #ifndef BUFF_H
-  /*Buffer*/
   [ERR_BUFF_ALLOC_FAILURE] = "Buffer allocation failure",
   [ERR_BUFF_REALLOC_FAILURE] = "Buffer reallocation failure",
   [ERR_BUFF_OUT_OF_SPACE] = "Fixed buffer is out of space.",
 #endif
+
 #ifndef PARSELY_H 
 #endif
+
 #ifndef TAB_H 
 	[ERR_LT_ALLOCATE]         = "Failed to allocate space for Table",
 	[ERR_LT_OUT_OF_SPACE]     = "Out of space",
@@ -76,6 +77,7 @@ static const char *__SingleLibErrors[] =
 #ifndef TIMER_H 
 	[ERR_LITE_TIMER_ERROR]        = "Timer error occurred!\n" ,
 #endif
+
 #ifndef OPT_H 
 	[ERR_OPT_UNINITIALIZED]  = "Option module uninitialized\n",
 	[ERR_OPT_TOO_LONG]                  = "Option flag too long\n",
@@ -85,8 +87,23 @@ static const char *__SingleLibErrors[] =
 	[ERR_OPT_EXPECTED_STRING]           = "Expected string after flag %s\n" ,
 	[ERR_OPT_EXPECTED_NUMBER]           = "Expected number after flag %s\n" ,
 #endif
+
 #ifndef SOCKET_H 
+	[ERR_SOCKET_EXPECTED_ANY]  = "...",
+	[ERR_SOCKET_EXPECTED_STRING] = "...",
+	[ERR_SOCKET_EXPECTED_NUMBER] = "...",
+	[ERR_SOCKET_CREATE] = "Could not create open new socket for communication: %s\n",
+	[ERR_SOCKET_GETADDRINFO] = "Could not get address info for uri: %s\n",
+	[ERR_SOCKET_INVALID_PROTOCOL] = "Invalid protocol specified: %s\n",
+	[ERR_SOCKET_BIND] = "Could not bind to socket: %s\n",
+	[ERR_SOCKET_LISTEN] = "Could not listen to socket: %s\n",
+	[ERR_SOCKET_CONNECT] = "Could not connect to server: %s\n",
+	[ERR_SOCKET_CONNECT_PARENT] = "Attempt to close parent socket file failed: %s\n",
+	[ERR_SOCKET_TCP_WRITE] = "Failed to send all data: %s\n",
+	[ERR_SOCKET_TCP_READ] = "Failed to send all data: %s\n",
+	[ERR_SOCKET_INVALID_PORT_NUMBER] = "Got invalid port number: %d\n",
 #endif
+
 #ifndef SINW_H
 	[ERR_POLL_INITIAL_ALLOCATOR]        = "File allocation failure.\n",
 	[ERR_POLL_TOO_MANY_FILES]           = "Attempt to open too many files.\n",
@@ -2817,70 +2834,6 @@ static const char *sq_names[] =
 	[SQ_DTE] = "date",
 };
 
-#if 0
-//Forward declarations for the sake of keeping data organized
-static _Bool sq_add_sqlite3_dateint (sqlite3_stmt *stmt, int i, const SQWrite *w); static _Bool sq_add_sqlite3_int (sqlite3_stmt *stmt, int i, const SQWrite *w);
-static _Bool sq_add_sqlite3_double (sqlite3_stmt *stmt, int i, const SQWrite *w);
-static _Bool sq_add_sqlite3_text (sqlite3_stmt *stmt, int i, const SQWrite *w);
-static _Bool sq_add_sqlite3_blob (sqlite3_stmt *stmt, int i, const SQWrite *w);
-
-static _Bool pr_add_sqlite3_int (sqlite3_stmt *stmt, int i, const SQWrite *w);
-static _Bool pr_add_sqlite3_double (sqlite3_stmt *stmt, int i, const SQWrite *w);
-static _Bool pr_add_sqlite3_text (sqlite3_stmt *stmt, int i, const SQWrite *w);
-static _Bool pr_add_sqlite3_blob (sqlite3_stmt *stmt, int i, const SQWrite *w);
-
-static int sq_sqlite3_column_int (sqlite3_stmt *stmt, int col, uint8_t *);
-static int sq_sqlite3_column_double (sqlite3_stmt *stmt, int col, uint8_t *);
-static int sq_sqlite3_column_text (sqlite3_stmt *stmt, int col, uint8_t *);
-static int sq_sqlite3_column_blob (sqlite3_stmt *stmt, int col, uint8_t *);
-
-static int sz_sqlite3_column_any (sqlite3_stmt *stmt, int col, uint8_t *);
-
-static int pr_sqlite3_column_int (sqlite3_stmt *stmt, int col, uint8_t *);
-static int pr_sqlite3_column_double (sqlite3_stmt *stmt, int col, uint8_t *);
-static int pr_sqlite3_column_text (sqlite3_stmt *stmt, int col, uint8_t *);
-static int pr_sqlite3_column_blob (sqlite3_stmt *stmt, int col, uint8_t *);
-
-static _Bool __sq_read_oneshot (const char *filename, const char *sql, int limit, SQWrite **ww);
-
-/*Reader function pointers*/
-static SQReader sq_readers[][7] = {
-	{
-		[SQLITE_INTEGER] = { .fp = sq_sqlite3_column_int },
-		[SQLITE_FLOAT]   = { .fp = sq_sqlite3_column_double },
-		[SQLITE_TEXT]    = { .fp = sq_sqlite3_column_text },
-		[SQLITE_BLOB]    = { .fp = sq_sqlite3_column_blob },
-		[SQLITE_NULL]    = { .fp = 0 },
-	},
-	{
-		[SQLITE_INTEGER] = { .fp = pr_sqlite3_column_int },
-		[SQLITE_FLOAT]   = { .fp = pr_sqlite3_column_double },
-		[SQLITE_TEXT]    = { .fp = pr_sqlite3_column_text },
-		[SQLITE_BLOB]    = { .fp = pr_sqlite3_column_blob },
-		[SQLITE_NULL]    = { .fp = 0 },
-	},
-};
-
-/*Insert function pointers*/
-static SQInsert sq_inserters[][7] = {
-	{ 
-		[SQLITE_INTEGER] = { .fp = sq_add_sqlite3_int },
-		[SQLITE_FLOAT]   = { .fp = sq_add_sqlite3_double },
-		[SQLITE_TEXT]    = { .fp = sq_add_sqlite3_text },
-		[SQLITE_BLOB]    = { .fp = sq_add_sqlite3_blob },
-		[SQ_DTE]         = { .fp = sq_add_sqlite3_dateint },
-		[SQLITE_NULL]    = { .fp = 0 },
-	}
- ,{
-		[SQLITE_INTEGER] = { .fp = pr_add_sqlite3_int },
-		[SQLITE_FLOAT]   = { .fp = pr_add_sqlite3_double },
-		[SQLITE_TEXT]    = { .fp = pr_add_sqlite3_text },
-		[SQLITE_BLOB]    = { .fp = pr_add_sqlite3_blob },
-		[SQLITE_NULL]    = { .fp = 0 },
-	},
-}; 
-#endif
-
 
 #ifdef DEBUG_H
 /*Print out the weird structure*/
@@ -3033,207 +2986,6 @@ static int sq_get_query_size ( sqlite3_stmt *stmt ) {
 } 
 
 
-#if 0
-
-//Do an insert
-int sq_insert_oneshot (const char *filename, const char *sql, const SQWrite *w, char *err) 
-{
-	int rc, pos = 1;
-	sqlite3 *db = NULL;
-	sqlite3_stmt *stmt = NULL;
-	SQInsert *stack = sq_inserters[0];
-
-	//Open database	
-	if (sqlite3_open(filename, &db) != SQLITE_OK)
-	{
-		fprintf (stderr, "Failed to prepare db stmt: %s\n", sqlite3_errmsg(db));	
-		return 0; //ERR_DB_OPEN; //berr(0, ERR_DB_OPEN);
-	}
-
-	//Prepare
-	if ((rc = sqlite3_prepare_v2(db, sql, -1, &stmt, 0)) != SQLITE_OK) 
-	{
-		//return err(NULL, ERR_DB_PREPARE_STMT);
-		fprintf (stderr, "Failed to prepare db stmt: %s\n", sqlite3_errmsg(db));	
-		return 0;
-	}
-
-	//Loop through each value, do something with it
-	while (!w->sentinel) 
-	{
-		if (!stack[w->type].fp (stmt, pos, w))
-		{
-			fprintf( stderr, "Insert at stack failed...\n" );
-			return 0;
-		}
-		w++, pos++;
-	}
-
-	//Step and execute
-	if ((rc = sqlite3_step(stmt)) != SQLITE_DONE)
-	{
-		fprintf (stderr, "Failed to step: %s\n", sqlite3_errmsg(db));	
-		//return berr(0, ERR_DB_STEP);
-		return 0;
-	}
-
-	//Finalize statement
-	if (stmt)
-		sqlite3_finalize(stmt);
-
-	//close database
-	if (sqlite3_close(db) != SQLITE_OK)
-	{
-		fprintf (stderr, "Failed to close db: %s\n", sqlite3_errmsg(db));	
-		//return berr(0, ERR_DB_CLOSE);
-		return 0;
-	}
-
-	return 1;
-}
-//Read data and return a reference to it
-uint8_t *sq_read_oneshot (const char *filename, const char *sql, int limit, char *err) 
-{
-	//Define common things
-	int rc;
-	int lm=0;
-	int size=0;
-	uint8_t *msg = NULL;
-	sqlite3 *db = NULL;
-	sqlite3_stmt *stmt = NULL;
-
-	//open the database if it's not already (or die and open it elsewhere)
-	if (sqlite3_open(filename, &db) != SQLITE_OK) {
-		//return err(NULL, ERR_DB_OPEN);
-		//fprintf( stderr, "%s: %s\n", name, err(ERR_DB_OPEN));   
-		return NULL;
-	}
-
-	//execute whatever SQL is here
-	if ((rc = sqlite3_prepare_v2(db, sql, -1, &stmt, 0)) != SQLITE_OK) {
-		//return err(NULL, ERR_DB_PREPARE_STMT);
-		//fprintf( stderr, "%s: %s\n", name, err(ERR_DB_PREPARE_STMT));   
-		return NULL;
-	}
-
-	//Stack model should be chosen ahead of time
-	SQReader *stack = sq_readers[0];
-
-	//Create some space for the message.  Leave me alone...
-	if ( !(msg = calloc(sq_get_query_size(stmt), 1)) ) {
-		fprintf( stderr, "%s: %s\n", name, "Couldn't allocate space for result set.");
-		return NULL;
-	}
-
-			
-	//serialize those results
-	while ( (rc = sqlite3_step(stmt)) != SQLITE_DONE )
-	{
-		int s = sqlite3_data_count(stmt);
-		for (int i=0; i < s; i++) 
-		{
-			//TODO: realloc might be a better option here.
-			int wr = sqlite3_column_bytes (stmt, i); 
-			memcpy( &msg[size], sqlite3_column_text(stmt, i), wr );
-			size  += wr;
-	
-			//Copy the next boundary	
-			memcpy( &msg[size], &boundary[ (i != (s - 1)) ? 0 : 9 ], 9 );
-			size  +=  9;
-		}
-
-		//fprintf(stderr, "%s\n", "hi");
-		//write(2, msg, size);
-		//getchar();
-	}
-
-	//finalize statement 
-	if (stmt) {
-		sqlite3_finalize(stmt);
-	}
-
-	//close database
-	if (sqlite3_close(db) != SQLITE_OK) {
-		//return err(NULL, ERR_DB_CLOSE);
-		//You could theoretically try again.
-		return NULL;
-	}
-
-
-	//Return something
-	return msg;
-}
-
-
-
-//Read data and use a callback
-uint8_t *sq_readinto_oneshot (const char *filename, const char *sql, int limit, void *p, int (*fp)(void *p)) 
-{
-	//Define common things
-	int rc;
-	int lm=0;
-	int size=0;
-	uint8_t *msg = NULL;
-	sqlite3 *db = NULL;
-	sqlite3_stmt *stmt = NULL;
-
-	//open the database if it's not already (or die and open it elsewhere)
-	if (sqlite3_open(filename, &db) != SQLITE_OK) {
-		//return err(NULL, ERR_DB_OPEN);
-		//fprintf( stderr, "%s: %s\n", name, err(ERR_DB_OPEN));   
-		return NULL;
-	}
-
-	//execute whatever SQL is here
-	if ((rc = sqlite3_prepare_v2(db, sql, -1, &stmt, 0)) != SQLITE_OK) {
-		//return err(NULL, ERR_DB_PREPARE_STMT);
-		//fprintf( stderr, "%s: %s\n", name, err(ERR_DB_PREPARE_STMT));   
-		return NULL;
-	}
-
-			
-	//serialize those results
-	while ( (rc = sqlite3_step(stmt)) != SQLITE_DONE )
-	{
-		int s = sqlite3_data_count(stmt);
-		for (int i=0; i < s; i++) 
-		{
-			//TODO: realloc might be a better option here.
-			int wr = sqlite3_column_bytes (stmt, i); 
-			memcpy( &msg[size], sqlite3_column_text(stmt, i), wr );
-			size  += wr;
-	
-			//Copy the next boundary	
-			memcpy( &msg[size], &boundary[ (i != (s - 1)) ? 0 : 9 ], 9 );
-			size  +=  9;
-		}
-
-#if 0
-		fprintf(stderr, "%s\n", "hi");
-		write(2, msg, size);
-		getchar();
-#endif
-	}
-
-	//finalize statement 
-	if (stmt) {
-		sqlite3_finalize(stmt);
-	}
-
-	//close database
-	if (sqlite3_close(db) != SQLITE_OK) {
-		//return err(NULL, ERR_DB_CLOSE);
-		//You could theoretically try again.
-		return NULL;
-	}
-
-
-	//Return something
-	return msg;
-}
-#endif
-
-
 //Check type
 SQType sq_get_type (uint8_t *p, int len) {
 	char c=0, f=0;
@@ -3323,476 +3075,6 @@ static int sq_add (sqlite3_stmt *stmt, int i, const SQWrite *w, char *errstr) {
 	return SQLITE_OK;
 }
 
-
-#if 0
-/*The cursor or current row can be kept here*/
-static _Bool sq_add_sqlite3_int (sqlite3_stmt *stmt, int i, const SQWrite *w) {
-	int rc = sqlite3_bind_int( stmt, i, w->v.n );
-	if (rc != SQLITE_OK) {
-		return (fprintf(stderr, "Error binding SQL %s at position %d: %s\n",
-			sqltypes[SQLITE_INTEGER], i, sqlite3_errstr(rc)) ? 0 : 0);
-	}
-	return 1;
-}
-
-
-
-//Add a date by integer or by long date?
-static _Bool sq_add_sqlite3_dateint (sqlite3_stmt *stmt, int i, const SQWrite *w) {
- #ifdef _POSIX_TIME 
-	struct timespec ts;
-	clock_gettime(CLOCK_REALTIME, &ts);
- #else
-	struct timeval ts;
-	gettimeofday( &ts, NULL );
- #endif
-	int rc = sqlite3_bind_int( stmt, i, ts.tv_sec );
-	if (rc != SQLITE_OK) {
-		return (fprintf(stderr, "Error binding SQL %s at position %d: %s\n",
-			sqltypes[SQLITE_INTEGER], i, sqlite3_errstr(rc)) ? 0 : 0);
-	}
-	return 1;
-}
-
-
-
-//
-static _Bool sq_add_sqlite3_double (sqlite3_stmt *stmt, int i, const SQWrite *w) {
-	int rc=sqlite3_bind_double(stmt, i, w->v.f);
-	if (rc != SQLITE_OK) {
-		return (fprintf(stderr, "Error binding SQL %s at position %d: %s\n",
-			sqltypes[SQLITE_FLOAT], i, sqlite3_errstr(rc)) ? 0 : 0);
-	}
-	return 1;
-}
-
-
-static _Bool sq_add_sqlite3_text (sqlite3_stmt *stmt, int i, const SQWrite *w) 
-{
-	int rc= sqlite3_bind_text(stmt, i, w->v.c,
-		(!w->len || w->len == -1) ? strlen(w->v.c) : w->len, SQLITE_STATIC);
-	if (rc != SQLITE_OK) {
-		return (fprintf(stderr, "Error binding SQL %s at position %d: %s\n",
-			sqltypes[SQLITE_TEXT], i, sqlite3_errstr(rc)) ? 0 : 0);
-	}
-	return 1;
-}
-
-
-static _Bool sq_add_sqlite3_blob (sqlite3_stmt *stmt, int i, const SQWrite *w) {
-	int rc = sqlite3_bind_blob(stmt, i, w->v.d, w->len, SQLITE_STATIC);
-	if (rc != SQLITE_OK) {
-		return (fprintf(stderr, "Error binding SQL %s at position %d: %s\n",
-			sqltypes[SQLITE_BLOB], i, sqlite3_errstr(rc)) ? 0 : 0);
-	}
-	return 1;
-}
-
-
-static _Bool pr_add_sqlite3_int (sqlite3_stmt *stmt, int i, const SQWrite *w) {
-	SHOWDATA( "Adding int at column %d\n", i);
-	fprintf(stderr, "%d\n", w->v.n); 
-	return 1;
-}
-
-
-static _Bool pr_add_sqlite3_double (sqlite3_stmt *stmt, int i, const SQWrite *w) {
-	SHOWDATA( "Adding float at column %d\n", i);
-	fprintf(stderr, "%f\n", w->v.f); 
-	return 1;
-}
-
-
-static _Bool pr_add_sqlite3_text (sqlite3_stmt *stmt, int i, const SQWrite *w) {
-	SHOWDATA( "Adding text at column %d\n", i);
-	write(2, w->v.c, w->len);
-	return 1;
-}
-
-
-static _Bool pr_add_sqlite3_blob (sqlite3_stmt *stmt, int i, const SQWrite *w) {
-	SHOWDATA( "Adding blob at column %d\n", i );
-	write(2, w->v.d, w->len);
-	return 1;
-}
-
-
-/*Handles serializing everything*/
-static int sq_sqlite3_column_int (sqlite3_stmt *stmt, int col, uint8_t *msg) {
-	SHOWDATA ("Adding %s to SQL database.\n", sqlite3_column_text(stmt, col) ); 
-	return 1;
-}
-
-
-static int sq_sqlite3_column_double (sqlite3_stmt *stmt, int col, uint8_t *msg) {
-	SHOWDATA ( "Adding %s to SQL database \n", sqlite3_column_text(stmt, col)); 
-	return 1;
-}
-
-
-static int sq_sqlite3_column_text (sqlite3_stmt *stmt, int col, uint8_t *msg) {
-	fprintf(stderr, "%s\n", sqlite3_column_text(stmt, col)); 
-	return 1;
-}
-
-
-static int sq_sqlite3_column_blob (sqlite3_stmt *stmt, int col, uint8_t *msg) {
-	fprintf(stderr, "%s\n", sqlite3_column_text(stmt, col)); 
-	return 1;
-}
-
-//....
-void sq_write_print (Database *gb, SQWrite *w) {
-	SQReader *stack = sq_readers[1];
-	int i=0;
-	while (!w->sentinel) {
-		if (!stack[w->type].fp (gb->stmt, i, NULL))
-			return;
-		w++, i++;
-	}
-}
-
-//Get size of items in columns everything
-static int sz_sqlite3_column_any (sqlite3_stmt *stmt, int col, uint8_t *msg) {
-	return sqlite3_column_bytes(stmt, col); 
-}
-
-
-//Handles serializing everything
-static int pr_sqlite3_column_int (sqlite3_stmt *stmt, int col, uint8_t *msg) {
-	fprintf(stderr, "%d\n", sqlite3_column_int(stmt, col)); 
-	return 1;
-}
-
-static int pr_sqlite3_column_double (sqlite3_stmt *stmt, int col, uint8_t *msg) {
-	fprintf(stderr, "%f\n", sqlite3_column_double(stmt, col)); 
-	return 1;
-}
-
-static int pr_sqlite3_column_text (sqlite3_stmt *stmt, int col, uint8_t *msg) {
-	fprintf(stderr, "%s\n", sqlite3_column_text(stmt, col)); 
-	return 1;
-}
-
-static int pr_sqlite3_column_blob (sqlite3_stmt *stmt, int col, uint8_t *msg) {
-	fprintf(stderr, "bytes: %d\n", sqlite3_column_bytes(stmt, col)); 
-	write(2, sqlite3_column_blob(stmt, col), sqlite3_column_bytes(stmt, col)); 
-	return 1;
-}
-
-//Insert values with a SQL statement that needs to be bound
-_Bool sq_exec_complex (Database *gb, const char *sql, const SQWrite *w) 
-{
-	int rc, pos = 1;
-	SQInsert *stack = sq_inserters[0];
-	VPRINT( "Database: %p, SQL statement: %s, SQWrite %p\n", gb, sql, w );
-
-	//Prepare
-	if ( (rc = sqlite3_prepare_v2(gb->db, sql, -1, &gb->stmt, 0)) != SQLITE_OK )
-		return serr( ERR_DB_PREPARE_STMT, gb, sqlite3_errmsg(gb->db) );
-
-	//Loop and bind each value
-	while (!w->sentinel) {
-		VPRINT( "Attempting to bind argument of type '%s' at %d to statement %s\n", 
-			SQ_TYPE(w->type), pos, sql );
-
-		if ( !stack[w->type].fp (gb->stmt, pos, w) ) {
-			return serr( ERR_DB_BIND_VALUE, gb, pos, sql ); 
-		}	
-		w++, pos++;
-	}
-
-	//Step and execute
-	if ((rc = sqlite3_step(gb->stmt)) != SQLITE_DONE) {
-		return 0;//err(NULL, ERR_DB_STEP);
-	}
-
-	//Finalize statement
-	if (gb->stmt) {
-		sqlite3_finalize(gb->stmt);
-		gb->stmt = NULL;
-	}
-
-	return 1;
-}
-
-
-//Insert values with a SQL statement that needs to be bound
-_Bool sq_insert (Database *gb, const char *sql, const SQWrite *w) 
-{
-	int rc, pos = 1;
-	SQInsert *stack = sq_inserters[0];
-
-	//Prepare
-	rc = sqlite3_prepare_v2(gb->db, sql, -1, &gb->stmt, 0);
-	if ( rc != SQLITE_OK ) {
-		return serr( ERR_DB_PREPARE_STMT, gb, sqlite3_errmsg(gb->db) ); 
-	}
-
-	//Loop and bind each value
-	while (!w->sentinel) {
-		VPRINT( "Attempting to bind argument of type '%s' at %d to statement %s\n", 
-			SQ_TYPE(w->type), pos, sql );
-
-		if ( !stack[ w->type ].fp (gb->stmt, pos, w) ) {
-			return serr( ERR_DB_BIND_VALUE, gb, pos, sql ); 
-		}
-		w++, pos++;
-	}
-
-	//Step and execute
-	if ( (rc = sqlite3_step(gb->stmt)) != SQLITE_DONE ) {
-		return serr( ERR_DB_STEP, gb, NULL );
-	}
-
-	//Finalize statement
-	if (gb->stmt) {
-		sqlite3_finalize(gb->stmt);
-		gb->stmt = NULL;
-	}
-
-	return 1;
-}
-
-//Save database results to table
-int sq_save (Database *db, const char *query, const char *name, const SQWrite *w )
-{
-	//...
-	int len = 0;
-	//define a name for model (if you want one)
-	const char *pq = NULL;
-
-	//Shut down attempts to send null queries
-	if ( !query ) {
-		fprintf( stderr, "No query specified...\n" );
-		return 0;
-	}
-
-	//Shut down attempts to read unopened databases
-	if ( !db ) {
-		fprintf( stderr, "No open database was detected...\n" );
-		return 0;
-	}
-
-
-
-	//Trim the received query
-	pq = (char *)trim((uint8_t *)query, " \t\n\r", strlen(query), &len ); 
-
-	//Run any other statement
-	if ( !memchr( "sS", *pq, 2 ) ) 
-	{
-		if ( !sq_exec_complex ( (Database *)db, pq, w ) ) 
-		{
-			fprintf( stderr, "sql_wrap: Failed to execute complex query.\n" );
-			return 0;
-		}
-	}
-	//Run selects
-	else
-	{
-		//Set the hash table's source to point the buffer's data
-		char *columnNames[127] = { NULL };
-		int columnInts[127]    = { 0 };
-		int pos         = 0,
-		    columnCount = 0,
-		    bfw         = 0, 
-		    a           = 0, 
-		    title       = 0; 
-		uint8_t *src    = NULL;
-		Parser q = { .words={
-			{ (char *)sqlite3_E },
-			{ (char *)sqlite3_C },
-			{ (char *)sqlite3_N },
-			{ NULL }
-		}};
-
-		//Initialize buffer for column names
-		if ( !bf_init( &db->header, NULL, 1 ) ) {
-			fprintf( stderr, "bf_init failed...\n" );
-			return 0;
-		}
-
-		//Initialize buffer for result set
-		if ( !bf_init( &db->results, NULL, 1 ) ) {
-			fprintf( stderr, "initialization of results failed...\n" );
-			return 0;
-		}
-
-		//Initialize a Table for result viewing 
-		if ( !lt_init( &db->kvt, NULL, 1024 ) ) 
-		{
-			fprintf( stderr, "bf_init failed...\n" );
-			return 0;
-		}
-	
-		//Start reading
-		if ( !sq_reader_start ( (Database *)db, pq, !w ? nullw : w ) ) {
-			fprintf( stderr, 	"start failed...\n" );
-			return 0;//http_err( h, 404, "Page not found." );
-		}
-
-		//Unless there are a ton of columns, we should be fine with this.
-		if (( columnCount = sqlite3_column_count( db->stmt )) > 127 ) {
-			fprintf( stderr, "sql_wrap: Too many rows...\n" );
-			return 0;
-		}
-
-
-		//Add each of the keys to the top of the table
-		for (int i=0; i < columnCount; i++ )
-		{
-			uint8_t *name = (uint8_t *)sqlite3_column_name(db->stmt, i);
-			int len = strlen( (char *)name );
-			if ( !bf_append( &db->header, name, len ) ) {
-				fprintf( stderr, "sql_wrap: Failed to add key names.\n" );
-				return 0;
-			}
-			if ( !bf_append( &db->header, (uint8_t *)"\0", 1 ) ) { 
-				fprintf( stderr, "sql_wrap: Failed to add sep.\n" );
-				return 0;
-			}
-			columnInts[ i ] = pos;
-			pos += len + 1;
-		}
-
-		for (int i=0; i < columnCount; i++ )
-			columnNames[i] = (char *)&(&db->header)->buffer[ columnInts[i] ];	
-
-		//This expects just one file
-		while ( sq_reader_continue( (Database *)db ) ) 
-		{
-			int dc = sqlite3_data_count(db->stmt);
-			//If there were no results
-			if ( !dc ) {
-				//lt_free( &db->header );
-				sq_close( (Database *)db );
-				return 0;
-			}
-
-			/*Using a hash table is such a good call*/
-			for (int i = 0; i < dc; i++ ) 
-			{
-				//All of the templates could go together here if you were so inclined
-				int len    = sqlite3_column_bytes(db->stmt, i);
-				uint8_t *b = (uint8_t *)sqlite3_column_blob(db->stmt, i); 
-				uint8_t *c = (i == dc - 1) ? (uint8_t *)sqlite3_N : (uint8_t *)sqlite3_C;
-
-				//Add value to buffer
-				if ( !bf_append( &db->results, b, sqlite3_column_bytes(db->stmt, i)) )
-				{
-					fprintf( stderr, "sql_wrap: Failed to add result set.\n" );
-					return 0;
-				}
-
-				if ( !bf_append( &db->results, c, sqlite3_L ) ) {
-					fprintf( stderr, "sql_wrap: Failed add sep.\n" );
-					return 0;
-				}
-			}
-		}
-
-		//Mark the end
-		bf_append( &db->results, (uint8_t *)"\0", 1 );
-		src = bf_data( &db->results );
-		bfw = bf_written( &db->results );
-		memset( &src[ bfw - ( sqlite3_L + 1 ) ], '3', sqlite3_L );
-
-		//Set everything needed for parsing
-		pr_prepare( &q );
-
-		//Add a query name (free it later)
-		if ( name ) 
-		{
-			db->qname = malloc( strlen( name ) + 1 );
-			memset( db->qname, 0, strlen( name ) + 1 );
-			memcpy( db->qname, name, strlen( name ) );
-			//db->qname[ strlen( name ) ] = '\0';
-			lt_addblobkey( &db->kvt, (uint8_t *)db->qname, strlen( name ) );
-			lt_descend( &db->kvt );
-		}
-
-		lt_addintkey( &db->kvt, title );
-		lt_descend( &db->kvt );
-
-
-		//Loop through all and put them in a malloc'd area.
-		while ( pr_next( &q, src, bfw ) )
-		{
-			lt_addblobkey( &db->kvt, (uint8_t *)columnNames[a], strlen( columnNames[a] ));
-			lt_addblobvalue( &db->kvt, &src[ q.prev ], q.size );
-			lt_finalize ( &db->kvt );
-			( a == columnCount - 1 ) ? a = 0 : a++;
-
-			if ( !q.word )
-				break;
-			else if ( *q.word == '3' )
-			{
-				lt_ascend( &db->kvt );
-				break;
-			}
-			else if ( *q.word == '{' ) 
-			{
-				lt_ascend( &db->kvt );
-				lt_addintkey( &db->kvt, ++title );
-				lt_descend( &db->kvt );
-			}
-		}
-
-		if ( name ) {
-			lt_ascend( &db->kvt );
-		}
-	}
-
-	lt_lock( &db->kvt );
-	return 1;	
-}
-
-//Executes a SQL statement
-_Bool sq_exec (Database *gb, const char *sql) 
-{
-	VPRINT( "Got SQL statement: %s\n", sql );
-
-	/*Finalize if not already done*/
-	(gb->stmt) ? sqlite3_finalize(gb->stmt) : 0;
-
-	/*This is some silly shit here*/
-	int t = 0, a = 0, rc = 0;
-	while ((a = memtok(&sql[t], (uint8_t *)";\0", strlen(sql) - t, 2)) > -1) 
-	{
-		//Initialize a buffer
-		init_buf(&sql[t], buf, a); 
-		
-		//Prepare a statement
-		if ((rc = sqlite3_prepare_v2(gb->db, buf, -1, &gb->stmt, 0)) != SQLITE_OK)
-		{
-			sq_free( gb );
-			return serr( ERR_DB_PREPARE_STMT, gb, NULL );
-		}
-
-		//Step to commit the record
-		if ((rc = sqlite3_step(gb->stmt)) != SQLITE_DONE) 
-		{
-			sqlite3_finalize(gb->stmt);
-			sq_free( gb );
-			return serr( ERR_DB_STEP, gb, NULL );
-		}
-
-		//Move up the indicator
-		t += a + 1;
-	} 
-
-	//Finalize b/c we're finished
-	sqlite3_finalize(gb->stmt);
-	gb->stmt = NULL;
-	return 1;	
-}
-
-
-
-
-
-#endif
 
 //Write a date
 void sq_getdate (char *datebuf) 
@@ -3906,15 +3188,10 @@ int sq_lexec ( Database *gb, const char *sql, const char *name, const SQWrite *w
 			"at %d to statement %s\n", SQ_TYPE(w->type), pos, pq );
 		
 		char locErr[2048] = {0};
-#if 0
-		if ( !stack[w->type].fp (gb->stmt, pos, w) )
-			return serr( ERR_DB_BIND_VALUE, gb, pos, pq ); 
-#else
 		if ( sq_add( gb->stmt, pos, w, locErr ) ) {
 			//TODO: So much more to be done here...
 			return serr( ERR_DB_BIND_VALUE, gb, pos, pq );
 		}
-#endif
 
 		w++, pos++;
 	}
@@ -4157,15 +3434,10 @@ _Bool sq_reader_start (Database *gb, const char *sql, const SQWrite *w)
 		//SQInsert *stack = sq_inserters[0];
 		char locErr[2048] = {0};
 		while ( !w->sentinel ) {
-		#if 0
-			if ( !stack[w->type].fp (gb->stmt, pos, w) )
-				return 0;
-		#else
 			if ( sq_add( gb->stmt, pos, w, locErr ) ) {
 				//TODO: So much more to be done here...
 				return serr( ERR_DB_BIND_VALUE, gb, pos, sql);
 			}
-		#endif
 			w++, pos++;
 		}
 	}
@@ -4504,16 +3776,16 @@ void __timer_eprint (Timer *t)
 
 #ifndef SOCKET_H
 //Get the address information of a socket.
-void socket_addrinfo (Socket *sock)
+int socket_addrinfo (Socket *sock)
 {
-	fprintf(stderr, "%s\n", "Getting address information for socket.");
+	VPRINT( "Getting address information for socket." );
 
 	struct addrinfo *peek; 
 	struct sockaddr_in *ipv4;
 	struct sockaddr_in6 *ipv6;
 	int status = getaddrinfo(sock->hostname, sock->portstr, &sock->hints, &sock->res);
 	if (status != 0)
-		err(1, "Could not get address information for this socket.");
+		return serr( ERR_SOCKET_GETADDRINFO, sock, gai_strerror( errno ) ); 
 
 	/* Loop through each */
 	for (peek = sock->res; peek != NULL; peek = peek->ai_next) {
@@ -4533,7 +3805,7 @@ void socket_addrinfo (Socket *sock)
 		if (inet_ntop(peek->ai_family, addr, sock->address, sizeof(sock->address)) == NULL)
 			continue;
 	
-		fprintf(stderr, "%s: %s\n", ipver, sock->address);
+		VPRINT( "%s: %s\n", ipver, sock->address);
 		/* Break somewhere after finding a valid address. */
 		break;
 	}
@@ -4544,6 +3816,7 @@ void socket_addrinfo (Socket *sock)
 	/* A list will probably be used here */
 	// OBJECT(list) *addresses
 	// { .ipver = 4, ipstr = 192.10..., .ipbin = peek->ai_addr, .len = peek->ai_addrlen }
+	return 1;
 }
 
 
@@ -4556,28 +3829,29 @@ _Bool socket_open (Socket *sock)
 	sock->bufsz = !sock->bufsz ? 1024 : sock->bufsz;
 	sock->opened = 0;
 	sock->backlog = 500;
-	sock->waittime = 5000;  // 3000 microseconds
+	sock->waittime = 5000;
 
-	if (!sock->proto || !strcmp(sock->proto, "TCP") || !strcmp(sock->proto, "tcp"))
+	//Automatically choose TCP if nothing is specified
+	int sock_opt = 0;
+	if ( !sock->proto || !strcmp(sock->proto, "TCP") || !strcmp(sock->proto, "tcp") ) {
+		sock_opt = 1;
 		set_sockopts(SOCK_STREAM, PF_INET, IPPROTO_TCP);
-	else if (!strcmp(sock->proto, "udp") ||!strcmp(sock->proto, "UDP"))
+	}
+	else if ( !strcmp(sock->proto, "udp") ||!strcmp(sock->proto, "UDP") ) {
+		sock_opt = 1;
 		set_sockopts(SOCK_DGRAM, PF_INET, IPPROTO_UDP);
-
-	/* Check port number (clients are zero until a request is made) */
-	if (!sock->port || sock->port < 0 || sock->port > 65536) {
-		return err( 1, "Invalid port specified." );
 	}
 
+	//Die if no supported protocols were requested
+	if ( !sock_opt )
+		return serr( ERR_SOCKET_INVALID_PROTOCOL, sock, sock->proto );
 
-	/* Set up the address data structure for use as either client or server */	
-	if (sock->_class == 's') 
-	{
-		/*there must be a way to do this WITHOUT malloc*/
-		//if ((sock->srvaddrinfo = (struct sockaddr_in *)nalloc(sizeof(struct sockaddr_in), "sockaddr.info")) == NULL)
-		//	return;
-			//return errnull("Could not allocate structure specified.");
+	/* Check port number (clients are zero until a request is made) */
+	if (!sock->port || sock->port < 0 || sock->port > 65536)
+		return serr( ERR_SOCKET_INVALID_PORT_NUMBER, sock, NULL );
 
-		/*This ought to work...*/
+	// Set up the address data structure for use as either client or server
+	if (sock->_class == 's') {
 		sock->srvaddrinfo = &sock->tmpaddrinfo;
 		memset(sock->srvaddrinfo, 0, sizeof(struct sockaddr_in));
 		struct sockaddr_in *saa = sock->srvaddrinfo; 
@@ -4587,7 +3861,6 @@ _Bool socket_open (Socket *sock)
 	}
 	else if (sock->_class == 'c') 
 	{
-		/* Set up the addrinfo structure for a future client request. */
 		struct addrinfo *h; 
 		memset(&sock->hints, 0, sizeof(sock->hints));
 		h = &sock->hints;
@@ -4595,13 +3868,14 @@ _Bool socket_open (Socket *sock)
 		h->ai_socktype = sock->conntype;
 	}
 
-	/* Finally, create a socket. */
-	if ((sock->fd = socket(sock->domain, sock->conntype, sock->protocol)) == -1) {
-		return 0;
-	}
+	//Finally, create a socket.
+	if ((sock->fd = socket(sock->domain, sock->conntype, sock->protocol)) == -1)
+		return serr( ERR_SOCKET_CREATE, sock, strerror( errno ) );
+
+	//Mark open flag.
 	sock->opened = 1;
 
-	/* Set timeout, reusable bit and any other options */
+	//Set timeout, reusable bit and any other options 
 	struct timespec to = { .tv_sec = 2 };
 	if (setsockopt(sock->fd, SOL_SOCKET, SO_REUSEADDR, &to, sizeof(to)) == -1) {
 		// sock->free(sock);
@@ -4612,26 +3886,58 @@ _Bool socket_open (Socket *sock)
 }
 
 
-
 //Bind to a socket
 _Bool socket_bind (Socket *sock) {
-	//set errno
-	return (bind(sock->fd, (struct sockaddr *)sock->srvaddrinfo, sizeof(struct sockaddr_in)) != -1);
-//		return errsys("Could not bind to socket.");
+	int status = bind(sock->fd, (struct sockaddr *)sock->srvaddrinfo, sizeof(struct sockaddr_in)); 
+	if ( status == -1 ) {
+		return serr( ERR_SOCKET_LISTEN, sock, strerror( errno ) );
+	}
+	return 1;
 }
-
 
 
 //Listen for connections over a socket.
-_Bool socket_listen (Socket *sock)
+_Bool socket_listen (Socket *sock) {
+	int status = listen(sock->fd, sock->backlog);
+	if ( status == -1 ) {
+		return serr( ERR_SOCKET_LISTEN, sock, strerror( errno ) );
+	}
+	return 1; 
+}
+
+
+//Opens a non blocking socket.
+_Bool socket_tcp_recv (Socket *sock, uint8_t *msg, int *len) 
 {
-	//set errno
-	return (listen(sock->fd, sock->backlog) != -1);
-		//return errsys("Could not listen out on socket.");
+	int t = 0, 
+      r = 0, 
+      w = ( *len > 0 ) ? *len : 64;
+
+	//If it's -1, die.  If it's less than buffer, die
+	while (1) {
+		//Error occurred, free or reset the buffer and die
+		if ( (r = read(sock->fd, &msg[ t ], w )) == -1 ) {
+			//handle recv() errors...
+			sock->err = errno;
+			return 0;
+		}
+
+		//...
+		if ( !r ) {
+			fprintf( stderr, "socket_tcp_recv should be done...\n" );
+			break;
+		}
+
+		t += r;
+	}
+
+	*len = t;
+	return 1;
 }
 
 
 
+#if 0
 //Open a socket for UDP
 _Bool socket_udp_recv (Socket *self)  {
 #if 0
@@ -4663,42 +3969,6 @@ _Bool socket_udp_recv (Socket *self)  {
 
 
 
-//Opens a non blocking socket.
-//This function is not a good idea for select I don't think...
-_Bool socket_tcp_recv (Socket *sock, uint8_t *msg, int *len) 
-{
-	int t = 0, 
-      r = 0, 
-      w = ( *len > 0 ) ? *len : 64;
-
-	//If it's -1, die.  If it's less than buffer, die
-	while (1) 
-	{
-		//Error occurred, free or reset the buffer and die
-		if ( (r = read(sock->fd, &msg[ t ], w )) == -1 )
-		{
-			//handle recv() errors...
-			sock->err = errno;
-			return 0;
-		}
-
-		//...
-		if ( !r )
-		{
-			fprintf( stderr, "socket_tcp_recv should be done...\n" );
-			break;
-		}
-
-		t += r;
-	}
-
-	*len = t;
-	return 1;
-}
-
-
-
-#if 0
 _Bool socket_udp_send (Socket *sock, uint8_t *msg, uint32_t len) {
 	int bs=0; 
 #if 0
@@ -4737,36 +4007,6 @@ _Bool socket_udp_send (Socket *sock, uint8_t *msg, uint32_t len) {
 #endif
 
 
-
-#if 0
-_Bool socket_tcp_send (Socket *sock, uint8_t *msg, uint32_t len) {
-	/* What is going on? */
-	int bs = 0;
-
-#if 0
-	fprintf(stderr, "Attempting to send message over fd '%d'\n", sock->fd);
-	fprintf(stderr, "message contents:\n");
-		
-	int c = 0;
-	// chardump(msg, ws > rcvd ? rcvd : ws);
-	for (c=0;c<msglen;c++)
-		fprintf(stderr, "'%c' ", msg[c]);
-#endif
-	while (1) { 
-		bs = send(sock->fd, msg, len, 0);
-		// usleep(sock->waittime);
-		if (bs==len)
-			break;
-		if (bs == -1)
-			return 0;
-		// keep trying
-	}
-	return SUCCESS;
-}
-#endif
-
-
-
 //Accept connections
 _Bool socket_accept (Socket *sock, Socket *new) {
 	/* Clone current socket data */
@@ -4785,7 +4025,7 @@ _Bool socket_accept (Socket *sock, Socket *new) {
 }
 
 
-
+#if 0
 //Send data via UDP
 _Bool socket_udp_send (Socket *sock, uint8_t *msg, uint32_t length) {
 	//int msglen = (!length) ? strlen(msg) : length;	
@@ -4820,6 +4060,7 @@ _Bool socket_udp_send (Socket *sock, uint8_t *msg, uint32_t length) {
 #endif
 	return 1;
 }
+#endif
 
 
 
@@ -4844,16 +4085,11 @@ _Bool socket_parse_uri (URIData *u, const char *uri) {
 #endif
 
 
-//Get address info
-_Bool socket_getaddrinfo (Socket *self) {
-	return 0;
-}
-
-
 //Refactor this to split out the connect steps.  Maybe create an iterator?
 int socket_connect (Socket *self, const char *uri, int port) 
 {
 	int fd, stat;
+	int connected = 0, resolved = 0;
 	char *ps;
 	char portstr[ 5 ] = {0};
 	struct addrinfo *r;
@@ -4861,52 +4097,56 @@ int socket_connect (Socket *self, const char *uri, int port)
 	// Quick check of port
 	if ( port < 1 || port > 65536 )
 	{
-		self->err = 2;
-		err( 2, "die die die..." );
+		VPRINT( "Port too large." );
+		return serr( ERR_SOCKET_INVALID_PORT_NUMBER, self, port );
 	}
 
 	// Make a string out of number
 	snprintf( portstr, 4, "%d", port );
 
-	// Get smart about this and parse URIs to make this a little simpler to use
-	// ...
-
 	// Always get canoncial name information
 	self->hints.ai_flags |= AI_CANONNAME;
 
 	// Get address information
+	VPRINT( "Getting address info." );
 	if ( (stat = getaddrinfo( uri, portstr, &self->hints, &self->res)) != 0 )
-	{
-		self->err = errno;
-		err(1, "%s", (char *)gai_strerror(stat));
-	}
+		return serr( ERR_SOCKET_GETADDRINFO, self, (char *)gai_strerror(stat) );
 
 	// ...
 	for ( r = self->res; r != NULL; r = self->res->ai_next ) 	
 	{
-		// I just want to see what's here...
-		fprintf( stderr, "%d\n", r->ai_addrlen );
-		fprintf( stderr, "%s\n", r->ai_canonname);
+		VPRINT( "r->ai_addrlen = %d\n", r->ai_addrlen );
+		VPRINT( "ai_canonname  = %s\n", r->ai_canonname);
 
 		// Bind to talk to the other guy
 		if ((self->fd = socket( r->ai_family, r->ai_socktype, r->ai_protocol )) == -1)
 		{
-			fprintf( stderr, "socket connect error: %s\n", strerror( errno ) );
+			VPRINT( "Attempt to open a connecting socket failed: %s\n", strerror( errno ) );
 			continue; //try again
 		}
 
 		// Connect
-		if (connect( self->fd, r->ai_addr, r->ai_addrlen) != -1)
+		if (connect( self->fd, r->ai_addr, r->ai_addrlen) != -1) {
+			VPRINT( "Connected succesfully!\n" );
+			resolved = 1, connected = 1;
 			break;
+		}
 		else 
 		{
-			fprintf( stderr, "socket connect error..." );
-			err(1, "%s", strerror(errno));	
+			VPRINT( "Attempt to connect to server failed: %s\n", strerror( errno ) );
+			//err(1, "%s", strerror(errno));	
 		}
 
 		// Close the parent if unsuccessful
-		if ( close( self->fd ) == -1 )
-			err(1, "%s", strerror(errno));	
+		if ( close( self->fd ) == -1 ) {
+			VPRINT( "Attempt to close parent socket file failed: %s\n", strerror( errno ) );
+			return serr( ERR_SOCKET_CONNECT_PARENT, self, strerror(errno));
+		}	
+	}
+
+	if ( !resolved && !connected ) {
+		freeaddrinfo( self->res );	
+		return serr( ERR_SOCKET_CONNECT, self, NULL );
 	}
 
 	freeaddrinfo( self->res );	
@@ -4922,22 +4162,18 @@ _Bool socket_tcp_send (Socket *sock, uint8_t *msg, uint32_t length)
 	int t   = 0;
 	int len = length;
 
-	while ( len )
-	{
-		//Run
-		if ( (bs = write(sock->fd, &msg[ t ], len)) == -1 )
-			return 0;
+	while ( len ) {
+		//Try to send data
+		//TODO: Can't other things return -1?
+		if ( (bs = write(sock->fd, &msg[ t ], len)) == -1 ) {
+			return serr( ERR_SOCKET_TCP_WRITE, sock, strerror(errno) );
+		}
 
 		//This should keep running
-		fprintf( stderr, "%d bytes written\n", bs );
+		VPRINT( "%d bytes written\n", bs );
 		t   += bs;
 		len -= t ;	
 	}
 	return 1;
 }
-#endif
-
-#ifndef SINW_H
-
-
 #endif

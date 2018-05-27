@@ -759,9 +759,19 @@ enum
 	ERR_OPT_EXPECTED_NUMBER,
 #endif
 #ifndef SOCKET_H 
-	ERR_LITE_SOCKET_EXPECTED_ANY,
-	ERR_LITE_SOCKET_EXPECTED_STRING,
-	ERR_LITE_SOCKET_EXPECTED_NUMBER,
+	ERR_SOCKET_EXPECTED_ANY,
+	ERR_SOCKET_EXPECTED_STRING,
+	ERR_SOCKET_EXPECTED_NUMBER,
+	ERR_SOCKET_CREATE,
+	ERR_SOCKET_GETADDRINFO,
+	ERR_SOCKET_INVALID_PROTOCOL,
+	ERR_SOCKET_BIND,
+	ERR_SOCKET_LISTEN,
+	ERR_SOCKET_CONNECT,
+	ERR_SOCKET_CONNECT_PARENT,
+	ERR_SOCKET_TCP_WRITE,
+	ERR_SOCKET_TCP_READ,
+	ERR_SOCKET_INVALID_PORT_NUMBER,
 #endif
 #ifndef SINW_H
 	ERR_POLL_INITIAL_ALLOCATOR,
@@ -1651,7 +1661,7 @@ _Bool socket_tcp_send (Socket *sock, uint8_t *msg, uint32_t len);
 //_Bool socket_udp_send (Socket *sock, uint8_t *msg, uint32_t len);
 
  //buffer_t * socket_recvd(Socket *self);
-void socket_addrinfo(Socket *self);
+int socket_addrinfo(Socket *self);
 _Bool socket_bind(Socket *self);
 _Bool socket_listen(Socket *self);
 //uri_t * socket_parsed(Socket *self);

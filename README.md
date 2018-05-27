@@ -95,9 +95,56 @@ char \*myNewString = (char \*)bf_data( farf );
 
 ### Sockets
 
-uh... :)
+#### Clients
 
+Setting up a Curl-style client looks like:
 
+<pre>
+//Define a basic request.
+char request[] =
+	"GET / HTTP/1.1\r\n"
+	"Host: ramarcollins.com\r\n"
+	"User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1\r\n"
+	"\r\n";
+
+//Check to see that you can connect (this handles getting address info)
+if ( !socket_connect( &s, ua->url, port ) )
+	return ERRL( "Couldn't connect to socket at port %d", port );
+
+//Send the request
+if ( !socket_tcp_send( &s, (uint8_t *)request, strlen(request) ) )
+	return ERRL( "Couldn't send data over socket at port %d", port );
+
+//Take what was requested
+if ( !socket_tcp_recv( &s, (uint8_t *)response, &recvd ) )
+	return ERRL( "Couldn't send data over socket at port %d", port );
+
+//Write the response
+write( 2, response, recvd );
+</pre>
+
+#### Servers
+
+Creating servers is not crazy difficult.  Little bit longer though.
+
+<pre>
+//Define a socket
+Socket s = { .server = 1, .proto = "tcp", .port = 8888 };
+
+//Open, bind, listen
+if ( !socket_open( &s ) )
+	return ERRL( "Failed to open socket: %s", s.errmsg );
+
+if ( !socket_bind( &s ) )
+	return ERRL( "Failed to bind to socket fd: %s", s.errmsg );
+
+if ( !socket_listen( &s ) )
+	return ERRL( "Failed to listen: %s", s.errmsg );
+
+while ( socket_accept( &s ) ) {
+	//create a new file, etc.
+}
+</pre>
 
 ### Templating via the Render() module 
 
