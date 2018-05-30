@@ -11,28 +11,30 @@ Option nullopt[] = {
 };
 
 Option a_opt[] = {
-	SHORT( "d", "doublehyphen", 0 ),
-	SHORT( "s", "string", 0 ),
-	SHORT( "n", "numeric", 0 ),
-	SHORT( "y", "hyphenated-arg", 0 ),
+	SHORT( "d", "doublehyphen", 's' ),
+	SHORT( "s", "string", 's' ),
+	SHORT( "n", "numeric", 'n' ),
+	SHORT( "y", "hyphenated-arg", 's' ),
 	SHORT( "s", "s", 0 ), //one character flag...
 	{ .sentinel = 1 }
 };
+
 
 struct TestOpts {
 	int expected;
 	const char *argstr, *desc;
 	Option *opt;
+	int errcode;
 } options[] = {
-	{ ERR_NONE,                "./a", "No arguments", a_opt }
- ,{ ERR_OPT_EXPECTED_ANY,    "./a --b", "Flag with expected argument, but no argument", a_opt }
- ,{ ERR_OPT_UNEXPECTED_FLAG, "./a --b --fish", "Flag with expected argument, but got flag instead", a_opt }
- ,{ ERR_NONE,                "./a --b -- --fishy", "Flag with expected argument, but argument starts with -- " , a_opt }
- ,{ ERR_OPT_EXPECTED_NUMBER, "./a --string 1", "Flag with expected argument, but argument is of wrong type ( type == number )", a_opt }
- ,{ ERR_OPT_EXPECTED_STRING, "./a --numeric str", "Flag with expected argument, but argument is of wrong type ( type == string)", a_opt }
- ,{ ERR_NONE,                "./a --string string", "Flag with expected argument, but argument exists and is right", a_opt }
- ,{ ERR_NONE,                "./a --string abc --numeric --something else", "Multiple flags with expected arguments, but no argument exists for one of the flags.", a_opt }
- ,{ ERR_NONE,                "./a --string abc --numeric 1 --something else", "Flag with expected argument, but argument exists and is right", a_opt }
+	{ ERR_NONE,                "./a", "No arguments, no flags", a_opt }
+ ,{ ERR_OPT_EXPECTED_ANY,    "./a --b", "Flag, but no arguments", a_opt }
+ ,{ ERR_OPT_UNEXPECTED_FLAG, "./a --b --fish", "Flag, with flag as argument.", a_opt }
+ ,{ ERR_NONE,                "./a --b -- --fishy", "Flag with argument starting with -- " , a_opt }
+ ,{ ERR_OPT_EXPECTED_STRING_ARG, "./a --string 1", "Argument type mismatch ( type == number )", a_opt }
+ ,{ ERR_OPT_EXPECTED_NUMERIC_ARG, "./a --numeric str", "Argument type mismatch ( type == string)", a_opt }
+ ,{ ERR_NONE,                "./a --string string", "Argument is correct", a_opt }
+ ,{ ERR_NONE,                "./a --string abc --numeric --something else", "Flags, but no argument exists for flag expecting argument.", a_opt }
+ ,{ ERR_NONE,                "./a --string abc --numeric 1 --something else", "but argument exists and is right", a_opt }
  ,{ 0, NULL }
 };
 
@@ -50,7 +52,8 @@ TEST( opt )
 		int fakeArgn = 0; 
 		Mem m;
 		memset( &m, 0, sizeof(Mem));
-		LPRINTF( "Running test: %s", ot->desc );
+		fprintf( stderr, "Evaluating command-line: %s\n", ot->argstr );
+		LPRINTF( "%s", ot->desc );
 
 		//Populate fakeArgv for opt
 		while ( strwalk( &m, ot->argstr, " " ) ) {
@@ -64,14 +67,15 @@ TEST( opt )
 		//for ( int i=0; i<fakeArgn; i++ ) fprintf( stderr, "'%s'\n", fakeArgv[ i ] );
 	
 		//Run opt and check for results...	
-		if ( !opt_eval( ot->opt, fakeArgn, fakeArgv ) ) {
-			//Some things need to fail...
-			//fprintf( stderr, "Error: %s\n", ot->opt->errmsg );
+		opt_eval( ot->opt, fakeArgn, fakeArgv );
+	
+		if ( ot->opt->error != ot->expected ) {
+			RPRINTF( "FAILURE, error: %d - '%s'", ot->opt->error, ot->opt->errmsg );
+		}
+		else {
+			RPRINTF( "SUCCESS!" );
 		}
 
-		//Opt set and get need to run too
-		//fprintf( stderr, "moving to next set...\n" );
-		RPRINTF( "No success whatsoever..." );
 		ot++;
 	}
 

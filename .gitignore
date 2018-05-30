@@ -25,3 +25,6 @@
 *.webm
 *.vid
 *.avi
+
+# A test file I was working with.
+newt*
