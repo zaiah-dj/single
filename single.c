@@ -3150,7 +3150,7 @@ int sq_lexec ( Database *gb, const char *sql, const char *name, const SQWrite *w
 	int	title= 0;
 	const char *pq = NULL;
 	//SQInsert *stack = sq_inserters[0];
-	struct { char *names[127]; int count, ints[127]; } col = { 0 };
+	struct { char *names[127]; int count, ints[127]; } col = {{0}, 0, {0} };
 	uint8_t *src = NULL;
 	Parser q = { 
 		.words={
