@@ -488,6 +488,9 @@ _Bool opt_eval (Option *opts, int argc, char **av) {
 					}
 				}
 				else if ( o->type == 'n' || o->type == 's' || o->type == 'c' ) {
+					//Move all args up
+					++av;
+
 					//Why would this ever be?
 					if ( !(*av) ) {
 						o = &opts[0];
@@ -501,7 +504,8 @@ _Bool opt_eval (Option *opts, int argc, char **av) {
 						o->errmsg = opt_errmsg;
 						return serr( ERR_OPT_UNEXPECTED_FLAG, o, *av );
 					}
-					
+			
+
 					//Evaluate the three different types
 					if ( o->type == 'c' ) {
 						(&o->v)->c = *av[0];
