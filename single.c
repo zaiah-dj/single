@@ -458,21 +458,6 @@ Value opt_get (Option *opts, const char *flag)
 _Bool opt_eval (Option *opts, int argc, char **av) {
 	char buf[1024] = { 0 };
 
-	//Since this "object" is moved through, the errmsg needs to point to the same string
-	#if 0
-	if ( 1 ) {
-		Option *o1 = opts;
-	#ifndef ERRV_H
-		char *errmsg = malloc( ERRV_LENGTH );
-		while ( !o1->sentinel )	{
-			o1->errmsg = opt_errmsg;
-			o1++;
-		}
-	#endif
-	}	
-	#endif
-
-	
 	while ( *av ) {
 		Option *o = opts;
 		while ( !o->sentinel ) {
