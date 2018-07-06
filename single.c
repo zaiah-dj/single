@@ -6,16 +6,84 @@ A two-file library for common things in C (and eventually C++)
 LICENSE
 -------
 
-DOCUMENTATION
--------------
+Summary
+-------
+single.c is a two file open-source library for common functionality in C.
 
-TESTS
+It includes:
+- TCP Sockets
+- Buffers
+- Option processing
+- Parsing primitives
+- A Mime library
+- A clock timer
+- Rendering
+- A Table implementation (similar to Lua's table structure)
+- A JSON parser
+- An SQL driver (but only for SQLite right now)
+- Random number and string generator
+- ...and many general utilities
+
+
+Usage
 -----
+### Building
+
+An object can be built with the following:
+<pre>
+$	gcc -Wall -Werror -Wno-unused -c single.c  
+</pre>
+
+### Using with your programs
+Reference the library's functions using 
+<pre>
+#include "single.h"
+</pre>
+
+### Package selection 
+
+single will let you remove certain parts of the build by defining compile-time flags.  For example, if you do not want
+the timer library, you can define TIMER_H to skip building the module. 
+<pre>
+$	gcc -Wall -Werror -Wno-unused -c single.c -DTIMER_H
+</pre>
+
+There are about seven different parts that comprise the utilities used to make single.c work.
+
+| Library    | Flag             | Description
+| ---------- | ----             | ----------- 
+| buffer     | -DBUFFER_H       | Includes support for buffers.
+| socket     | -DSOCKET_H       | Includes support for sockets.
+| file       | -DFILES_H        | File system writing and reading.
+| nw         | -DSINW_H         | Single includes part of a library called <a href="https://github.com/zaiah-dj/tmnw">tmnw</a> that handles TCP sockets and handy abstractions for servers.
+| errors     | -DERR_H          | Includes support for strerror functionality.  This can be defined out to save space in a final binary.
+| parsely    | -DPARSELY_H      | Includes support for writing basic parsers.
+| tab        | -DTAB_H          | Includes support for a hash table library. 
+| render     | -DRENDER_H       | Includes support for a basic templating system.
+| sqrooge    | -DSQROOGE_H      | includes support for SQL engine work. ( Only works with Sqlite3 for now)
+| timer      | -DTIMER_H        | Includes support for precision timing.
+| mem        | -DMEM_H          | Includes support for improved memory utilities.
+| json       | -DJSON_H         | Includes support for parsing JSON
+| random     | -DRAND_H         | Includes support for working with random numbers. 
+| options    | -DOPT_H          | Includes support for basic option processing.
+
+Unfortunately, basic graphics support is not included.   Single's best uses are for utilities, command line and daemon programs.   I am working on another library that will solve some basic graphics needs called <a href="https://github.com/zaiah-dj/canvas">Canvas</a>. 
+
+
+Tests
+-----
+Running `make` in single's project directory will yield a test programcalled 'single-test'.  Running:
+<pre>
+./single-test --all
+</pre>
+
+will run tests for all of the program's libraries.
 
 TODO
 ----
-Package a tool to create documentation here.
-Package a way to build tests here.
+- Package a tool to create documentation here.
+- Package a way to build tests here.
+- Add `file` support.  Just need to take the time to do it.
 
  * ------------------------------------------- */
 
@@ -101,7 +169,7 @@ static const char *__SingleLibErrors[] =
 	[ERR_SOCKET_CONNECT] = "Could not connect to server: %s\n",
 	[ERR_SOCKET_CONNECT_PARENT] = "Attempt to close parent socket file failed: %s\n",
 	[ERR_SOCKET_TCP_WRITE] = "Failed to send all data: %s\n",
-	[ERR_SOCKET_TCP_READ] = "Failed to send all data: %s\n",
+	[ERR_SOCKET_TCP_READ] = "Failed to read all data: %s\n",
 	[ERR_SOCKET_INVALID_PORT_NUMBER] = "Got invalid port number: %d\n",
 #endif
 
@@ -3828,6 +3896,16 @@ void __timer_eprint (Timer *t)
 
 
 #ifndef SOCKET_H
+void socket_free (Socket *sock)
+{
+	;	
+}
+
+_Bool socket_close (Socket *sock)
+{
+	return ( close( sock->fd ) == -1 ) ? 0 : 1;
+}
+
 //Get the address information of a socket.
 int socket_addrinfo (Socket *sock)
 {
@@ -3967,28 +4045,56 @@ _Bool socket_tcp_recv (Socket *sock, uint8_t *msg, int *len)
       w = ( *len > 0 ) ? *len : 64;
 
 	//If it's -1, die.  If it's less than buffer, die
+	//TODO: Could also do while ( r > 0 ) {
 	while (1) {
 		//Error occurred, free or reset the buffer and die
-		if ( (r = read(sock->fd, &msg[ t ], w )) == -1 ) {
-			//handle recv() errors...
-			sock->err = errno;
+		//if ( (r = read(sock->fd, &msg[ t ], w )) == -1 ) {
+		r = recv(sock->fd, &msg[ t ], w, 0 );
+
+		//Simply try again momentarily if this happens...
+		if ( r == -1 && ( errno == EAGAIN || errno == EWOULDBLOCK ) ) {
+			continue;
+		}
+		else if ( r == -1 ) {
+			if ( errno == EBADF )
+				return serr( ERR_SOCKET_TCP_READ, sock, strerror( errno ) );
+			else if ( errno == ECONNRESET )
+				return serr( ERR_SOCKET_TCP_READ, sock, strerror( errno ) );
+			else if ( errno == EINTR )
+				return serr( ERR_SOCKET_TCP_READ, sock, strerror( errno ) );
+			else if ( errno == EINVAL )
+				return serr( ERR_SOCKET_TCP_READ, sock, strerror( errno ) );
+			else if ( errno == ENOTCONN )
+				return serr( ERR_SOCKET_TCP_READ, sock, strerror( errno ) );
+			else if ( errno == ENOTSOCK )
+				return serr( ERR_SOCKET_TCP_READ, sock, strerror( errno ) );
+			else if ( errno == EOPNOTSUPP )
+				return serr( ERR_SOCKET_TCP_READ, sock, strerror( errno ) );
+			else if ( errno == ETIMEDOUT )
+				return serr( ERR_SOCKET_TCP_READ, sock, strerror( errno ) );
+			else if ( errno == EIO )
+				return serr( ERR_SOCKET_TCP_READ, sock, strerror( errno ) );
+			else if ( errno == ENOBUFS )
+				return serr( ERR_SOCKET_TCP_READ, sock, strerror( errno ) );
+			else if ( errno == ENOMEM ) {
+				return serr( ERR_SOCKET_TCP_READ, sock, strerror( errno ) );
+			}
 			return 0;
 		}
 
-		//...
+		//If byte length is zero, I'm probably finished reading
 		if ( !r ) {
-			fprintf( stderr, "socket_tcp_recv should be done...\n" );
+			//fprintf( stderr, "socket_tcp_recv should be done...\n" );
 			break;
 		}
 
+		VPRINT( "%d bytes received\n", r );
 		t += r;
 	}
 
 	*len = t;
 	return 1;
 }
-
-
 
 #if 0
 //Open a socket for UDP
@@ -4216,11 +4322,55 @@ _Bool socket_tcp_send (Socket *sock, uint8_t *msg, uint32_t length)
 	int len = length;
 
 	while ( len ) {
-		//Try to send data
-		//TODO: Can't other things return -1?
+		#if 0	
 		if ( (bs = write(sock->fd, &msg[ t ], len)) == -1 ) {
 			return serr( ERR_SOCKET_TCP_WRITE, sock, strerror(errno) );
 		}
+		#else
+		//Try to send data
+		bs = send(sock->fd, &msg[ t ], len, 0);
+		if ( bs == -1 && ( errno == EAGAIN || errno == EWOULDBLOCK ) ) {
+			continue;
+		} 	
+		else if ( bs == -1 && errno == EMSGSIZE) {
+		#if 1
+			//Seems like I could just wait, but...
+			VPRINT( "Not yet ready to send all data via chosen socket" );
+			continue;	
+		#else
+			return serr( ERR_SOCKET_TCP_WRITE, sock, strerror( errno ) );
+		#endif
+		}
+		else if ( bs == -1 ) { 
+			if ( errno == EBADF )
+				return serr( ERR_SOCKET_TCP_WRITE, sock, strerror( errno ) );
+			else if ( errno == ECONNRESET )
+				return serr( ERR_SOCKET_TCP_WRITE, sock, strerror( errno ) );
+			else if ( errno == EDESTADDRREQ)
+				return serr( ERR_SOCKET_TCP_WRITE, sock, strerror( errno ) );
+			else if ( errno == EINTR )
+				return serr( ERR_SOCKET_TCP_WRITE, sock, strerror( errno ) );
+			else if ( errno == ENOTCONN )
+				return serr( ERR_SOCKET_TCP_WRITE, sock, strerror( errno ) );
+			else if ( errno == ENOTSOCK )
+				return serr( ERR_SOCKET_TCP_WRITE, sock, strerror( errno ) );
+			else if ( errno == EOPNOTSUPP )
+				return serr( ERR_SOCKET_TCP_WRITE, sock, strerror( errno ) );
+			else if ( errno == EPIPE )
+				return serr( ERR_SOCKET_TCP_WRITE, sock, strerror( errno ) );
+			else if ( errno == EACCES )
+				return serr( ERR_SOCKET_TCP_WRITE, sock, strerror( errno ) );
+			else if ( errno == EIO )
+				return serr( ERR_SOCKET_TCP_WRITE, sock, strerror( errno ) );
+			else if ( errno == ENETDOWN )
+				return serr( ERR_SOCKET_TCP_WRITE, sock, strerror( errno ) );
+			else if ( errno == ENETUNREACH )
+				return serr( ERR_SOCKET_TCP_WRITE, sock, strerror( errno ) );
+			else if ( errno == ENOBUFS ) {
+				return serr( ERR_SOCKET_TCP_WRITE, sock, strerror( errno ) );
+			}
+		}
+		#endif
 
 		//This should keep running
 		VPRINT( "%d bytes written\n", bs );
@@ -4228,5 +4378,55 @@ _Bool socket_tcp_send (Socket *sock, uint8_t *msg, uint32_t length)
 		len -= t ;	
 	}
 	return 1;
+}
+#endif
+
+
+#ifdef DOCS_H
+Option cli_opts[] = {
+	{ "-m", "--man", "Make documentation in man page format.", 0 }
+ ,{ "-l", "--html", "Make documentation in HTML format.", 0 }
+ ,{ "-d", "--markdown", "Make documentation in Markdown page format.", 0 }
+ ,{ .sentinel = 1 }
+};
+
+int cmdMan( Option *opts, char *err ) {
+return 0;
+}
+
+struct Cmd {
+	const char *cmd;
+	int (*exec)( Option *, char * );
+} cmds[] = {
+	{ "--man", cmdMan }
+ ,{ "--html", cmdMan }
+ ,{ "--markdown", cmdMan }
+};
+
+#define ERROUT(chr) \
+	fprintf( stderr, "%s: %s\n", chr, strerror(errno) ); \
+	return errno;
+
+int main( int argc, char *argv[] )
+{
+	//This tool is (for now anyway), just used for my single's docs...
+	//I don't mind shipping a program that can do all of the work though...
+	( argc < 2 ) ? opt_usage( cli_opts, argv[0], "nothing to do.", 0 ) : opt_eval( cli_opts, argc, argv );
+	
+	//Read in all the documentation
+	int fd;
+	char msg[ 300000 ] = { 0 };
+	if ( ( fd = open( "single.c", O_RDONLY ) ) == -1 ) {
+		ERROUT( "open failed" );
+	}
+
+	if ( read( fd, msg, sizeof(msg) ) == -1 ) {
+		ERROUT( "read failed" );
+	}
+
+	//memfind( msg, sizeof(msg), "*/" ) //find the first ending comment, this prog assumes that the goods are in the first comment block...
+
+	close( fd );
+	return 0;
 }
 #endif
