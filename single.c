@@ -1104,8 +1104,12 @@ void render_dump_mark ( Render *r ) {
 		fprintf( stderr, "{ size:   %-4d,", ct->size  );
 		fprintf( stderr,  " type:   %-1d,", ct->type  );
 		fprintf( stderr,  " index:  %-4d,", ct->index );
+#if 1
+		fprintf( stderr,  " action: %-6s,'", &render_type_text[ ct->action * 6 ] );
+#else
 		fprintf( stderr,  " action: %-6s,'",
 			&"RAW  \0""-LOOP\0""^LOOP\0""$LOOP\0""STUB \0""DIRECT\0""INNER \0"[ ct->action * 7 ] ); 
+#endif
 		for ( int i=0 ; i < ct->size ; i++ )
 			fprintf( stderr, "%c", (ct->blob[ i ] == '\n' ) ? '@' : ct->blob[ i ] ); 
 		//write( 2, ct->blob, ct->size );
@@ -1166,6 +1170,15 @@ int render_map ( Render *r, uint8_t *src, int srclen ) {
 
 	//Loop through a thing
 	for ( int alloc=2, t;  pr_next( &p, src, srclen );  ) {
+		//What exactly does the marker say each time
+fprintf(stderr,"===\n"); render_dump_mark( r ); 
+#if 0
+fprintf(stderr,"prev match===\n"); 
+write(2,&src[ p.prev ],srclen - p.prev); 
+fprintf(stderr,"recent match===\n"); 
+write(2,p.word,p.size); 
+#endif
+
 		//Copy the last of the stream
 		if ( p.word == NULL ) {
 			ct->action = R_RAW;
@@ -1175,14 +1188,35 @@ int render_map ( Render *r, uint8_t *src, int srclen ) {
 			break;
 		}
 
+		int depth=0;
+
+		//This is the token to choose an action based on
+		t = p.word[ p.tokenSize - 1 ];
+fprintf( stderr, "\nMatched token: %c\n", t );
+getchar();
+
+/*
+x dump mark after each REALLOC call
+
+x # .ref returns a stub, (it's probably programmed to do so, but another case is needed)
+	
+	the '#' match is found, BUT when reaching the '}', I  think it's being classified as stub.  So I need either a:
+		//bitmask (to mark that the "stub" you found is not a stub at all, it's a loop)
+		
+
+- 
+*/
+
 		//Just mark each section (and it's position)
-		if ( (t = p.word[ p.tokenSize - 1 ]) == '#' ) {
+		if ( t == '#' ) {
 			//The start of "positive" loops (items that should be true)
 			ct->blob = &src[p.prev],
 			ct->size = p.size,
 			ct->action = R_RAW;
 			REALLOC( raw, r->markers );
+			//If R_POSLOOP has already been marked and not closed, do something
 			ct->action = R_POSLOOP;
+			depth++;
 		}
 		else if ( t == '^' ) {
 			//The start of "negative" loops (items that should be false)
@@ -1191,6 +1225,7 @@ int render_map ( Render *r, uint8_t *src, int srclen ) {
 			ct->action = R_RAW;
 			REALLOC( raw, r->markers );
 			ct->action = R_NEGLOOP;
+			depth--;
 		}
 		else if (t == '/') {
 			//The end of either a "positive" or "negative" loop
@@ -1211,6 +1246,7 @@ int render_map ( Render *r, uint8_t *src, int srclen ) {
 		else if (t == '}' /*|| t == '!'*/ ) {
 			//Anything within here will always be a table
 			ct->blob  = trim( (uint8_t *)&src[ p.prev ], (char *)trimchars, p.size, &ct->size );
+		#if 0
 		#ifdef RENDER_DEBUG_H
 			fprintf( stderr, "%s\n", "hi" );
 			write( 2, ct->blob, ct->size );
@@ -1219,8 +1255,21 @@ int render_map ( Render *r, uint8_t *src, int srclen ) {
 			fprintf( stderr, "%s\n", "What is index?" );
 			fprintf( stderr, "%d\n", lt_get_long_i( r->srctable, ct->blob, ct->size ) );	
 		#endif
-			if ( *ct->blob == '.' )
+		#endif
+			if ( *ct->blob == '.' ) {
+				//the action is maintained from the previous invocation, so use that...
+				fprintf( stderr, 
+					"(ct->action == R_POSLOOP) == %c\n", 
+					*(&"ft"[(ct->action == R_POSLOOP)]) ); 
+				//you can:
+				//1. leave a pointer to the new table if it exists...
+				//2. create the full string and replace it inline
+				//3. fill .index with the index of the table that's being referenced
+				//
+				//additionally, there is a loop var in the rendering function and 
+				//recursion or at least some kind of loop is needed to make it run...
 				ct->action = R_STUB;
+			}
 			else {
 				ct->index = lt_get_long_i( r->srctable, ct->blob, ct->size );
 				ct->type  = lt_vta( r->srctable, ct->index );
