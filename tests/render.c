@@ -2,8 +2,8 @@
 #include "harness.h"
 
 /* -------------------------------------- *
- * BUGS:
- * -----
+ * BUGS
+ * ----
  *
  * - Keys that don't exist don't seem to 
  * work (i.e. when not there, the rest of
@@ -13,8 +13,20 @@
  *
  * - Nested tables still don't work...
  *
- * ...
  *
+ * NOTES
+ * -----
+ * - Certain keys return a carriage return at the end of the sequence.
+ *   Why?
+ * 
+ * - I was able to retrieve the table reference for nested tables, not 
+ *   sure if it's right, but it's there.
+ * 
+ * - Single retrieval keys seem to work.
+ *   
+ * - 
+ * 
+ * 
  * 
  * TODO:
  * - Test other types of data
@@ -69,10 +81,10 @@
 
 
 //All tests go here
-#define TABLE_SINGLE
 #define TABLE_DOUBLE
-#define TABLE_NONE
 #if 0
+#define TABLE_NONE
+#define TABLE_SINGLE
 #define TABLE_KEYVALUE
 #define TABLE_KEYVALUEEMB
 #define TABLE_MULTI
@@ -186,6 +198,7 @@ LiteKv DoubleTableAlpha[] = {
 		{ INT_KEY( 0 )       , TABLE_VALUE( )         },
 			{ TEXT_KEY( "city" ), BLOB_VALUE( "San Francisco" ) },
 			{ TEXT_KEY( "parent_state" ), TEXT_VALUE( "CA" ) },
+			{ TEXT_KEY( "desc" ), BLOB_VALUE( "There are so many things to see and do in this wonderful town.  Like talk to a billionaire startup founder or super-educated University of Berkeley professors." ) },
 			{ TEXT_KEY( "metadata" ), TABLE_VALUE( )         },
 				//Pay attention to this, I'd like to embed uint8_t data here (I think Lua can handle this)
 				{ TEXT_KEY( "claim_to_fame" ), TEXT_VALUE( "The Real Silicon Valley" ) },
@@ -197,16 +210,18 @@ LiteKv DoubleTableAlpha[] = {
 		{ INT_KEY( 1 )       , TABLE_VALUE( )         },
 			{ TEXT_KEY( "city" ), BLOB_VALUE( "New York" ) },
 			{ TEXT_KEY( "parent_state" ), TEXT_VALUE( "NY" ) },
+			{ TEXT_KEY( "desc" ), BLOB_VALUE( "New York City is one of the most well-known destinations on earth and home to over 8 million residents." ) },
 			{ TEXT_KEY( "metadata" ), TABLE_VALUE( )         },
 				{ TEXT_KEY( "claim_to_fame" ), TEXT_VALUE( "The Greatest City on Earth" ) },
 				{ TEXT_KEY( "skyline" ), BLOB_VALUE( "CA" ) },
-				{ TEXT_KEY( "population" ), INT_VALUE( 19750000 ) },
+				{ TEXT_KEY( "population" ), INT_VALUE( 8750000 ) },
 				{ TRM() },
 			{ TRM() },
 
 		{ INT_KEY( 2 )       , TABLE_VALUE( )         },
 			{ TEXT_KEY( "city" ), BLOB_VALUE( "Raleigh" ) },
 			{ TEXT_KEY( "parent_state" ), TEXT_VALUE( "NC" ) },
+			{ TEXT_KEY( "desc" ), BLOB_VALUE( "Otherwise known as the Oak City, around 600,000 residents call Raleigh home." ) },
 			{ TEXT_KEY( "metadata" ), TABLE_VALUE( )         },
 				{ TEXT_KEY( "claim_to_fame" ), TEXT_VALUE( "Silicon Valley of the South" ) },
 				{ TEXT_KEY( "skyline" ), BLOB_VALUE( "CA" ) },
@@ -339,7 +354,7 @@ RenderTest r[] =
 	//.values = the Table to use for values (these tests do not test any parsing)
 #ifdef TABLE_NONE
 	{
-		.name = "no_table",
+		.name = "TABLE_NONE",
 		.desc = "Template values with no tables.",
 		.values = NoTable, 
 		.renSrc =
@@ -372,7 +387,7 @@ RenderTest r[] =
 #ifdef TABLE_SINGLE
 	//one table
 	{
-		.name = "one level table",
+		.name = "TABLE_SINGLE",
 		.desc = "one level table",
 		.values = SingleTable, 
 
@@ -419,7 +434,7 @@ RenderTest r[] =
 
 #ifdef TABLE_DOUBLE
 	{
-		.name = "two level table",
+		.name = "TABLE_DOUBLE",
 		.desc = "two level table | key value test",
 		.values = DoubleTableAlpha,
 
@@ -432,7 +447,7 @@ RenderTest r[] =
 		 "{{# cities }}\n"
 		 "	<h2>{{ .city }}</h2>\n"
 		 "	<p>\n"
-		 "    {{ .city }} is a city full of {{ .population }} people.\n" 
+		 "    {{ .city }}, {{ .parent_state }} is a city full of {{ .metadata.population }} people.\n" 
 		 "	</p>\n"
 		 "	<p>\n"
 		 "    {{ .desc }}\n"
@@ -444,8 +459,10 @@ RenderTest r[] =
 		 "	</thead>\n"
 		 "	<tbody>\n"
 		 "	{{# .metadata }}\n"
-		 "		<li>Population: {{ .population }}</li>\n"  
-		 "		<li>Claim to Fame: {{ cities.metadata.claim to fame }}</li>\n"
+		 "    <tr>\n"
+		 "			<td>Population: {{ .population }}</td>\n"  
+		 "			<td>Claim to Fame: {{ cities.metadata.claim_to_fame }}</td>\n"
+		 "    </tr>\n"
 		 "	{{/ .metadata }}\n"
 		 "	</tbody>\n"
 		 "	</table>\n"
@@ -459,9 +476,13 @@ RenderTest r[] =
 		 "<head>\n"
 		 "</head>\n"
 		 "<body>\n"
+		 "\n"
 		 "	<h2>San Francisco</h2>\n"
 		 "	<p>\n"
-		 "    San Francisco is a city in CA.\n" 
+		 "    San Francisco, CA is a city full of 870887 people.\n" 
+		 "	</p>\n"
+		 "	<p>\n"
+		 "  	There are so many things to see and do in this wonderful town.  Like talk to a billionaire startup founder or super-educated University of Berkeley professors.\n" 
 		 "	</p>\n"
 		 "	<table>\n"
 		 "	<thead>\n"
@@ -470,14 +491,18 @@ RenderTest r[] =
 		 "	</thead>\n"
 		 "	<tbody>\n"
 		 "    <tr>\n"
-		 "			<td>870887</td>\n"  
-		 "			<td>The Real Silicon Valley</td>\n"
+		 "			<td>Population: 870887</td>\n"  
+		 "			<td>Claim to Fame: The Real Silicon Valley</td>\n"
 		 "    </tr>\n"
 		 "	</tbody>\n"
 		 "	</table>\n"
+		 "\n"
 		 "	<h2>New York</h2>\n"
 		 "	<p>\n"
-		 "    New York is a city in NY.\n" 
+		 "    New York is a city full of 8750000 people.\n" 
+		 "	</p>\n"
+		 "	<p>\n"
+		 "    New York, NY is one of the most well-known destinations on earth and home to over 8 million residents.\n"
 		 "	</p>\n"
 		 "	<table>\n"
 		 "	<thead>\n"
@@ -486,14 +511,15 @@ RenderTest r[] =
 		 "	</thead>\n"
 		 "	<tbody>\n"
 		 "    <tr>\n"
-		 "			<td>19750000</td>\n"  
-		 "			<td>The Greatest City on Earth</td>\n"
+		 "			<td>Population: 19750000</td>\n"  
+		 "			<td>Claim to Fame: The Greatest City on Earth</td>\n"
 		 "    </tr>\n"
 		 "	</tbody>\n"
 		 "	</table>\n"
+		 "\n"
 		 "	<h2>Raleigh</h2>\n"
 		 "	<p>\n"
-		 "    Raleigh is a city in NC.\n" 
+		 "    Raleigh, NC is a city full of 350001 people.\n" 
 		 "	</p>\n"
 		 "	<table>\n"
 		 "	<thead>\n"
@@ -636,30 +662,23 @@ RenderTest r[] =
 };
 
 
-
-
-TEST( render )
-{
-#if 0
-		Table *a = NULL, *b = NULL; 
-		a = convert_lkv( ST );
-		lt_dump( a );
-		niprintf( lt_countall( a ) );
-
-		b = convert_lkv( MT );
-		lt_dump( b );
-		niprintf( lt_countall( b ) );
-#if 0
-#endif
-		return 1;
-#else
+TEST( render ) {
 	int set = 1;
 	RenderTest *rt = r;
 	char buf[ 2048 ];
 	int destlen = 0;
 	uint8_t *dest = NULL;
 
-	//Loop through each RTest
+	//Let me know what's been defined
+	fprintf( stderr, "Running tests:\n" );
+	while ( !rt->sentinel ) {
+		fprintf( stderr, "%s\n", rt->name );
+		rt++;
+	}
+
+	//Reset RenderTest pointer and run each test.
+	fprintf( stderr, "\n" );
+	rt = r;
 	while ( !rt->sentinel )
 	{
 		//Define
@@ -690,8 +709,11 @@ TEST( render )
 		}
 
 		//Dump the map? (is useful to see what's what)
-		if ( 0 ) 
+		if ( 1 ) {
+			fprintf( stderr, "$src after render_map(...) looks like:\n" );
 			render_dump_mark( &R );
+			getchar();
+		}
 
 		//Start replacing things
 		if ( !render_render( &R ) ) {
@@ -707,10 +729,10 @@ TEST( render )
 			EPRINTF( "Templating failed somewhere.  Not sure where...\n" );
 		}
 
-#if 0
+	#if 0
 		write( 2, dest, destlen );
 		getchar();
-#else
+	#else
 		//Check rendered result against what should be
 		if ( memcmp( rt->renCmp, dest, destlen ) == 0 ) {
 			fprintf( stderr, "SUCCESS: Final matches expected!\n" );
@@ -725,7 +747,7 @@ TEST( render )
 			write( 2, dest, destlen );
 			//EPRINTF( "Finished result did not match expected result" );
 		}
-#endif
+	#endif
 
 		//Free everything
 		render_free( &R );
@@ -735,5 +757,4 @@ TEST( render )
 	}
 
 	return 0;
-#endif
 }

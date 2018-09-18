@@ -1163,18 +1163,15 @@ int render_map ( Render *r, uint8_t *src, int srclen )
 	//Prepare the markers
 	if ( !(r->markers = malloc( sizeof( Mark ) )) )
 		return 0;
-	else 
-	{
+	else {
 		memset( r->markers, 0, sizeof(Mark) );
 		ct = r->markers;
 	}
 
 	//Loop through a thing
-	for ( int alloc=2, t;  pr_next( &p, src, srclen );  ) 
-	{
+	for ( int alloc=2, t;  pr_next( &p, src, srclen );  ) {
 		//Copy the last of the stream
-		if ( p.word == NULL )
-		{
+		if ( p.word == NULL ) {
 			ct->action = RAW;
 			ct->blob = &src[ p.prev ];
 			ct->size = srclen - p.prev; 
@@ -1183,8 +1180,7 @@ int render_map ( Render *r, uint8_t *src, int srclen )
 		}
 
 		//Just mark each section (and it's position)
-		if ((t = p.word[ p.tokenSize - 1 ]) == '#')
-		{
+		if ( (t = p.word[ p.tokenSize - 1 ]) == '#' ) {
 			//The start of "positive" loops (items that should be true)
 			ct->blob = &src[p.prev],
 			ct->size = p.size,
@@ -1192,8 +1188,7 @@ int render_map ( Render *r, uint8_t *src, int srclen )
 			REALLOC( raw, r->markers );
 			ct->action = POSLOOP;
 		}
-		else if (t == '^') 
-		{
+		else if ( t == '^' ) {
 			//The start of "negative" loops (items that should be false)
 			ct->blob = &src[p.prev],
 			ct->size = p.size,
@@ -1201,8 +1196,7 @@ int render_map ( Render *r, uint8_t *src, int srclen )
 			REALLOC( raw, r->markers );
 			ct->action = NEGLOOP;
 		}
-		else if (t == '/')
-		{
+		else if (t == '/') {
 			//The end of either a "positive" or "negative" loop
 			ct->blob = &src[p.prev],
 			ct->size = p.size,
@@ -1210,8 +1204,7 @@ int render_map ( Render *r, uint8_t *src, int srclen )
 			REALLOC( raw, r->markers );
 			ct->action = ENDLOOP;
 		}
-		else if (t == '{')
-		{
+		else if (t == '{') {
 			//The start of a key (any type)
 			ct->blob = &src[p.prev],
 			ct->size = p.size,
@@ -1219,8 +1212,7 @@ int render_map ( Render *r, uint8_t *src, int srclen )
 			REALLOC( raw, r->markers );
 			ct->action = DIRECT;
 		}
-		else if (t == '}' /*|| t == '!'*/ )
-		{
+		else if (t == '}' /*|| t == '!'*/ ) {
 			//Anything within here will always be a table
 			ct->blob  = trim( (uint8_t *)&src[ p.prev ], (char *)trimchars, p.size, &ct->size );
 		#ifdef RENDER_DEBUG_H
@@ -1246,7 +1238,6 @@ int render_map ( Render *r, uint8_t *src, int srclen )
 		}
 	}
 
-	//render_dump_mark( r );
 	return 1;
 }
 
