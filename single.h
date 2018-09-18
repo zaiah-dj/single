@@ -1043,12 +1043,13 @@ struct Option
 #ifndef RENDER_H
 enum
 { /*...*/
-	RAW = 0,
-	NEGLOOP,
-	POSLOOP,
-	ENDLOOP,
-	STUB,
-	DIRECT
+	R_RAW = 0,
+	R_NEGLOOP,
+	R_POSLOOP,
+	R_ENDLOOP,
+	R_STUB,
+	R_DIRECT,
+	R_INNER	
 };
 
 

@@ -1095,16 +1095,17 @@ void print_body ( Bod *b )
  #endif
 
 
-void render_dump_mark ( Render *r )
-{
+const char render_type_text[] = 
+	"RAW  \0""-LOOP\0""^LOOP\0""$LOOP\0""STUB \0""DIRECT\0""INNER \0";//[ ct->action * 7 ] ); 
+
+void render_dump_mark ( Render *r ) {
 	Mark *ct = &r->markers[0];
-	while ( ct->blob )
-	{
+	while ( ct->blob ) {
 		fprintf( stderr, "{ size:   %-4d,", ct->size  );
 		fprintf( stderr,  " type:   %-1d,", ct->type  );
 		fprintf( stderr,  " index:  %-4d,", ct->index );
 		fprintf( stderr,  " action: %-6s,'",
-			&"RAW  \0""-LOOP\0""^LOOP\0""$LOOP\0""STUB \0""DIRECT"[ ct->action * 6 ] ); 
+			&"RAW  \0""-LOOP\0""^LOOP\0""$LOOP\0""STUB \0""DIRECT\0""INNER \0"[ ct->action * 7 ] ); 
 		for ( int i=0 ; i < ct->size ; i++ )
 			fprintf( stderr, "%c", (ct->blob[ i ] == '\n' ) ? '@' : ct->blob[ i ] ); 
 		//write( 2, ct->blob, ct->size );
@@ -1115,8 +1116,7 @@ void render_dump_mark ( Render *r )
 
 
 //render_init - Initializes a render block
-int render_init ( Render *r, Table *t )
-{
+int render_init ( Render *r, Table *t ) {
 	r->depth = 0;
 	r->maxbuf = 2048;
 	r->srctable = t;
@@ -1127,8 +1127,7 @@ int render_init ( Render *r, Table *t )
 
 
 //Set the render
-void render_free ( Render *r )
-{
+void render_free ( Render *r ) {
 	free( r->markers );
 	bf_free( &r->dest );
 }
@@ -1136,23 +1135,20 @@ void render_free ( Render *r )
 
 
 //Set the render source data?
-void render_set_srcdata (Render *r, uint8_t *src)
-{
+void render_set_srcdata (Render *r, uint8_t *src) {
 	r->src = src;
 }
 
 
 
 //Set the render source
-void render_set_srctable (Render *r, Table *t)
-{
+void render_set_srctable (Render *r, Table *t) {
 	r->srctable = t;
 } 
 
 
 //Do a map
-int render_map ( Render *r, uint8_t *src, int srclen )
-{
+int render_map ( Render *r, uint8_t *src, int srclen ) {
 	//Define stuff
 	Parser p   = {.words = {{"{{#"}, {"{{/"}, {"{{^"}, {"{{>"}, {"{{"}, {"}}"}, {NULL}}};
 	Mark *raw  = NULL, 
@@ -1172,7 +1168,7 @@ int render_map ( Render *r, uint8_t *src, int srclen )
 	for ( int alloc=2, t;  pr_next( &p, src, srclen );  ) {
 		//Copy the last of the stream
 		if ( p.word == NULL ) {
-			ct->action = RAW;
+			ct->action = R_RAW;
 			ct->blob = &src[ p.prev ];
 			ct->size = srclen - p.prev; 
 			REALLOC( raw, r->markers );
@@ -1184,33 +1180,33 @@ int render_map ( Render *r, uint8_t *src, int srclen )
 			//The start of "positive" loops (items that should be true)
 			ct->blob = &src[p.prev],
 			ct->size = p.size,
-			ct->action = RAW;
+			ct->action = R_RAW;
 			REALLOC( raw, r->markers );
-			ct->action = POSLOOP;
+			ct->action = R_POSLOOP;
 		}
 		else if ( t == '^' ) {
 			//The start of "negative" loops (items that should be false)
 			ct->blob = &src[p.prev],
 			ct->size = p.size,
-			ct->action = RAW;
+			ct->action = R_RAW;
 			REALLOC( raw, r->markers );
-			ct->action = NEGLOOP;
+			ct->action = R_NEGLOOP;
 		}
 		else if (t == '/') {
 			//The end of either a "positive" or "negative" loop
 			ct->blob = &src[p.prev],
 			ct->size = p.size,
-			ct->action = RAW;
+			ct->action = R_RAW;
 			REALLOC( raw, r->markers );
-			ct->action = ENDLOOP;
+			ct->action = R_ENDLOOP;
 		}
 		else if (t == '{') {
 			//The start of a key (any type)
 			ct->blob = &src[p.prev],
 			ct->size = p.size,
-			ct->action = RAW;
+			ct->action = R_RAW;
 			REALLOC( raw, r->markers );
-			ct->action = DIRECT;
+			ct->action = R_DIRECT;
 		}
 		else if (t == '}' /*|| t == '!'*/ ) {
 			//Anything within here will always be a table
@@ -1224,11 +1220,11 @@ int render_map ( Render *r, uint8_t *src, int srclen )
 			fprintf( stderr, "%d\n", lt_get_long_i( r->srctable, ct->blob, ct->size ) );	
 		#endif
 			if ( *ct->blob == '.' )
-				ct->action = STUB;
+				ct->action = R_STUB;
 			else {
 				ct->index = lt_get_long_i( r->srctable, ct->blob, ct->size );
 				ct->type  = lt_vta( r->srctable, ct->index );
-				if ((ct->type == LITE_TBL) && (ct->action == POSLOOP || ct->action == NEGLOOP)) 
+				if ((ct->type == LITE_TBL) && (ct->action == R_POSLOOP || ct->action == R_NEGLOOP)) 
 				{
 					ct->parent = ct->blob; 
 					ct->psize = ct->size;	
@@ -1286,9 +1282,9 @@ int render_render ( Render *r )
 	while ( ct->blob ) 
 	{
 		//Is the skip bit on?
-		if ( ct->action != ENDLOOP && dt->skip ) 
+		if ( ct->action != R_ENDLOOP && dt->skip ) 
 			{ ct++; continue; }
-		else if ( ct->action == ENDLOOP ) 
+		else if ( ct->action == R_ENDLOOP ) 
 		{
 			//Stop skipping if these match
 			if ( ct->size == dt->psize && (memcmp( dt->parent, ct->blob, dt->size ) == 0))
@@ -1315,7 +1311,7 @@ int render_render ( Render *r )
 		}
 
 		//Simply copy this data
-		if ( ct->action == RAW )
+		if ( ct->action == R_RAW )
 		{
 		#ifdef RENDER_DEBUG_H
 			write( 2, ct->blob, ct->size );
@@ -1323,7 +1319,7 @@ int render_render ( Render *r )
 			bf_append( &r->dest, ct->blob, ct->size );
 		}
 		//Retrieve the reference and write it
-		else if ( ct->action == DIRECT && ct->index > -1 )
+		else if ( ct->action == R_DIRECT && ct->index > -1 )
 		{
 		#ifdef RENDER_DEBUG_H
 			SHOWDATA( "in rdbgh" );
@@ -1365,7 +1361,7 @@ int render_render ( Render *r )
 				bf_append( &r->dest, (uint8_t *)a, strlen( a ) );
 			}
 		}
-		else if ( ct->action == STUB )
+		else if ( ct->action == R_STUB )
 		{
 			//Check if the key is .key or .value. This will allow me to loop through keys and values...
 			int i=0, p=0;
@@ -1419,9 +1415,9 @@ int render_render ( Render *r )
 			}	
 			memset( search, 0, sizeof(search) );
 		}
-		else if ( ct->action == NEGLOOP || ct->action == POSLOOP )
+		else if ( ct->action == R_NEGLOOP || ct->action == R_POSLOOP )
 		{
-			if ( ct->action == NEGLOOP && ct->index > -1 )
+			if ( ct->action == R_NEGLOOP && ct->index > -1 )
 				dt->skip = 1; //Set something
 			else 
 			{
