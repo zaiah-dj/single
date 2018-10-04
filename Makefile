@@ -153,4 +153,21 @@ change:
 	@cat CHANGELOG.ACTIVE CHANGELOG > CHANGELOG.NEW
 	@rm CHANGELOG.ACTIVE CHANGELOG.USER
 	@mv CHANGELOG.NEW CHANGELOG
+
+# gitlog - Generate a full changelog from the commit history
+gitlog:
+	@printf "# CHANGELOG\n\n"
+	@printf "## STATS\n\n"
+	@printf -- "- Commit count: "
+	@git log --full-history --oneline | wc -l
+	@printf -- "- Project Inception "
+	@git log --full-history | grep Date: | tail -n 1
+	@printf -- "- Last Commit "
+	@git log -n 1 | grep Date:
+	@printf -- "- Authors:\n"
+	@git log --full-history | grep Author: | sort | uniq | sed '{ s/Author: //; s/^/\t- /; }'
+	@printf "\n"
+	@printf "## HISTORY\n\n"
+	@git log --full-history --author=Antonio | sed '{ s/^   /- /; }'
+	@printf "\n<link rel=stylesheet href=changelog.css>\n"
 #endif
