@@ -991,6 +991,8 @@ static const Mime mime[] = {
   {        "xps", "application/vnd.ms-xpsdocument"                                                 },
   {        "xul", "application/vnd.mozilla.xul+xml"                                                },
   {        "zip", "application/zip"                                                                },
+
+  {        NULL, NULL                                                                },
 };
 
 
@@ -1012,6 +1014,16 @@ const char *mtref (const char *mimename) {
 //Why is this here?
 const char *file_type_from_mime (const char *filename) {
 	return NULL;
+}
+
+
+//Supply extension only and return the mimetype
+const char *mtfref ( const char *extension ) {
+	Mime *m = (Mime *)mime;
+	while ( (++m)->mimetype ) {
+		if ( strcmp(m->filetype, extension) == 0 ) return m->mimetype;
+	} 
+	return mime[0].mimetype;
 }
 
 
@@ -1083,16 +1095,21 @@ void print_body ( Bod *b )
  #endif
 
 
-void render_dump_mark ( Render *r )
-{
+const char render_type_text[] = 
+	"RAW  \0""-LOOP\0""^LOOP\0""$LOOP\0""STUB \0""DIRECT\0""INNER \0";//[ ct->action * 7 ] ); 
+
+void render_dump_mark ( Render *r ) {
 	Mark *ct = &r->markers[0];
-	while ( ct->blob )
-	{
+	while ( ct->blob ) {
 		fprintf( stderr, "{ size:   %-4d,", ct->size  );
 		fprintf( stderr,  " type:   %-1d,", ct->type  );
 		fprintf( stderr,  " index:  %-4d,", ct->index );
+#if 1
+		fprintf( stderr,  " action: %-6s,'", &render_type_text[ ct->action * 6 ] );
+#else
 		fprintf( stderr,  " action: %-6s,'",
-			&"RAW  \0""-LOOP\0""^LOOP\0""$LOOP\0""STUB \0""DIRECT"[ ct->action * 6 ] ); 
+			&"RAW  \0""-LOOP\0""^LOOP\0""$LOOP\0""STUB \0""DIRECT\0""INNER \0"[ ct->action * 7 ] ); 
+#endif
 		for ( int i=0 ; i < ct->size ; i++ )
 			fprintf( stderr, "%c", (ct->blob[ i ] == '\n' ) ? '@' : ct->blob[ i ] ); 
 		//write( 2, ct->blob, ct->size );
@@ -1103,8 +1120,7 @@ void render_dump_mark ( Render *r )
 
 
 //render_init - Initializes a render block
-int render_init ( Render *r, Table *t )
-{
+int render_init ( Render *r, Table *t ) {
 	r->depth = 0;
 	r->maxbuf = 2048;
 	r->srctable = t;
@@ -1115,8 +1131,7 @@ int render_init ( Render *r, Table *t )
 
 
 //Set the render
-void render_free ( Render *r )
-{
+void render_free ( Render *r ) {
 	free( r->markers );
 	bf_free( &r->dest );
 }
@@ -1124,23 +1139,20 @@ void render_free ( Render *r )
 
 
 //Set the render source data?
-void render_set_srcdata (Render *r, uint8_t *src)
-{
+void render_set_srcdata (Render *r, uint8_t *src) {
 	r->src = src;
 }
 
 
 
 //Set the render source
-void render_set_srctable (Render *r, Table *t)
-{
+void render_set_srctable (Render *r, Table *t) {
 	r->srctable = t;
 } 
 
 
 //Do a map
-int render_map ( Render *r, uint8_t *src, int srclen )
-{
+int render_map ( Render *r, uint8_t *src, int srclen ) {
 	//Define stuff
 	Parser p   = {.words = {{"{{#"}, {"{{/"}, {"{{^"}, {"{{>"}, {"{{"}, {"}}"}, {NULL}}};
 	Mark *raw  = NULL, 
@@ -1151,66 +1163,78 @@ int render_map ( Render *r, uint8_t *src, int srclen )
 	//Prepare the markers
 	if ( !(r->markers = malloc( sizeof( Mark ) )) )
 		return 0;
-	else 
-	{
+	else {
 		memset( r->markers, 0, sizeof(Mark) );
 		ct = r->markers;
 	}
 
 	//Loop through a thing
-	for ( int alloc=2, t;  pr_next( &p, src, srclen );  ) 
-	{
+	for ( int alloc=2, t;  pr_next( &p, src, srclen );  ) {
+		//What exactly does the marker say each time
+fprintf(stderr,"===\n"); render_dump_mark( r ); 
+#if 0
+fprintf(stderr,"prev match===\n"); 
+write(2,&src[ p.prev ],srclen - p.prev); 
+fprintf(stderr,"recent match===\n"); 
+write(2,p.word,p.size); 
+#endif
+
 		//Copy the last of the stream
-		if ( p.word == NULL )
-		{
-			ct->action = RAW;
+		if ( p.word == NULL ) {
+			ct->action = R_RAW;
 			ct->blob = &src[ p.prev ];
 			ct->size = srclen - p.prev; 
 			REALLOC( raw, r->markers );
 			break;
 		}
 
+		int depth=0;
+
+		//This is the token to choose an action based on
+		t = p.word[ p.tokenSize - 1 ];
+fprintf( stderr, "\nMatched token: %c\n", t );
+//getchar();
+
 		//Just mark each section (and it's position)
-		if ((t = p.word[ p.tokenSize - 1 ]) == '#')
-		{
+		if ( t == '#' ) {
 			//The start of "positive" loops (items that should be true)
 			ct->blob = &src[p.prev],
 			ct->size = p.size,
-			ct->action = RAW;
+			ct->action = R_RAW;
 			REALLOC( raw, r->markers );
-			ct->action = POSLOOP;
+			//If R_POSLOOP has already been marked and not closed, do something
+			ct->action = R_POSLOOP;
+			depth++;
 		}
-		else if (t == '^') 
-		{
+		else if ( t == '^' ) {
 			//The start of "negative" loops (items that should be false)
 			ct->blob = &src[p.prev],
 			ct->size = p.size,
-			ct->action = RAW;
+			ct->action = R_RAW;
 			REALLOC( raw, r->markers );
-			ct->action = NEGLOOP;
+			ct->action = R_NEGLOOP;
+			depth--;
 		}
-		else if (t == '/')
-		{
+		else if (t == '/') {
 			//The end of either a "positive" or "negative" loop
 			ct->blob = &src[p.prev],
 			ct->size = p.size,
-			ct->action = RAW;
+			ct->action = R_RAW;
 			REALLOC( raw, r->markers );
-			ct->action = ENDLOOP;
+			ct->action = R_ENDLOOP;
 		}
-		else if (t == '{')
-		{
+		else if (t == '{') {
 			//The start of a key (any type)
 			ct->blob = &src[p.prev],
 			ct->size = p.size,
-			ct->action = RAW;
+			ct->action = R_RAW;
 			REALLOC( raw, r->markers );
-			ct->action = DIRECT;
+			ct->action = R_DIRECT;
 		}
-		else if (t == '}' /*|| t == '!'*/ )
-		{
+		else if (t == '}' /*|| t == '!'*/ ) {
 			//Anything within here will always be a table
 			ct->blob  = trim( (uint8_t *)&src[ p.prev ], (char *)trimchars, p.size, &ct->size );
+		#if 0
 		#ifdef RENDER_DEBUG_H
 			fprintf( stderr, "%s\n", "hi" );
 			write( 2, ct->blob, ct->size );
@@ -1219,12 +1243,25 @@ int render_map ( Render *r, uint8_t *src, int srclen )
 			fprintf( stderr, "%s\n", "What is index?" );
 			fprintf( stderr, "%d\n", lt_get_long_i( r->srctable, ct->blob, ct->size ) );	
 		#endif
-			if ( *ct->blob == '.' )
-				ct->action = STUB;
+		#endif
+			if ( *ct->blob == '.' ) {
+				//the action is maintained from the previous invocation, so use that...
+				fprintf( stderr, 
+					"(ct->action == R_POSLOOP) == %c\n", 
+					*(&"ft"[(ct->action == R_POSLOOP)]) ); 
+				//you can:
+				//1. leave a pointer to the new table if it exists...
+				//2. create the full string and replace it inline
+				//3. fill .index with the index of the table that's being referenced
+				//
+				//additionally, there is a loop var in the rendering function and 
+				//recursion or at least some kind of loop is needed to make it run...
+				ct->action = R_STUB;
+			}
 			else {
 				ct->index = lt_get_long_i( r->srctable, ct->blob, ct->size );
 				ct->type  = lt_vta( r->srctable, ct->index );
-				if ((ct->type == LITE_TBL) && (ct->action == POSLOOP || ct->action == NEGLOOP)) 
+				if ((ct->type == LITE_TBL) && (ct->action == R_POSLOOP || ct->action == R_NEGLOOP)) 
 				{
 					ct->parent = ct->blob; 
 					ct->psize = ct->size;	
@@ -1234,7 +1271,6 @@ int render_map ( Render *r, uint8_t *src, int srclen )
 		}
 	}
 
-	//render_dump_mark( r );
 	return 1;
 }
 
@@ -1283,9 +1319,9 @@ int render_render ( Render *r )
 	while ( ct->blob ) 
 	{
 		//Is the skip bit on?
-		if ( ct->action != ENDLOOP && dt->skip ) 
+		if ( ct->action != R_ENDLOOP && dt->skip ) 
 			{ ct++; continue; }
-		else if ( ct->action == ENDLOOP ) 
+		else if ( ct->action == R_ENDLOOP ) 
 		{
 			//Stop skipping if these match
 			if ( ct->size == dt->psize && (memcmp( dt->parent, ct->blob, dt->size ) == 0))
@@ -1312,7 +1348,7 @@ int render_render ( Render *r )
 		}
 
 		//Simply copy this data
-		if ( ct->action == RAW )
+		if ( ct->action == R_RAW )
 		{
 		#ifdef RENDER_DEBUG_H
 			write( 2, ct->blob, ct->size );
@@ -1320,7 +1356,7 @@ int render_render ( Render *r )
 			bf_append( &r->dest, ct->blob, ct->size );
 		}
 		//Retrieve the reference and write it
-		else if ( ct->action == DIRECT && ct->index > -1 )
+		else if ( ct->action == R_DIRECT && ct->index > -1 )
 		{
 		#ifdef RENDER_DEBUG_H
 			SHOWDATA( "in rdbgh" );
@@ -1362,7 +1398,7 @@ int render_render ( Render *r )
 				bf_append( &r->dest, (uint8_t *)a, strlen( a ) );
 			}
 		}
-		else if ( ct->action == STUB )
+		else if ( ct->action == R_STUB )
 		{
 			//Check if the key is .key or .value. This will allow me to loop through keys and values...
 			int i=0, p=0;
@@ -1416,9 +1452,9 @@ int render_render ( Render *r )
 			}	
 			memset( search, 0, sizeof(search) );
 		}
-		else if ( ct->action == NEGLOOP || ct->action == POSLOOP )
+		else if ( ct->action == R_NEGLOOP || ct->action == R_POSLOOP )
 		{
-			if ( ct->action == NEGLOOP && ct->index > -1 )
+			if ( ct->action == R_NEGLOOP && ct->index > -1 )
 				dt->skip = 1; //Set something
 			else 
 			{

@@ -1043,12 +1043,13 @@ struct Option
 #ifndef RENDER_H
 enum
 { /*...*/
-	RAW = 0,
-	NEGLOOP,
-	POSLOOP,
-	ENDLOOP,
-	STUB,
-	DIRECT
+	R_RAW = 0,
+	R_NEGLOOP,
+	R_POSLOOP,
+	R_ENDLOOP,
+	R_STUB,
+	R_DIRECT,
+	R_INNER	
 };
 
 
@@ -1595,6 +1596,7 @@ void json_free ( Table *t );
 
 #ifndef MIME_H
 const char *mtref (const char *) ;  //Always returns a reference
+const char *mtfref (const char *) ;
 const char *mime_type_from_file (const char *) ;
 const char *file_type_from_mime (const char *) ;
 #endif
