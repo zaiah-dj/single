@@ -1193,19 +1193,7 @@ write(2,p.word,p.size);
 		//This is the token to choose an action based on
 		t = p.word[ p.tokenSize - 1 ];
 fprintf( stderr, "\nMatched token: %c\n", t );
-getchar();
-
-/*
-x dump mark after each REALLOC call
-
-x # .ref returns a stub, (it's probably programmed to do so, but another case is needed)
-	
-	the '#' match is found, BUT when reaching the '}', I  think it's being classified as stub.  So I need either a:
-		//bitmask (to mark that the "stub" you found is not a stub at all, it's a loop)
-		
-
-- 
-*/
+//getchar();
 
 		//Just mark each section (and it's position)
 		if ( t == '#' ) {
