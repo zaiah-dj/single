@@ -1,18 +1,21 @@
 single=/Users/ramar/prj/single {
- .gitignore
  CHANGELOG
- CHANGELOG.md
- MANUAL.md
- Makefile
- README.md
- TODO
  changelog.html
+ CHANGELOG.md
+ Makefile
+ MANUAL.md
  newt.c
  newt.readme
- simpletables.h
+ README.md
+ single-test
  single.c
- single.h
  src.vim
+ TODO
+ harness.o
+ simpletables.h
+ single.h
+ single.o
+ sqlite3.o
  tests=tests {
   buffer.c
   fmt.c

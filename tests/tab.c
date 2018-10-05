@@ -330,7 +330,7 @@ int get_count ( LiteKv *kv )
 //convert
 Table *convert_lkv ( LiteKv *kv )
 {
-	char buf[ 2048 ];
+	char buf[ BUFLEN ];
 	Table *t = malloc( sizeof( Table ) );
 	lt_init( t, NULL, get_count( kv ) );
 
@@ -394,7 +394,7 @@ Table *convert_lkv ( LiteKv *kv )
 TEST( tab )
 {
 	int set = 1;
-	char buf [ 2048 ];
+	char buf [ BUFLEN ];
 	TestKv *j = tests_kv;
 
 	while ( j->lkv ) 

@@ -7,7 +7,7 @@ DFLAGS = -DNW_VERBOSE
 PICTYPE=-fPIC
 #CFLAGS = -g -Wall -Wno-unused -Werror -std=c99 $(COMPLAIN) -fsanitize=address -fsanitize-undefined-trap-on-error  -DSQLITE3_PATH="\"vendor/sqlite3.h\"" -DERRLNO_H
 #CC=clang
-CFLAGS = -g -Wall -Wno-unused -Werror -std=c99 $(COMPLAIN) -DSQLITE3_PATH="\"vendor/sqlite3.h\"" -Wno-format-truncation -DERRLNO_H #-DDEBUG_H
+CFLAGS = -g -Wall -Wno-unused -Werror -std=c99 $(COMPLAIN) -DSQLITE3_PATH="\"vendor/sqlite3.h\"" #-Wno-format-truncation -DERRLNO_H #-DDEBUG_H
 CC=gcc
 
 #if 0

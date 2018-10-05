@@ -232,7 +232,7 @@ int lt_makestr ( LiteKv *kv, int i, void *p )
 TEST( sqrooge )
 {
 	struct DubChar *t = dubchars;
-	char buf[2048]={0};
+	char buf[BUFLEN]={0};
 
 	//Loop through all the test results
 	while ( t->name ) {

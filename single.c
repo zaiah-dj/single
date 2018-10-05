@@ -91,6 +91,10 @@ TODO
 
 //This flag is here to control how table counts work...
 
+#define ERROUT(chr) \
+	fprintf( stderr, "%s: %s\n", chr, strerror(errno) ); \
+	return errno;
+
 static const unsigned int lt_hash = 31;
 
 unsigned int __lt_int = 0;
@@ -1110,6 +1114,7 @@ void render_dump_mark ( Render *r ) {
 		fprintf( stderr,  " action: %-6s,'",
 			&"RAW  \0""-LOOP\0""^LOOP\0""$LOOP\0""STUB \0""DIRECT\0""INNER \0"[ ct->action * 7 ] ); 
 #endif
+		fprintf( stderr,  " depth: %-2d,'", *ct->depth );
 		for ( int i=0 ; i < ct->size ; i++ )
 			fprintf( stderr, "%c", (ct->blob[ i ] == '\n' ) ? '@' : ct->blob[ i ] ); 
 		//write( 2, ct->blob, ct->size );
@@ -1159,6 +1164,7 @@ int render_map ( Render *r, uint8_t *src, int srclen ) {
 			  *ct  = NULL; 
 	int follow = 1;
 	pr_prepare( &p );
+	int depth=0;
 
 	//Prepare the markers
 	if ( !(r->markers = malloc( sizeof( Mark ) )) )
@@ -1166,17 +1172,19 @@ int render_map ( Render *r, uint8_t *src, int srclen ) {
 	else {
 		memset( r->markers, 0, sizeof(Mark) );
 		ct = r->markers;
+		ct->depth = &depth;
 	}
 
 	//Loop through a thing
 	for ( int alloc=2, t;  pr_next( &p, src, srclen );  ) {
 		//What exactly does the marker say each time
-fprintf(stderr,"===\n"); render_dump_mark( r ); 
+//fprintf(stderr,"===\n"); render_dump_mark( r ); 
 #if 0
 fprintf(stderr,"prev match===\n"); 
 write(2,&src[ p.prev ],srclen - p.prev); 
 fprintf(stderr,"recent match===\n"); 
 write(2,p.word,p.size); 
+getchar();
 #endif
 
 		//Copy the last of the stream
@@ -1188,12 +1196,9 @@ write(2,p.word,p.size);
 			break;
 		}
 
-		int depth=0;
-
 		//This is the token to choose an action based on
 		t = p.word[ p.tokenSize - 1 ];
-fprintf( stderr, "\nMatched token: %c\n", t );
-//getchar();
+//fprintf( stderr, "\nMatched token: %c\n", t );
 
 		//Just mark each section (and it's position)
 		if ( t == '#' ) {
@@ -1244,7 +1249,8 @@ fprintf( stderr, "\nMatched token: %c\n", t );
 			fprintf( stderr, "%d\n", lt_get_long_i( r->srctable, ct->blob, ct->size ) );	
 		#endif
 		#endif
-			if ( *ct->blob == '.' ) {
+	#if 0
+			if ( *ct->blob == '.' && depth > 1 ) {
 				//the action is maintained from the previous invocation, so use that...
 				fprintf( stderr, 
 					"(ct->action == R_POSLOOP) == %c\n", 
@@ -1256,9 +1262,25 @@ fprintf( stderr, "\nMatched token: %c\n", t );
 				//
 				//additionally, there is a loop var in the rendering function and 
 				//recursion or at least some kind of loop is needed to make it run...
-				ct->action = R_STUB;
+				ct->action = R_INNER;
+//fprintf( stderr, "render has to get another level of table now" );
+//exit( 0 );
 			}
-			else {
+			else if ( *ct->blob == '.' && depth == 1 ) {
+		#else
+		#endif
+			//This is for all inner stubs, same code and all.
+			if ( *ct->blob == '.' && ( ct->action != R_POSLOOP && ct->action != R_NEGLOOP ) )
+				ct->action = R_STUB;
+#if 0
+			else if ( *ct->blob == '.' && ct->action == R_NEGLOOP )
+				ct->action = R_NEGLOOP;
+			//Leave the 'action' the same, but the source word will change during render
+			else if ( *ct->blob == '.' && ct->action == R_POSLOOP )
+				ct->action = R_POSLOOP;
+#endif
+			else { 
+fprintf( stderr, "%p\n", ct->parent );
 				ct->index = lt_get_long_i( r->srctable, ct->blob, ct->size );
 				ct->type  = lt_vta( r->srctable, ct->index );
 				if ((ct->type == LITE_TBL) && (ct->action == R_POSLOOP || ct->action == R_NEGLOOP)) 
@@ -4438,10 +4460,6 @@ struct Cmd {
  ,{ "--html", cmdMan }
  ,{ "--markdown", cmdMan }
 };
-
-#define ERROUT(chr) \
-	fprintf( stderr, "%s: %s\n", chr, strerror(errno) ); \
-	return errno;
 
 int main( int argc, char *argv[] )
 {
