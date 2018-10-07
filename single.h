@@ -445,7 +445,7 @@
 		r->markers = raw; \
 		memset( &r->markers[ (follow - 1)], 0, sizeof(Mark) ); \
 		ct = &r->markers[ (follow - 1) ]; \
-		ct->depth = &depth; \
+		ct->depth = depth; \
 	}
 #endif
 
@@ -1057,7 +1057,7 @@ enum
 typedef struct
 { 
   uint8_t *blob, *parent;
-  int      size, action, psize, type, index, *depth;
+  int      size, action, psize, type, index, depth;
 } Mark;  
 
 typedef struct

@@ -5,6 +5,7 @@ single=/Users/ramar/prj/single {
  Makefile
  MANUAL.md
  newt.c
+ renderLastTry.c
  newt.readme
  README.md
  single-test
