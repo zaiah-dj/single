@@ -1,3 +1,39 @@
+* lots of stuff is missing
+		where is element->parent?  multiple levels shouldn't be a problem, but I don't know where this is done 
+
+		how is the looping actually done?
+			this warrants a long explanation and possibly a rewrite
+
+
+
+* this took me a long ASS time to figure out...
+x		check lines 1273 - 1290 or so... 
+x		actions that are not loops are stubs (as currently written)
+		check parent's nullness(ct->parent + ct->psize), if not null, it is now the blob 
+		check that indices are coming back the right way, and also check that depth is affected the right way
+		test and see if double/triple deep table keys are working as they should...
+		maybe 30 min for this
+
+* walk through double triple looping
+		you've got to loop other already looped values,
+
+		a <<EOF
+			<html>	
+				<a href="/{{ href }}">{{ href_text }}</a>
+			</html>	
+		EOF
+	
+* the way it's written right now, marking does'nt handle everything
+		a better mark for purposes of caching would:
+			find each index where something occurred, (the exact index) and store it an array
+			(obviously, this array would be crazy long, it would also have keep a reference to the type of element)
+		this way, action doesn't quite matter so much, it's probably only needed at 
+		sizeof Mark =
+		sizeof int[2] = 16 
+	
+		
+
+
 * convert docs to markdown
 
 * put this in some kind of bug tracking system

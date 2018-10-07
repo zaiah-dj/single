@@ -1,0 +1,40 @@
+single=/Users/ramar/prj/single {
+ CHANGELOG
+ changelog.html
+ CHANGELOG.md
+ Makefile
+ MANUAL.md
+ newt.c
+ renderLastTry.c
+ newt.readme
+ README.md
+ single-test
+ single.c
+ src.vim
+ TODO
+ harness.o
+ simpletables.h
+ single.h
+ single.o
+ sqlite3.o
+ tests=tests {
+  buffer.c
+  fmt.c
+  harness-test-data.c
+  harness.c
+  harness.h
+  json.c
+  mem.c
+  opt.c
+  render.c
+  socket.c
+  sqrooge-file.c
+  sqrooge.c
+  tab.c
+  timer.c
+ }
+ vendor=vendor {
+  sqlite3.c
+  sqlite3.h
+ }
+}

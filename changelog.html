@@ -1,0 +1,195 @@
+<h1>CHANGELOG</h1>
+
+<h2>STATS</h2>
+
+<ul>
+<li>Commit count:       17</li>
+<li>Project Inception Date:   Tue May 2 08:23:23 2017 -0400</li>
+<li>Last Commit Date:   Wed Jan 17 10:01:41 2018 -0500</li>
+<li>Authors:
+t- Antonio Collins &lt;antonio.collins.contractor.akc.org>
+t- Antonio Collins <a href="&#x6d;&#97;&#105;&#x6c;&#116;&#x6f;&#x3a;&#114;&#x61;&#109;&#97;&#x72;&#x2e;&#x63;&#x6f;&#108;&#108;&#x69;&#110;&#115;&#x40;&#x67;&#109;&#x61;&#x69;&#x6c;&#x2e;&#99;&#x6f;&#x6d;">&#x72;&#97;&#x6d;&#97;&#114;&#x2e;&#x63;&#x6f;&#108;&#x6c;&#x69;&#110;&#115;&#64;&#x67;&#x6d;&#97;&#x69;&#x6c;&#46;&#99;&#111;&#x6d;</a>
+t- Antonio R. Collins II &lt;ramar.collins.com>
+t- Antonio R. Collins II <a href="&#109;&#x61;&#x69;&#108;&#116;&#x6f;&#x3a;&#x72;&#97;&#x6d;&#97;&#114;&#x2e;&#99;&#111;&#108;&#108;&#x69;&#x6e;&#115;&#x40;&#103;&#x6d;&#x61;&#105;&#108;&#46;&#x63;&#111;&#109;">&#114;&#x61;&#x6d;&#x61;&#x72;&#x2e;&#99;&#111;&#x6c;&#x6c;&#x69;&#x6e;&#x73;&#x40;&#x67;&#x6d;&#x61;&#x69;&#108;&#x2e;&#x63;&#111;&#x6d;</a>
+t- Antonio Ramar Collins II <a href="&#109;&#x61;&#x69;&#x6c;&#x74;&#111;&#x3a;&#x72;&#x61;&#109;&#97;&#114;&#x2e;&#x63;&#x6f;&#x6c;&#108;&#105;&#x6e;&#115;&#x40;&#103;&#x6d;&#x61;&#x69;&#x6c;&#x2e;&#99;&#111;&#x6d;">&#x72;&#x61;&#109;&#x61;&#114;&#x2e;&#x63;&#x6f;&#108;&#108;&#105;&#110;&#x73;&#x40;&#103;&#109;&#x61;&#105;&#108;&#46;&#99;&#x6f;&#109;</a>
+t- AntonioRamarCollinsTheSecond <a href="&#109;&#97;&#x69;&#x6c;&#116;&#111;&#x3a;&#x61;&#x6e;&#116;&#111;&#110;&#105;&#x6f;&#64;&#100;&#101;&#98;&#105;&#97;&#x6e;&#x2e;&#119;&#x72;&#111;&#x73;&#x73;&#108;&#x65;&#x72;">&#97;&#x6e;&#x74;&#111;&#110;&#x69;&#111;&#64;&#x64;&#x65;&#98;&#x69;&#97;&#x6e;&#46;&#119;&#x72;&#111;&#115;&#x73;&#x6c;&#101;&#114;</a>
+t- Bulbous Grammatical Elephant Man &lt;bulbous@krunker></li>
+</ul>
+
+
+<h2>HISTORY</h2>
+
+<p>commit a0addd53ec091403f53126d5b887dfdef71e4f42
+Author: Antonio R. Collins II <a href="&#x6d;&#x61;&#x69;&#108;&#x74;&#x6f;&#58;&#114;&#97;&#x6d;&#x61;&#114;&#46;&#x63;&#111;&#108;&#108;&#x69;&#110;&#x73;&#x40;&#x67;&#x6d;&#x61;&#105;&#108;&#46;&#x63;&#x6f;&#109;">&#114;&#97;&#x6d;&#x61;&#x72;&#46;&#99;&#x6f;&#108;&#108;&#105;&#110;&#115;&#64;&#x67;&#109;&#97;&#x69;&#108;&#x2e;&#99;&#x6f;&#109;</a>
+Date:   Wed Jan 17 10:01:41 2018 -0500</p>
+
+<h2>-  Added stdlib.h to harness.c.  Need this for random numbers.</h2>
+
+<ul>
+<li>I am going to come up with a more portable way to do this, especially since crypto-grade randomness won&rsquo;t be important in these tests.</li>
+</ul>
+
+
+<p>commit ce10fe86cbf43e05b7fe859db17e0e2c099b08a8
+Author: Antonio R. Collins II <a href="&#x6d;&#x61;&#x69;&#x6c;&#x74;&#111;&#58;&#x72;&#97;&#x6d;&#97;&#x72;&#46;&#x63;&#111;&#x6c;&#x6c;&#105;&#x6e;&#x73;&#x40;&#103;&#109;&#x61;&#105;&#x6c;&#x2e;&#x63;&#x6f;&#x6d;">&#114;&#x61;&#109;&#x61;&#114;&#x2e;&#x63;&#x6f;&#108;&#108;&#105;&#110;&#x73;&#64;&#x67;&#x6d;&#x61;&#x69;&#108;&#46;&#99;&#x6f;&#109;</a>
+Date:   Tue Jan 16 21:04:51 2018 -0500</p>
+
+<ul>
+<li>Removed excessive logging at lt_free.</li>
+</ul>
+
+
+<p>commit e638677c01ce1789bdf5ff5113ce7231e4f014a6
+Author: Antonio R. Collins II <a href="&#x6d;&#97;&#x69;&#108;&#116;&#111;&#58;&#x72;&#97;&#x6d;&#x61;&#x72;&#x2e;&#99;&#x6f;&#108;&#108;&#x69;&#110;&#115;&#64;&#103;&#109;&#97;&#x69;&#x6c;&#46;&#99;&#x6f;&#x6d;">&#114;&#97;&#x6d;&#x61;&#x72;&#x2e;&#99;&#x6f;&#108;&#108;&#105;&#x6e;&#115;&#x40;&#x67;&#x6d;&#97;&#x69;&#108;&#46;&#99;&#111;&#x6d;</a>
+Date:   Tue Jan 16 20:59:32 2018 -0500</p>
+
+<ul>
+<li>Re-edited Makefile to build with sqlite from the vendor directory (previously failed and caused build not to work&hellip;)</li>
+</ul>
+
+
+<p>commit 4ddffc517b1761b6de836475b76cf5528aa3c77a
+Author: Antonio R. Collins II &lt;ramar.collins.com>
+Date:   Thu Nov 9 10:27:37 2017 -0500</p>
+
+<ul>
+<li>Cleaned up Makefile and modified test target to use vendor/sqlite3.h</li>
+</ul>
+
+
+<p>commit a8b668ece6d02618a74884ca91516ba080788a71
+Author: Antonio Collins &lt;antonio.collins.contractor.akc.org>
+Date:   Thu Nov 9 10:20:18 2017 -0500</p>
+
+<ul>
+<li>Why was an object file in here&hellip;?</li>
+</ul>
+
+
+<p>commit 969ecf88c54dbf0ea6c1c2ef57b77fa3ec78af07
+Author: Antonio R. Collins II <a href="&#109;&#97;&#105;&#x6c;&#116;&#111;&#58;&#x72;&#x61;&#x6d;&#x61;&#114;&#46;&#99;&#111;&#x6c;&#x6c;&#x69;&#x6e;&#115;&#x40;&#103;&#109;&#97;&#105;&#x6c;&#46;&#x63;&#x6f;&#109;">&#114;&#x61;&#x6d;&#97;&#114;&#x2e;&#x63;&#x6f;&#x6c;&#108;&#105;&#110;&#115;&#64;&#103;&#x6d;&#x61;&#x69;&#108;&#46;&#99;&#x6f;&#109;</a>
+Date:   Sat Oct 28 08:46:29 2017 -0400</p>
+
+<ul>
+<li>Added options to control debugging output.</li>
+</ul>
+
+
+<p>commit 50058f971863f3bd6f6b3b81f10a5fcb76c2397c
+Author: Antonio R. Collins II <a href="&#109;&#x61;&#x69;&#x6c;&#x74;&#111;&#x3a;&#x72;&#97;&#109;&#97;&#114;&#x2e;&#99;&#x6f;&#108;&#x6c;&#x69;&#110;&#x73;&#64;&#103;&#x6d;&#x61;&#x69;&#x6c;&#x2e;&#x63;&#x6f;&#109;">&#x72;&#x61;&#x6d;&#97;&#114;&#46;&#99;&#x6f;&#x6c;&#108;&#105;&#110;&#x73;&#x40;&#103;&#109;&#x61;&#x69;&#108;&#x2e;&#99;&#111;&#x6d;</a>
+Date:   Sun Oct 22 15:55:59 2017 -0400</p>
+
+<h2>-  Added better docs and SQLITE3_PATH and</h2>
+
+<ul>
+<li>SQLITE3_GLOBAL to the build options.</li>
+</ul>
+
+
+<p>commit 76debbad9ee005f944247f213472cea4f93e2ef5
+Author: Antonio R. Collins II <a href="&#x6d;&#x61;&#105;&#108;&#116;&#x6f;&#x3a;&#114;&#97;&#109;&#x61;&#x72;&#x2e;&#x63;&#x6f;&#108;&#108;&#105;&#110;&#115;&#x40;&#x67;&#109;&#x61;&#105;&#x6c;&#x2e;&#x63;&#x6f;&#x6d;">&#114;&#x61;&#109;&#97;&#x72;&#46;&#x63;&#x6f;&#108;&#108;&#x69;&#x6e;&#x73;&#64;&#103;&#109;&#x61;&#x69;&#108;&#x2e;&#x63;&#x6f;&#x6d;</a>
+Date:   Sun Oct 22 15:23:07 2017 -0400</p>
+
+<h2>-  Added overwrites for DEBUG_H</h2>
+
+<ul>
+<li>SHOWDATA and other macros were not &ldquo;zeroed out&rdquo; when DEBUG_H not set.</li>
+</ul>
+
+
+<p>commit 962fa7cbaede3158240f32a48f5d7f436530155e
+Author: Antonio Ramar Collins II <a href="&#109;&#x61;&#x69;&#x6c;&#116;&#x6f;&#x3a;&#114;&#x61;&#109;&#97;&#114;&#x2e;&#x63;&#x6f;&#108;&#x6c;&#x69;&#110;&#x73;&#64;&#103;&#x6d;&#x61;&#x69;&#108;&#x2e;&#x63;&#111;&#x6d;">&#114;&#97;&#109;&#x61;&#x72;&#46;&#99;&#111;&#108;&#108;&#105;&#x6e;&#115;&#64;&#103;&#x6d;&#97;&#x69;&#x6c;&#46;&#99;&#x6f;&#x6d;</a>
+Date:   Tue Aug 8 22:18:56 2017 -0400</p>
+
+<ul>
+<li>Added test data.</li>
+</ul>
+
+
+<p>commit 09472473289f2fe24f15c02a101b963f9be5b0d5
+Author: AntonioRamarCollinsTheSecond <a href="&#109;&#97;&#105;&#108;&#116;&#x6f;&#58;&#x61;&#x6e;&#116;&#x6f;&#x6e;&#105;&#x6f;&#x40;&#100;&#101;&#x62;&#x69;&#x61;&#x6e;&#x2e;&#x77;&#x72;&#x6f;&#115;&#115;&#108;&#x65;&#x72;">&#x61;&#x6e;&#116;&#x6f;&#x6e;&#105;&#x6f;&#64;&#x64;&#101;&#98;&#105;&#x61;&#110;&#x2e;&#x77;&#x72;&#x6f;&#115;&#115;&#108;&#101;&#x72;</a>
+Date:   Fri Jun 30 02:54:37 2017 -0400</p>
+
+<ul>
+<li>Added some additional tests, added vendor/sqlite3.[ch] to the build and made some format changes so the lib will compile with either clang or gcc with no errors&hellip;</li>
+</ul>
+
+
+<p>commit 8b1113cb4051b4ea79bebc61f7c074c81d8115b7
+Author: Antonio Ramar Collins II <a href="&#x6d;&#x61;&#105;&#108;&#x74;&#111;&#x3a;&#114;&#x61;&#109;&#97;&#x72;&#x2e;&#99;&#111;&#x6c;&#x6c;&#105;&#110;&#x73;&#64;&#103;&#x6d;&#x61;&#x69;&#108;&#x2e;&#x63;&#x6f;&#x6d;">&#114;&#97;&#109;&#x61;&#114;&#x2e;&#x63;&#x6f;&#108;&#x6c;&#x69;&#110;&#115;&#x40;&#x67;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#x6d;</a>
+Date:   Sat May 13 11:25:44 2017 -0400</p>
+
+<ul>
+<li>Added fmt, json and tab tests to the repo.</li>
+</ul>
+
+
+<p>commit f3826488de36c816bfd8a1b897269edc9bc17a2f
+Author: Antonio Ramar Collins II <a href="&#x6d;&#x61;&#105;&#x6c;&#x74;&#111;&#58;&#114;&#97;&#x6d;&#x61;&#x72;&#x2e;&#99;&#x6f;&#x6c;&#108;&#105;&#110;&#x73;&#64;&#x67;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#x6d;">&#x72;&#x61;&#109;&#97;&#x72;&#x2e;&#99;&#x6f;&#108;&#108;&#105;&#x6e;&#115;&#64;&#x67;&#x6d;&#x61;&#105;&#x6c;&#x2e;&#x63;&#x6f;&#x6d;</a>
+Date:   Thu May 11 19:15:08 2017 -0400</p>
+
+<h2>-  Added some new definitions in opt.</h2>
+
+<ul>
+<li>Also added a harness program, it just adds a bunch of tests</li>
+<li>from the command line and the user can compile them out by defining
+
+<ul>
+<li>the units that are wanted.</li>
+</ul>
+</li>
+<li></li>
+<li>Likewise, if you want to run all the tests, don&rsquo;t define anything</li>
+<li>and run &ndash;all when you run the harness ( single-test is the name of</li>
+<li>the binary ).</li>
+</ul>
+
+
+<p>commit badfdc0ca1adb8964aec1d27e31af815659a8dba
+Author: Antonio Collins <a href="&#x6d;&#x61;&#x69;&#x6c;&#x74;&#x6f;&#58;&#114;&#x61;&#x6d;&#x61;&#x72;&#46;&#99;&#x6f;&#108;&#108;&#x69;&#110;&#x73;&#x40;&#103;&#x6d;&#97;&#x69;&#x6c;&#x2e;&#x63;&#111;&#109;">&#114;&#x61;&#x6d;&#x61;&#114;&#x2e;&#99;&#111;&#x6c;&#x6c;&#105;&#110;&#115;&#64;&#x67;&#x6d;&#97;&#x69;&#x6c;&#x2e;&#x63;&#111;&#x6d;</a>
+Date:   Tue May 9 17:29:42 2017 -0400</p>
+
+<h2>-  Created a test harness to make testing these easy and in one place.</h2>
+
+<ul>
+<li>I should be able to put the rest of this stuff together tonight or something.</li>
+</ul>
+
+
+<p>commit 90e48380dd769bfab5780688cebd659deee4c947
+Author: Antonio Collins <a href="&#109;&#x61;&#x69;&#x6c;&#116;&#111;&#x3a;&#x72;&#97;&#109;&#97;&#x72;&#46;&#x63;&#x6f;&#x6c;&#x6c;&#x69;&#x6e;&#x73;&#x40;&#x67;&#109;&#x61;&#105;&#108;&#46;&#x63;&#x6f;&#109;">&#114;&#x61;&#x6d;&#x61;&#114;&#46;&#x63;&#x6f;&#x6c;&#x6c;&#x69;&#x6e;&#115;&#x40;&#x67;&#109;&#97;&#105;&#x6c;&#x2e;&#x63;&#111;&#x6d;</a>
+Date:   Tue May 9 15:14:05 2017 -0400</p>
+
+<ul>
+<li>Removed tests until they&rsquo;re done completely.</li>
+</ul>
+
+
+<p>commit 057a398d94ba6ad0e19b7658373bfbd914bcf02a
+Author: Bulbous Grammatical Elephant Man &lt;bulbous@krunker>
+Date:   Tue May 9 15:13:02 2017 -0400</p>
+
+<ul>
+<li>Added Timer module and started adding tests.  Have not added the tests to the repo yet.</li>
+</ul>
+
+
+<p>commit c58a7a3f0c9d994578e3aca216b3494c9e4b5797
+Author: Antonio Ramar Collins II <a href="&#109;&#x61;&#x69;&#108;&#x74;&#111;&#x3a;&#114;&#97;&#109;&#x61;&#114;&#46;&#x63;&#x6f;&#x6c;&#108;&#x69;&#110;&#115;&#x40;&#x67;&#x6d;&#x61;&#105;&#x6c;&#46;&#x63;&#111;&#x6d;">&#114;&#97;&#109;&#x61;&#114;&#46;&#x63;&#x6f;&#108;&#108;&#x69;&#x6e;&#115;&#x40;&#x67;&#x6d;&#97;&#x69;&#108;&#46;&#x63;&#111;&#109;</a>
+Date:   Tue May 2 08:32:19 2017 -0400</p>
+
+<ul>
+<li>Modified README ever so slightly.   Still much more to do.</li>
+</ul>
+
+
+<p>commit dd70f5f1dd6a122fb53a44ac104562cd8ea683f9
+Author: Antonio Ramar Collins II <a href="&#109;&#x61;&#105;&#x6c;&#116;&#x6f;&#58;&#x72;&#97;&#109;&#x61;&#x72;&#x2e;&#x63;&#x6f;&#108;&#x6c;&#x69;&#110;&#x73;&#x40;&#x67;&#109;&#97;&#105;&#x6c;&#x2e;&#99;&#x6f;&#x6d;">&#114;&#x61;&#109;&#97;&#x72;&#46;&#99;&#x6f;&#x6c;&#108;&#x69;&#x6e;&#x73;&#64;&#103;&#109;&#x61;&#105;&#x6c;&#x2e;&#x63;&#111;&#109;</a>
+Date:   Tue May 2 08:23:23 2017 -0400</p>
+
+<ul>
+<li>Alpha stage commit.</li>
+</ul>
+
+
+<p><link rel=stylesheet href=changelog.css></p>

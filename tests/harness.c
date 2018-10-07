@@ -5,41 +5,41 @@
 
 #define BUFLEN 8192 
 
-//#define BUFFER_H
+#define BUFFER_H
 //#define JSON_H
 #define FILES_H 
-//#define MEM_H 
+#define MEM_H 
 //#define OPT_H
 #define PARSELY_H 
 #define RAND_H 
 //#define RENDER_H 
-//#define SOCKET_H 
-//#define SQROOGE_H 
-//#define TIMER_H 
+#define SOCKET_H 
+#define SQROOGE_H 
+#define TIMER_H 
 #define UTIL_H 
 
 /*Pretty print left side values*/
 #define LPRINTF( ... ) \
 	memset( buf, 0, sizeof( buf ) ) ; \
-	snprintf( buf, BUFLEN, __VA_ARGS__ ) ; \
+	snprintf( buf, BUFLEN - 1, __VA_ARGS__ ) ; \
 	fprintf( stderr, "%-60s", buf )
 
 /*Pretty print right side values*/
 #define RPRINTF( ... ) \
 	memset( buf, 0, sizeof( buf ) ) ; \
-	snprintf( buf, BUFLEN, __VA_ARGS__ ) ; \
+	snprintf( buf, BUFLEN - 1, __VA_ARGS__ ) ; \
 	fprintf( stderr, "%10s\n", buf )
 
 /*Pretty print headers for tests */
 #define HPRINTF( ... ) \
 	memset( buf, 0, sizeof( buf ) ) ; \
-	snprintf( buf, BUFLEN, __VA_ARGS__ ) ; \
+	snprintf( buf, BUFLEN - 1, __VA_ARGS__ ) ; \
 	fprintf( stderr, "%s\n====================\n", buf )
 
 /*Pretty print error messages*/
 #define EPRINTF( ... ) \
 	memset( buf, 0, sizeof( buf ) ) ; \
-	snprintf( buf, BUFLEN, __VA_ARGS__ ) ; \
+	snprintf( buf, BUFLEN - 1, __VA_ARGS__ ) ; \
 	fprintf( stderr, "ERROR: %s\n", buf )
 
 /*Test definition so I don't have to remember the declaration for each new test*/

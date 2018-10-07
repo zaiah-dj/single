@@ -297,10 +297,17 @@ LiteKv MultiLevelTable[] = {
 				{ TEXT_KEY( "skyline" ), BLOB_VALUE( "CA" ) },
 				{ TEXT_KEY( "population" ), INT_VALUE( 870887 ) },
 				{ TEXT_KEY( "demographics" ), TABLE_VALUE( )         },
+#if 0
 					{ TEXT_KEY( "Black" ),    INT_VALUE( 5.5 ) },
 					{ TEXT_KEY( "White" ),    INT_VALUE( 40.5 ) },
 					{ TEXT_KEY( "Asian" ),    INT_VALUE( 35.4 ) },
 					{ TEXT_KEY( "Hispanic" ), INT_VALUE( 15.2 ) },
+#else
+					{ TEXT_KEY( "Black" ),    INT_VALUE( 5 ) },
+					{ TEXT_KEY( "White" ),    INT_VALUE( 40 ) },
+					{ TEXT_KEY( "Asian" ),    INT_VALUE( 35 ) },
+					{ TEXT_KEY( "Hispanic" ), INT_VALUE( 15 ) },
+#endif
 					{ TEXT_KEY( "Other" ),    INT_VALUE( 20 ) },
 					{ TRM() },
 				{ TRM() },
@@ -313,9 +320,15 @@ LiteKv MultiLevelTable[] = {
 				{ TEXT_KEY( "skyline" ), BLOB_VALUE( "CA" ) },
 				{ TEXT_KEY( "population" ), INT_VALUE( 19750000 ) },
 				{ TEXT_KEY( "demographics" ), TABLE_VALUE( )         },
+#if 0
 					{ TEXT_KEY( "Black" ),    INT_VALUE( 17.7 ) },
 					{ TEXT_KEY( "White" ),    INT_VALUE( 55.8 ) },
 					{ TEXT_KEY( "Asian" ),    INT_VALUE( 8.9 ) },
+#else
+					{ TEXT_KEY( "Black" ),    INT_VALUE( 17 ) },
+					{ TEXT_KEY( "White" ),    INT_VALUE( 55 ) },
+					{ TEXT_KEY( "Asian" ),    INT_VALUE( 8 ) },
+#endif
 					{ TEXT_KEY( "Hispanic" ), INT_VALUE( 19 ) },
 					{ TEXT_KEY( "Other" ),    INT_VALUE( 13 ) },
 					{ TRM() },
@@ -329,10 +342,17 @@ LiteKv MultiLevelTable[] = {
 				{ TEXT_KEY( "skyline" ), BLOB_VALUE( "CA" ) },
 				{ TEXT_KEY( "population" ), INT_VALUE( 870887 ) },
 				{ TEXT_KEY( "demographics" ), TABLE_VALUE( )         },
+#if 0
 					{ TEXT_KEY( "Black" ),    INT_VALUE( 28.4 ) },
 					{ TEXT_KEY( "White" ),    INT_VALUE( 57.74 ) },
 					{ TEXT_KEY( "Asian" ),    INT_VALUE( 4.69 ) },
 					{ TEXT_KEY( "Hispanic" ), INT_VALUE( 11.81 ) },
+#else
+					{ TEXT_KEY( "Black" ),    INT_VALUE( 28 ) },
+					{ TEXT_KEY( "White" ),    INT_VALUE( 57 ) },
+					{ TEXT_KEY( "Asian" ),    INT_VALUE( 4 ) },
+					{ TEXT_KEY( "Hispanic" ), INT_VALUE( 11 ) },
+#endif
 					{ TEXT_KEY( "Other" ),    INT_VALUE( 9 ) },
 					{ TRM() },
 				{ TRM() },
@@ -665,7 +685,7 @@ RenderTest r[] =
 TEST( render ) {
 	int set = 1;
 	RenderTest *rt = r;
-	char buf[ 2048 ];
+	char buf[ BUFLEN ];
 	int destlen = 0;
 	uint8_t *dest = NULL;
 

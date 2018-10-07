@@ -48,7 +48,7 @@ struct TestOpts {
 
 TEST( opt )
 {
-	char buf[ 2048 ] = { 0 };
+	char buf[ BUFLEN ] = { 0 };
 	//const char **ot = opt_tests;
 	struct TestOpts *ot = options;
 
