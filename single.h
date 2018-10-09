@@ -447,6 +447,7 @@
 		r->markers = raw; \
 		memset( &r->markers[ (follow - 1)], 0, sizeof(Mark) ); \
 		ct = &r->markers[ (follow - 1) ]; \
+		ct->index = -1; \
 	}
 #endif
 

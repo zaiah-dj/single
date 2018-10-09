@@ -1,0 +1,30 @@
+
+render loop
+assume a map that looks like this (can be more complicated)
+
+start @ depth first
+	this might have to be a linked list of arrays
+
+	[ 0 ]
+	[ 1 ]
+	[ 2 ] -> 
+
+
+keeping the pay as you go model
+	always assume that the table is right and won't be changed
+	
+	1. copy raw
+	2. deallocate that block, move pointer up, this is a linked list
+	3. catch all blocks within the loop
+			set pointer to block
+
+
+moving to a recursive model
+	ren_ren ( can run locally, not by the user )
+	
+	on loop
+		get number of rows in the table
+		then get count of columns
+	
+		
+	
