@@ -732,7 +732,7 @@ TEST( render ) {
 		if ( 1 ) {
 			fprintf( stderr, "$src after render_map(...) looks like:\n" );
 			render_dump_mark( &R );
-			getchar();
+			//getchar();
 		}
 
 		//Start replacing things

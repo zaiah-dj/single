@@ -3,7 +3,7 @@
 #include "harness-test-data.c"
 #include <stdlib.h>
 
-#define BUFLEN 8192 
+#define BUFLEN 8192
 
 #define BUFFER_H
 //#define JSON_H

@@ -1103,6 +1103,7 @@ void print_body ( Bod *b )
 const char render_type_text[] = 
 	"RAW  \0""-LOOP\0""^LOOP\0""$LOOP\0""STUB \0""DIRECT\0""INNER \0";//[ ct->action * 7 ] ); 
 
+
 void render_dump_mark ( Render *r ) {
 	Mark *ct = &r->markers[0];
 	while ( ct->blob ) {
@@ -1115,7 +1116,6 @@ void render_dump_mark ( Render *r ) {
 		fprintf( stderr,  " action: %-6s,'",
 			&"RAW  \0""-LOOP\0""^LOOP\0""$LOOP\0""STUB \0""DIRECT\0""INNER \0"[ ct->action * 7 ] ); 
 #endif
-		fprintf( stderr,  " depth: %-2d,'", ct->depth );
 		for ( int i=0 ; i < ct->size ; i++ )
 			fprintf( stderr, "%c", (ct->blob[ i ] == '\n' ) ? '@' : ct->blob[ i ] ); 
 		//write( 2, ct->blob, ct->size );
@@ -1157,108 +1157,11 @@ void render_set_srctable (Render *r, Table *t) {
 } 
 
 
-//Do a map
-int render_map ( Render *r, uint8_t *src, int srclen ) {
-	//Define stuff
-	Parser p   = {.words = {{"{{#"}, {"{{/"}, {"{{^"}, {"{{>"}, {"{{"}, {"}}"}, {NULL}}};
-	Mark *raw  = NULL, 
-			  *ct  = NULL; 
-	int follow = 1;
-	pr_prepare( &p );
-	int depth=0;
-
-	//Prepare the markers
-	if ( !(r->markers = malloc( sizeof( Mark ) )) )
-		return 0;
-	else {
-		memset( r->markers, 0, sizeof(Mark) );
-		ct = r->markers;
-		ct->depth = depth;
-	}
-
-	//Loop through a thing
-	for ( int alloc=2, t;  pr_next( &p, src, srclen );  ) {
-		//What exactly does the marker say each time
-//fprintf(stderr,"===\n"); render_dump_mark( r ); 
 #if 0
-fprintf(stderr,"prev match===\n"); 
-write(2,&src[ p.prev ],srclen - p.prev); 
-fprintf(stderr,"recent match===\n"); 
-write(2,p.word,p.size); 
-getchar();
+#include "render1.c"
+#else
+#include "render2.c"
 #endif
-
-		//Copy the last of the stream
-		if ( p.word == NULL ) {
-			ct->action = R_RAW;
-			ct->blob = &src[ p.prev ];
-			ct->size = srclen - p.prev; 
-			REALLOC( raw, r->markers );
-			break;
-		}
-
-		//This is the token to choose an action based on
-		t = p.word[ p.tokenSize - 1 ];
-//fprintf( stderr, "\nMatched token: %c\n", t );
-
-		//Just mark each section (and it's position)
-		if ( t == '#' ) {
-			//The start of "positive" loops (items that should be true)
-			ct->blob = &src[p.prev],
-			ct->size = p.size,
-			ct->action = R_RAW;
-			REALLOC( raw, r->markers );
-			//If R_POSLOOP has already been marked and not closed, do something
-			ct->action = R_POSLOOP;
-			depth++;
-		}
-		else if ( t == '^' ) {
-			//The start of "negative" loops (items that should be false)
-			ct->blob = &src[p.prev],
-			ct->size = p.size,
-			ct->action = R_RAW;
-			REALLOC( raw, r->markers );
-			ct->action = R_NEGLOOP;
-			depth--;
-		}
-		else if (t == '/') {
-			//The end of either a "positive" or "negative" loop
-			ct->blob = &src[p.prev],
-			ct->size = p.size,
-			ct->action = R_RAW;
-			REALLOC( raw, r->markers );
-			ct->action = R_ENDLOOP;
-			depth--;
-		}
-		else if (t == '{') {
-			//The start of a key (any type)
-			ct->blob = &src[p.prev],
-			ct->size = p.size,
-			ct->action = R_RAW;
-			REALLOC( raw, r->markers );
-			ct->action = R_DIRECT;
-		}
-		else if (t == '}' /*|| t == '!'*/ ) {
-			//Anything within here will always be a table
-			ct->blob  = trim( (uint8_t *)&src[ p.prev ], (char *)trimchars, p.size, &ct->size );
-			//This is for all inner stubs, same code and all.
-			int stat = ( ct->action != R_POSLOOP && ct->action != R_ENDLOOP && ct->action != R_NEGLOOP );
-			if ( *ct->blob == '.' && stat )
-				ct->action = R_STUB;
-			else { 
-				ct->index = lt_get_long_i( r->srctable, ct->blob, ct->size );
-				ct->type  = lt_vta( r->srctable, ct->index );
-				if ((ct->type == LITE_TBL) && (ct->action == R_POSLOOP || ct->action == R_NEGLOOP)) {
-					ct->parent = ct->blob; 
-					ct->psize = ct->size;	
-				}
-			}
-			REALLOC( raw, r->markers );
-		}
-	}
-
-	return 1;
-}
 
 
 
@@ -1279,182 +1182,6 @@ static int append (uint8_t *dest, int dmax, uint8_t *src, int srclen, int item, 
 		}
 	}
 	return *pos;
-}
-
-
-
-//Render
-int render_render ( Render *r ) {
-	//Loops can just use pointers... probably...
-	Mark *lt=NULL, *ct = &r->markers[0];
-	unsigned char search[ 2048 ];
-	struct DT { Mark *mark; uint8_t *src, *parent; int size, psize, skip, times, position; } d[10]; 
-
-	//everytime you descend, src is what you got, size is length of src
-	//and times is times to repeat
-	struct DT *dt = d;
-	int top = 0;
-	memset( search, 0, sizeof(search) );
-	memset( dt, 0, sizeof (struct DT));
-	
-	while ( ct->blob ) {
-		//Is the skip bit on?
-		if ( ct->action != R_ENDLOOP && dt->skip ) 
-			{ ct++; continue; }
-		else if ( ct->action == R_ENDLOOP ) {
-			//Stop skipping if these match
-			if ( ct->size == dt->psize && (memcmp( dt->parent, ct->blob, dt->size ) == 0)) {
-				if ( dt->skip )
-					dt->skip = 0;
-				else {
-					//Decrement repetition
-					if ( dt->times == 0 )
-						dt--;
-					else {
-						--dt->times;
-						ct = dt->mark;
-						continue;
-					}
-				}
-			}
-		}
-
-		//Simply copy this data
-		if ( ct->action == R_RAW ) {
-		#ifdef RENDER_DEBUG_H
-			write( 2, ct->blob, ct->size );
-		#endif
-			bf_append( &r->dest, ct->blob, ct->size );
-		}
-		//Retrieve the reference and write it
-		else if ( ct->action == R_DIRECT && ct->index > -1 ) {
-		#ifdef RENDER_DEBUG_H
-			SHOWDATA( "in rdbgh" );
-			if ( ct->type == LITE_BLB )
-				write( 2, lt_blobdata_at( r->srctable, ct->index ), lt_blobsize_at( r->srctable, ct->index ));
-			else if ( ct->type == LITE_INT )
-				fprintf( stderr, "%d", lt_int_at( r->srctable, ct->index )); 
-			else if ( ct->type == LITE_FLT )
-				fprintf( stderr, "%f", lt_float_at( r->srctable, ct->index )); 
-			else if ( ct->type == LITE_USR )
-				fprintf( stderr, "%p", lt_userdata_at( r->srctable, ct->index )); 
-			else if ( ct->type == LITE_TBL )
-				fprintf( stderr, "%p", (void *)&lt_table_at( r->srctable, ct->index )); 
-			else if ( ct->type == LITE_TXT )
-				fprintf( stderr, "%s\n", lt_text_at( r->srctable, ct->index ) );
-			else { 
-			}	
-		#endif
-			//fprintf( stderr, "Direct reference is of type: %s", lt_typename( ct->type ));
-			if ( ct->type == LITE_BLB ) {
-				uint8_t *b = lt_blobdata_at( r->srctable, ct->index );
-				bf_append( &r->dest, b, lt_blobsize_at( r->srctable, ct->index ));
-			}
-			else { 
-				char *a = NULL, b[128] = {0};
-				if ( ct->type == LITE_INT )
-					snprintf( a = b, 63, "%d", lt_int_at( r->srctable, ct->index )); 
-				else if ( ct->type == LITE_FLT )
-					snprintf( a = b, 127, "%f", lt_float_at( r->srctable, ct->index )); 
-				else if ( ct->type == LITE_USR )
-					snprintf( a = b, 127, "%p", lt_userdata_at( r->srctable, ct->index )); 
-				else if ( ct->type == LITE_TBL )
-					snprintf( a = b, 127, "%p", (void *)&lt_table_at( r->srctable, ct->index )); 
-				else if ( ct->type == LITE_TXT )
-					a = lt_text_at( r->srctable, ct->index );
-				else { 
-					a = 0;//Skip all other types
-				}	
-				bf_append( &r->dest, (uint8_t *)a, strlen( a ) );
-			}
-		}
-		else if ( ct->action == R_STUB ) {
-			//Check if the key is .key or .value. Loop through keys and values...
-			int i=0, p=0;
-			memcpy( &search[ p ], dt->parent, dt->psize );
-			p += dt->psize;
-
-			//Reverse can be done by manipulating dt->times (top = dt->times; num = top - dt->times )
-			p += snprintf( (char *)&search[ p ], 64, ".%d", dt->times );
-			memcpy( &search[ p ], ct->blob, ct->size );
-			p += ct->size;
-		
-		#ifdef RENDER_DEBUG_H
-			niprintf( dt->psize );
-			niprintf( ct->size  );
-			niprintf( dt->times );
-			write( 2, "Search: ", 8 );
-			write( 2, search, p );
-			write( 2, "\n", 1 );
-			getchar();
-		#endif
-	
-			//Get long i, yay
-			if ( (i = lt_get_long_i( r->srctable, search, p )) == -1 ) {
-				ct++;
-				continue;
-			}
-			else {
-				uint8_t *src = NULL;
-				LiteType t = lt_vta( r->srctable, i );
-				memset( search, 0, sizeof(search) );
-
-				if (t == LITE_USR)
-					p = snprintf( (char *)( src = search ), sizeof(search), "%p", lt_userdata_at( r->srctable, i ));
-				else if (t == LITE_FLT) 
-					p = snprintf( (char *)( src = search ), sizeof(search), "%0.2f", lt_float_at( r->srctable, i ));
-				else if (t == LITE_INT)
-					p = snprintf( (char *)( src = search ), sizeof(search), "%d", lt_int_at( r->srctable, i ));
-				else if (t == LITE_TBL)
-					p = snprintf( (char *)( src = search ), sizeof(search), "%p", &lt_table_at( r->srctable, i ));
-				else if (t == LITE_TXT)
-					p = strlen( lt_text_at(r->srctable, i) ), src = (uint8_t *)lt_text_at( r->srctable, i );
-				else if (t == LITE_BLB) 
-					p = lt_blobsize_at( r->srctable, i), src = lt_blobdata_at( r->srctable, i ); 
-				else {
-					ct++;
-					continue;
-				}
-				bf_append( &r->dest, src, p ); 
-			}	
-			memset( search, 0, sizeof(search) );
-		}
-		else if ( ct->action == R_NEGLOOP || ct->action == R_POSLOOP ) {
-			if ( ct->action == R_NEGLOOP && ct->index > -1 )
-				dt->skip = 1; //Set something
-			else {
-				if ( ct->index == -1 )
-					dt->skip = 1;
-				else {
-					//No looping necessary
-					if ( ct->type != LITE_TBL )
-						; //This is where true or false should take place...
-					else {
-						dt++;
-						memset( dt, 0, sizeof (struct DT));
-
-						//Skip completely if this is a table and there are no entries
-						if ( (dt->times = lt_counti( r->srctable, ct->index )) > 0 ) {
-							--dt->times;  /*Adjust count b/c the sentinel has its own index*/
-							//dt->times -= 2;  /*Adjust count b/c the sentinel has its own index*/
-							dt->mark = ct + 1;
-							dt->psize = ct->size;
-							dt->parent = ct->blob;
-						}
-					#if 0
-						lt_dump( r->srctable );
-						fprintf( stderr, "We is gonna repeat this, this many times: %d\n", dt->times );
-						return 0;	
-					#endif
-					}
-				}
-			}
-		}
-
-		ct++;
-	}
-	
-	return 1;
 }
 
 

@@ -1,7 +1,9 @@
-/*
+/* ------------------------------------------- * 
  * single.h
- * --------
- *
+ * ========
+ * 
+ * TODO
+ * ----
  *  This library has gotten big.  It handles most basic utilities. 
  *  Let's start with errors.
  *
@@ -32,8 +34,8 @@
  *  Line numbers can also be compiled in and out when bugs are tricky.  
  *  Admittedly, this is mostly for my own purposes, but it can be useful outside of testing.
  *  Use -DERRLNO_H to enable line number and function macros as part of error messages.
- *
- * */
+ * 
+ * ------------------------------------------- */
 //Start with includes, not all modules need all headers
 #ifndef _WIN32
  #define _POSIX_C_SOURCE 200809L
@@ -445,7 +447,6 @@
 		r->markers = raw; \
 		memset( &r->markers[ (follow - 1)], 0, sizeof(Mark) ); \
 		ct = &r->markers[ (follow - 1) ]; \
-		ct->depth = depth; \
 	}
 #endif
 
@@ -1057,7 +1058,9 @@ enum
 typedef struct
 { 
   uint8_t *blob, *parent;
-  int      size, action, psize, type, index, depth;
+  int      size, index;
+	short    action, type, psize, no;
+	//,action,psize ,type
 } Mark;  
 
 typedef struct
@@ -1073,8 +1076,10 @@ typedef struct
   Mark    *markers;	
   Table   *renderers;  //This thing should handle different rendering functs 
   Buffer   dest;
-  
   Parser  *p;
+	struct parent { uint8_t *src; int size; } parent[10]; 
+	char *psrc;
+	int psize;
   char     buf[RENDER_MAX_BUF_SIZE];
  #ifndef ERR_H
   int error;
@@ -1087,6 +1092,7 @@ typedef struct
  #endif
 } Render;
 #endif
+
 
 #ifndef SQROOGE_H
 enum {

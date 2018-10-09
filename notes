@@ -1,0 +1,41 @@
+this render thing is too difficult...
+
+RAW (no table key)
+	memcpy
+
+DIRECT
+	get index of value
+
+LOOP
+	get index of table, how many values are there
+
+STUB
+	these don't change position, afaik, so maybe when getting
+the first one, the others can be calculated by using the
+loop's first index ( e.g. 'name' => the table, 'name.king'
+=> the value, calculate the remaining positions of king by
+multiplying the position by the current count
+
+$KEY, $VALUE
+	this one is a little easier... but needs some real
+limitations, for example, do I allow any other stubs?
+
+
+this SHOULD save some time when looping, since now just
+references are needed
+
+
+map should look like:
+{ size, index, action & type (should be bitmasks), content }
+(trim to four ?)
+
+i don't have to use an array to store each index, I can
+start from a point and use an countsize ( e.g. i += cs,
+where cs is the distance to the next valid key )
+
+also, if each marker is stored in its own pointer, moving
+backwards should not be very difficult
+
+
+
+
