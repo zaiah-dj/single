@@ -315,8 +315,18 @@ lt_dump( r->srctable );
 							memcpy( &par[ parlen ], dt->parent, dt->psize );
 							parlen += dt->psize;
 
-LiteKv *ik = NULL; 
-while ( (ik = lt_items( r->srctable, "cities" )) ) {
+write(2,par,parlen);
+
+niprintf( dt->times ); exit( 0 );
+
+//find index, move and do work
+int a = lt_geti( r->srctable, "cities" );
+lt_set( r->srctable, a );
+LiteKv *ik = lt_current( r->srctable );
+
+//if my index is a table, i'll have to loop
+//and find the shallow keys
+do {
 	char keybuf[ 1024 ] = {0};
 	if ( ik->key.type == LITE_BLB )
 		memcpy( keybuf, ik->key.v.vblob.blob, ik->key.v.vblob.size );
@@ -327,12 +337,24 @@ while ( (ik = lt_items( r->srctable, "cities" )) ) {
 	}
 
 	//if the type is a table, skip the count 
-	fprintf( stderr, "[??] => '%s' (%s) -> (%s)\n", keybuf 
+	fprintf( stderr, "[%d] => '%s' (%s) -> (%s)\n", 
+	   (r->srctable)->index
+		,keybuf 
 		,lt_typename( ik->key.type )
 		,lt_typename(ik->value.type ) 
 	);
+	if ( ik->value.type == LITE_TBL ) {
+		//get count
+		int el = lt_counti( r->srctable, (r->srctable)->index );  
+		niprintf( el );	
+		niprintf( r->srctable->index );	
+		niprintf( lt_set( r->srctable, el ) );
+		niprintf( r->srctable->index );	
+
+	}
 	getchar();
-}
+} while ( (ik = lt_next( r->srctable )) );
+
 
 fprintf(stderr,"stopping function...\n" ); getchar();
 exit( 0 );

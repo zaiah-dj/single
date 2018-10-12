@@ -1580,8 +1580,7 @@ int lt_move (Table *t, int dir) {
 
 
 //Finalize adding to both sides of a table data structure
-void lt_finalize (Table *t)
-{
+void lt_finalize (Table *t) {
 	//if these are equal, don't increment both *t->rCount and t->count
 	( t->rCount == &t->count ) ? 0 : ( *t->rCount )++ ; 
 	t->count ++;
@@ -1591,8 +1590,7 @@ void lt_finalize (Table *t)
 
 
 //Hash each key
-void lt_lock (Table *t)
-{
+void lt_lock (Table *t) {
 	//Might not be able to reuse this...	
 	LiteKv *parent = NULL;
 	LiteValue *v   = NULL;
@@ -1731,14 +1729,12 @@ int lt_get_long_i (Table *t, unsigned char *find, int len)
 
 
 //Return LiteKv at certain index
-LiteValue *lt_retany (Table *t, int index)
-{
+LiteValue *lt_retany (Table *t, int index) {
 	return ( index <= -1 || index > t->count ) ? NULL : &(t->head + index)->value; 
 }
 
 
-int lt_exists (Table *t, int index)
-{
+int lt_exists (Table *t, int index) {
 	return ( index <= -1 || index > t->count );
 }
 
@@ -1771,16 +1767,25 @@ LiteRecord *lt_ret (Table *t, LiteType type, int index) {
 
 
 //Set the current index to another one
-int lt_set (Table *t, int index)
-{
-	return ( index <= -1 || index > t->count ) ? -1 : (t->index = index);
+int lt_set (Table *t, int index) {
+	int j = 0;	
+	if ( index < 0 )
+		j = (( t->index + index ) < 0 ) ? -1 : (t->index += index ); 
+	else {
+		j = (( t->index + index ) > t->count ) ? -1 : (t->index += index ); 
+	}
+
+	if ( j == -1 )
+		return 0;
+	else {
+		t->current += index;	
+		return 1;
+	}
 }
 
 
-
 //Reset a table index
-void lt_reset (Table *t)
-{
+void lt_reset (Table *t) {
 	t->start = 0;
 	t->end   = 0;
 	t->index = 0;
@@ -1789,13 +1794,16 @@ void lt_reset (Table *t)
 
 
 //Iterate through the indices of a table
-LiteKv *lt_next (Table *t)
-{
+LiteKv *lt_next (Table *t) {
 	LiteKv *curr = (t->index > t->count) ? NULL : t->head + t->index;
 	t->index++;
 	return curr;
 }
 
+
+LiteKv *lt_current (Table *t) {
+	return ( t->index > t->count ) ? NULL : t->head + t->index;
+}
 
 
 //Loop from another point...
@@ -2054,8 +2062,7 @@ void lt_dump (Table *t)
 
 
 //Dump all values in a table.
-int __lt_dump ( LiteKv *kv, int i, void *p )
-{
+int __lt_dump ( LiteKv *kv, int i, void *p ) {
 	VPRINT( "kv at __lt_dump: %p", kv );
 	LiteType vt = kv->value.type;
 	int *level = (int *)p;
@@ -2068,8 +2075,7 @@ int __lt_dump ( LiteKv *kv, int i, void *p )
 
 //Write a real simple function to iterate through everything
 //void lt_complex_exec (Table *t, int (*fp)( LiteType t, LiteValue *k, LiteValue *v, int i, void *p ) )
-int lt_exec (Table *t, void *p, int (*fp)( LiteKv *kv, int i, void *p ) )
-{
+int lt_exec (Table *t, void *p, int (*fp)( LiteKv *kv, int i, void *p ) ) {
 	int level = 0;	
 
 	//Loop through each index
@@ -2083,8 +2089,7 @@ int lt_exec (Table *t, void *p, int (*fp)( LiteKv *kv, int i, void *p ) )
 }
 
 //Print a set of values at a particular index
-static void lt_printindex (LiteKv *tt, int ind)
-{
+static void lt_printindex (LiteKv *tt, int ind) {
 	int         w = 0;
   char b[lt_buflen]; 
 	memset(b, 0, lt_buflen);

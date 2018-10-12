@@ -1,0 +1,166 @@
+
+
+@ stub
+
+- make parent (and keep it until the current operation is done)
+
+a)
+	- allocate a stretching buffer of ints and add each index of table to it
+
+b)
+	- iterate through all of the keys in this particular table
+	- need a pointer to array of LiteValues( *lv )
+	- each time dt->times drops, lv moves forward ( lv++ )
+
+
+
+c) 
+	copy and create parent buffer at loop start
+	find the index of that table, skipping the entire block if not there
+	loop through all the keys, allocate a buffer for each and copy the child stub
+to parent string (order should not matter, bc, every iteration is differnt)
+	this array of uin8t /char pointers may need to be added to Mark 
+	free when count drops and rebuild the buffer everytime
+
+	now:
+		key value should be quite simple to do
+		likewise stubs should be slightly more efficient, since we'll check the last
+chars of both on every new thing
+
+
+
+
+test some assumptions
+	
+- does the order of tables change? no
+
+- will the schema of tables change?  yes, because Lua and JS (and probably other
+  weak table imps will not maintain an order) 
+
+- is there a way to read ahead?, yes
+		I'd have to use my current index, and compare that to a count of all
+		elements in the table, I think this is the wrong way to approach though
+
+- are there any tools to allow me to get the index of each value I'm looking for
+  and store later?
+		as written no, 
+		I can either:
+		
+		aa) write a less strict hashing method that can do something like turn:
+			hash.0.bot.fly.0 into hash.bot.fly
+				this would involve modifying the hashing function to do some extra
+				type sniffing before returning a number
+
+		bb) use a new data structure that holds the requested indices of a set
+			of keys at a certain point in the table
+				this solves the rendering problem by giving me a data structure I
+				can use and iterate through
+
+				much lighter on memory
+
+		cc) return a "rebounded" table (composed of references to the original
+			table) with its own hashes
+				i would basically make a copy, but not a complete copy, even with
+				ptrs, this could be heavy on memory, and is not super easy to 
+				implement.  and it still doesn't quite solve my current problem
+			
+				more useful and less to think about
+				with backend changes, this should still work the same
+
+d)
+	readahead at R_ENDLOOP | R_POSLOOP | R_KEYLOOP, there could be a lot of keys
+	
+	stubs should read as they go
+
+
+so again from the beginning:
+- lt_copy should be able to make a new table (i don't care if it's pointers or
+  something else)
+- after this has been succesfully tested, I want each copy to be assigned to
+  a pointer in that weird structure in render_render
+
+	key/val ( $LOOP )
+	-----------------
+- moving through this is no longer as simple as 1,2,3.  instead of that, try
+	lt_next on each one, copy each key to the parent string and that should 
+	yield a value, obviously skip table entries
+- as dt->times drops (since the number should still be accurate), move lt_next
+	up by one.  if it returns NULL, uh...	
+- at dt->times == 0, destroy the copy
+
+	stubs ( #LOOP )
+	-----------------
+- single keys that are not within a numerically indexed table are easy, they're
+  just direct references
+- single keys within a numerically indexed table involve:
+	the long way involves loop through each key via lt_next and waiting until a
+		match is found, this is kind of silly and defeats the purpose of using a
+			hash table, will take forever for 100 column tables
+	a shorter but equally brutish way to do it is making a copy of the numerically
+		indexed table, and running hashes on that, 
+			something like copy_t = lt_copy( tp, ...  )
+			str = parent + stub 
+			lt_get_long_i( copy_t, str ); ...bla bla bla
+			now this is three copies of tables on the heap, isn't there another way?
+	simple enough way, and kind of an extension of what is already happening	
+		str = parent + stub
+		h = lt_get_long_i( t, str )
+		if ( h > -1 ) 
+			value // if there is a match, you're out of luck
+		else {
+			key = pull first key via lt_next // should be an int
+			str = parent + key + stub
+			lt_get_long_i( t, str ) 
+		}
+	yet another idea would look something like this:
+		at loop
+		int x[] = malloc ( lt_count * number of keys you want?, which you have to read ahead
+			to do )	
+	something I may have forgotten
+		lt_count will return the most appropriate count for the type in questoin
+		if the value contains on value and it is a table, then count will be one
+		if count is run on the table, I'll get something else
+	
+	
+	exec ( !KEY ) // ! may be a comment in mustache, so check )
+	-----------------
+- run some code on the block and return, this probably isn't that difficult to
+  pull
+
+
+	....		
+	-----------------
+- I think I'm missing the obvious.
+	I can't extract anything else or modify the table.  that would be kind of
+	defeating the purpose
+
+	x dump the multi level table and see if it looks sensible in any way
+
+	more assumptions to test:
+	- can I change the behavior of a stub based on its type
+		yes, but this isn't currently being done...
+		or accounted for in any meaningful way
+
+	- can lt_next( ... ) be used to move from a certain point in a table?
+		if no,
+			it really sucks, and I guess a copy is needed
+		if yes, 
+			then the next steps are valid
+
+	- does lt_next( ... ) move through only the shallowest keys? 
+	  if no, 
+			then I'll have to loop and find table keys and do a whole lot of other
+			fuckery to make it work
+	  if yes,
+			I can pull the first key to come back after lt_next executes
+			if it's text, combine that, if it's numeric combine that... then the
+			copying isn't needed...	
+
+
+	- pseudocode the new proc loop with the above logic:
+
+
+
+	the issue is that I can't really use numbers to grab the next index ( although
+	I could if I knew the count )
+

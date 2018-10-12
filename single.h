@@ -269,6 +269,16 @@
 #ifndef TAB_H
  #define LT_POLYMORPH_BUFLEN 2048
  #define LT_MAX_HASH 7 
+#if 0
+ #define lt_advance(t, pos) \
+	lt_set( t, t->index + pos, 0 ) 
+ #define lt_rewind(t, pos) \
+	lt_set( t, t->index - pos, 0 )
+#endif
+ #define lt_advance(t, pos) \
+	lt_set( t, pos ) 
+ #define lt_rewind(t, pos) \
+	lt_set( t, pos )
  #define lt_dump(t) \
 	lt_exec( t, &__lt_int, __lt_dump )
  #define lt_blob_at( t, i ) \
@@ -1493,6 +1503,7 @@ const char *lt_rettypename( Table *t, int side, int index );
 void lt_lock (Table *t); 
 int lt_get_long_i (Table *t, unsigned char *find, int len);
 LiteKv *lt_next (Table *t);
+LiteKv *lt_current (Table *t);
 void lt_reset (Table *t);
 int lt_set (Table *t, int index);
 LiteValue *lt_retany (Table *t, int index);
