@@ -1,0 +1,160 @@
+
+
+//changes needed on render
+
+- LITE_TBL for stub is on the bottom now.  this should never be called though
+
+- add bounds check for deepest table (10) (or allow malloc of new Marks) 
+
+- multiple levels deep ought to work, but I can't think of a way to do this
+  with just hashes yet 
+
+- add key/value logic {{ $tbl }} {{ .key }} {{ .value }} {{ /tbl }}, R_KEYVAL
+
+
+
+
+
+// NON-RECURSIVE VERSION
+
+uint8_t parent[] = {0};
+Mark *yah = NULL;
+
+while ( 1 ) {
+
+	//this should be first 
+	RAW:
+		copy raw values from whatever source text 
+
+	POSLOOP:
+		if type is not table
+			render the next blocks as direct or raw (or stub if we are inside a table
+			already)
+		else 
+			move pointer next (or start recursion)
+			looptimes = how many times you need to loop, 
+			disthash = the key and value distances between table indices
+
+	NEGLOOP:
+		if type is table
+			completely skip this block (since I can't negate it)
+		else
+			if this value does not exist
+			render th next blocks as direct or raw (or stub if we are inside a table)	
+
+	ENDLOOP:
+		if type is not table
+			skip this block and move on
+		else 
+			if looptimes == 0
+				move pointer back (or end recursion)
+			else
+				repeat and looptimes--
+		
+	STUB:
+		make parent and then 
+		copy value from table
+
+	DIRECT:
+		copy value from table
+
+
+
+}
+
+
+// NON-RECURSIVE VERSION
+
+uint8_t parent[] = {0};
+Mark *yah = NULL;
+
+while ( 1 ) {
+
+	//this should be first 
+	RAW:
+		copy raw values from whatever source text 
+
+	POSLOOP:
+		if type is not table
+			render the next blocks as direct or raw (or stub if we are inside a table
+			already)
+		else 
+			move pointer next (or start recursion)
+			looptimes = how many times you need to loop, 
+			disthash = the key and value distances between table indices
+
+	NEGLOOP:
+		if type is table
+			completely skip this block (since I can't negate it)
+		else
+			if this value does not exist
+			render th next blocks as direct or raw (or stub if we are inside a table)	
+
+	ENDLOOP:
+		if type is not table
+			skip this block and move on
+		else 
+			if looptimes == 0
+				move pointer back (or end recursion)
+			else
+				repeat and looptimes--
+		
+	STUB:
+		make parent and then 
+		copy value from table
+
+	DIRECT:
+		copy value from table
+
+
+
+}
+
+
+// RECURSIVE VERSION
+
+// first time run, p should be NULL
+sig( Render *r, uint8_t parent *p, int plen ) {
+	uint8_t parent[] = {0};
+	( p ) ? memcpy( parent, p, plen) : 0;
+
+	while ( 1 ) {
+
+		//this should be first 
+		RAW:
+			copy raw values from whatever source text 
+			memcpy( r->dest, r->block, r->bsize );
+
+		POSLOOP:
+			if type is not table
+				render the next blocks as direct or raw (or stub if we are inside a table
+				already)
+			else 
+				move pointer next (or start recursion)
+				looptimes = how many times you need to loop, 
+				disthash = the key and value distances between table indices
+
+		NEGLOOP:
+			if type is table
+				completely skip this block (since I can't negate it)
+			else
+				if this value does not exist
+				render th next blocks as direct or raw (or stub if we are inside a table)	
+
+		ENDLOOP:
+			if type is not table
+				skip this block and move on
+			else 
+				if looptimes == 0
+					move pointer back (or end recursion)
+				else
+					repeat and looptimes--
+			
+		STUB:
+			copy value from table
+
+		DIRECT:
+
+	} 
+} 
+

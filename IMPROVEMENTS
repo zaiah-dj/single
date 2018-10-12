@@ -1,0 +1,24 @@
+below is an improved hash structure.  it's still way too big.
+
+struct Boosie 
+{
+  //short hash[8]; //i don't remember why this is an array
+	short hash[4];
+  LiteKv *parent;  
+  union { char *h; int p;} luke; 
+  LiteValue value;
+	char vtype;
+	union {
+		int vint;
+		float       vfloat;
+		char       *vchar;
+		uint8_t    *vblob;
+		void       *vnull;
+		void       *vusrdata;
+		LiteBlob    vblob;
+		LiteTable   vtable;
+		long        vptr;
+	} name;
+};
+
+

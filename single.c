@@ -1337,8 +1337,7 @@ const char *lt_strerror (Table *t)
 
 
 //Initiailizes a table data structure
-Table *lt_init (Table *t, LiteKv *k, int size) 
-{
+Table *lt_init (Table *t, LiteKv *k, int size) {
 	SHOWDATA( "Working with root table %p\n", t );
 
 	//Calculate optimal modulus for hashing
@@ -1376,8 +1375,7 @@ Table *lt_init (Table *t, LiteKv *k, int size)
 	t->mallocd = (!k) ? 1 : 0;
 
 	//Allocate space for users that don't pass in their own structure 
-	if ( !k )
-	{
+	if ( !k ) {
 		actual_size = t->modulo;
 		k = malloc(t->modulo * sizeof(LiteKv));
 		if ( !k ) 
@@ -1387,8 +1385,7 @@ Table *lt_init (Table *t, LiteKv *k, int size)
 		}
 	}
 
-	if ( memset((void *)k, 0, sizeof(LiteKv) * actual_size) == NULL ) 
-	{
+	if ( memset((void *)k, 0, sizeof(LiteKv) * actual_size) == NULL ) {
 		t->error = ERR_LT_ALLOCATE;
 		return 0;
 	}
@@ -1424,8 +1421,7 @@ LiteType lt_add ( Table *t, int side, LiteType lt, int vi, float vf,
 	char *vc, unsigned char *vb, unsigned int vblen, void *vn, Table *vt, char *trim )
 {
 
-	if ( t->index >= t->total ) 
-	{
+	if ( t->index >= t->total ) {
 		t->error = ERR_LT_OUT_OF_SPACE;
 		return 0;
 	}
@@ -1440,55 +1436,46 @@ LiteType lt_add ( Table *t, int side, LiteType lt, int vi, float vf,
 		return 0;
 
 	//Set each value to its matching type
-	if ( lt == LITE_INT )
-	{
+	if ( lt == LITE_INT ) {
 		r->vint = vi;
 		SHOWDATA( "Adding int %s %d to table at %p", ( !side ) ? "key" : "value", r->vint, ( void * )t );
 	}
-	else if ( lt == LITE_FLT )
-	{
+	else if ( lt == LITE_FLT ) {
 		r->vfloat = vf;
 		SHOWDATA( "Adding float %s %f to table at %p", ( !side ) ? "key" : "value", r->vfloat, ( void * )t );
 	}
 #ifdef LITE_NUL
-	else if ( lt == LITE_NUL )
-	{
+	else if ( lt == LITE_NUL ) {
 		r->vnull = NULL;
 		SHOWDATA( "Adding null %s to table at %p", ( !side ) ? "key" : "value", ( void * )t );
 	}
 #endif
-	else if ( lt == LITE_USR )
-	{
+	else if ( lt == LITE_USR ) {
 		r->vusrdata = vn;
 		SHOWDATA( "Adding userdata %p to table at %p", ( void * )r->vusrdata, ( void * )t );
 	}
-	else if ( lt == LITE_TBL )
-	{
+	else if ( lt == LITE_TBL ) {
 		SHOWDATA( "Adding invalid value table!" );
 		return ( t->error = ERR_LT_INVALID_VALUE ) ? -1 : -1;
 	}
-	else if ( lt == LITE_BLB )
-	{
+	else if ( lt == LITE_BLB ) {
 		r->vblob.blob = vb, r->vblob.size = vblen;
 		SHOWDATA( "Adding blob %s of length %d to table at %p", (!side) ? "key" : "value", r->vblob.size, ( void * )t );
 	}
-	else if ( lt == LITE_TXT )
-	{
+	else if ( lt == LITE_TXT ) {
 		//Even though this says LITE_TXT, the assumption 
 		//is that tab needs to duplicate the data. 
 		r->vchar = malloc( vblen + 1 );
 		if ( !r->vchar )
 			return 0;
-		else 
-		{
+		else {
 			memset( r->vchar, 0, vblen + 1 );
 			memcpy( r->vchar, vb, vblen );
 			r->vchar[ vblen ] = '\0';
 			SHOWDATA( "Adding text %s '%s' to table at %p", ( !side ) ? "key" : "value", r->vchar, ( void * )t );
 		}
 	}
-	else 
-	{
+	else {
 		SHOWDATA( "Attempted to add unknown %s type to table at %p", ( !side ) ? "key" : "value", ( void * )t );
 		return 0;
 	}
@@ -1498,18 +1485,17 @@ LiteType lt_add ( Table *t, int side, LiteType lt, int vi, float vf,
 
 
 //Return types
-LiteType lt_rettype( Table *t, int side, int index )
-{
-	if ( index < 0 || index > t->count )
+LiteType lt_rettype( Table *t, int side, int index ) {
+	if ( index < 0 || index > t->count ) {
 		return ( t->error = ERR_LT_INVALID_INDEX ) ? 0 : 0;
+	}
 	return (!side) ? (t->head + index)->key.type : (t->head + index)->value.type; 
 }
 
 
 
 //Return typenames
-const char *lt_rettypename( Table *t, int side, int index )
-{
+const char *lt_rettypename( Table *t, int side, int index ) {
 	if ( index < 0 || index > t->count ) 
 	{
 		t->error = ERR_LT_INVALID_INDEX; 
@@ -1520,18 +1506,15 @@ const char *lt_rettypename( Table *t, int side, int index )
 }
 
 
-const char *lt_typename (int type)
-{
+const char *lt_typename (int type) {
 	return ( type > -1 && type <= LITE_NOD ) ? lt_polymorph_type_names[ type ] : NULL;
 }
 
 
 //Move left or right within the hierarchy of tables
-int lt_move (Table *t, int dir) 
-{
+int lt_move (Table *t, int dir) {
 	//Out of space
-	if ( t->index > t->total ) 
-	{
+	if ( t->index > t->total ) {
 		t->error = ERR_LT_OUT_OF_SPACE;
 		return -1;
 	}
@@ -1542,8 +1525,7 @@ int lt_move (Table *t, int dir)
 	LiteValue *value = &curr->value;
 
 	//Left or right?	
-	if ( !dir )
-	{
+	if ( !dir ) {
 		//Set count of elements in this new table to actual count
 		LiteTable *T = &value->v.vtable;
 		value->type  = LITE_TBL;
@@ -1763,13 +1745,11 @@ int lt_exists (Table *t, int index)
 
 
 //Return a LiteRecord matching a certain type at a certain index
-LiteRecord *lt_ret (Table *t, LiteType type, int index)
-{
-		if ( index <= -1 || index > t->count ) 
-		{
-			t->error = ERR_LT_INVALID_INDEX;
-			return (LiteRecord *)supernul; 
-		}
+LiteRecord *lt_ret (Table *t, LiteType type, int index) {
+	if ( index <= -1 || index > t->count ) {
+		t->error = ERR_LT_INVALID_INDEX;
+		return (LiteRecord *)supernul; 
+	}
 #if 0
 	}
 	else 
@@ -1935,19 +1915,17 @@ Table *lt_within_long( Table *st, uint8_t *src, int len )
 }
 
 
-void lt_unset (Table *t)
-{
-	if (t->buf) 
-	{
+void lt_unset (Table *t) {
+	if (t->buf) {
 		free( t->buf );
 		t->buf = NULL;
 	}
 }
 
+
 //Copy from start index to end index
 //A macro will handle copying tables (and it'd be even better to do it without duplication)
-Table *lt_copy (Table *dest, Table *src, int from, int to)
-{
+Table *lt_copy (Table *dest, Table *src, int from, int to, int weak) {
 	//Get a count of all elements
 	int index = 0;
 	int start = (from < 0 ) ? 0 : from;
@@ -2165,6 +2143,39 @@ static void lt_printindex (LiteKv *tt, int ind)
 	write(2, "\n", 1);
 }	
 
+// If I pulled things out, ...
+typedef struct TableMeta {
+	//where does what I'm asking for start?
+	//specifically what is there? (4 tables, 1 text?)
+
+	//or should this just be range of values? 
+	//int start = a, int end = b; for ( int aa = start; aa<end; aa++ )
+	//
+	//this can be calculated with just a hash ( e.g. GetTableMeta( t, 123 )
+	//-> returns TableMeta tt = { start = 13, end = 23 }
+
+	//a step further for this thing would be something like 
+	//GetTableMeta( t, 123, "word1", "word2" )
+	//
+	//word1 and word2 would both come out in the structure as incrementors
+	//e.g this function would get hash of the key word1 and then find all other
+	//keys of word1.  provided that these keys were equidistant from each other,
+	//only an incrementor should need to come back. 
+	// .incrementor might be 3 for word1, so each new loop would go up by 3
+	// for ( int i=start; i<end; i += inc )
+	//
+	//if the keys  were not equidistant then I'd have to
+	//allocate x amount of ints for the different distances
+	//
+	// [ 2, 3, 7, 8, 13, 17, 18 ] ...
+
+	int start, end;
+} TableMeta;
+
+
+void lt_wtf ( Table *t, TableMeta *tm ) {
+
+}
 
 
 #ifdef DEBUG_H 

@@ -151,7 +151,7 @@ int render_map ( Render *r, uint8_t *src, int srclen ) {
 			REALLOC( raw, r->markers );
 		}
 	}
-render_dump_mark( r );exit( 0 );
+
 	return 1;
 }
 
@@ -159,16 +159,24 @@ render_dump_mark( r );exit( 0 );
 
 //Render
 int render_render ( Render *r ) {
+#if 0
+	char *hhhh = "cities.0.metadata.population";
+	uint8_t *hh = (uint8_t *)hhhh;
+	int hashFound = lt_get_long_i( r->srctable, hh, strlen(hhhh) );
+lt_dump( r->srctable );
+	niprintf( hashFound );
+	exit( 0 );
+#endif
 	//Loops can just use pointers... probably...
 	Mark *lt=NULL, *ct = &r->markers[0];
-	unsigned char srch[ 2048 ];
+	unsigned char srch[1024] = {0}, par[1024] = {0};
+	int parlen = 0;
 	struct DT { Mark *mark; uint8_t *src, *parent; int size, psize, skip, times, position; } d[10]; 
 
 	//everytime you descend, src is what you got, size is length of src
 	//and times is times to repeat
 	struct DT *dt = d;
-	int top = 0;
-	memset( srch, 0, sizeof(srch) );
+	//int top = 0;
 	memset( dt, 0, sizeof (struct DT));
 	
 	while ( ct->blob ) {
@@ -226,16 +234,37 @@ int render_render ( Render *r ) {
 		else if ( ct->action == R_STUB ) {
 			//Check if the key is .key or .value. Loop through keys and values...
 			int i=0, p=0;
+#if 0
 			memcpy( &srch[ p ], dt->parent, dt->psize );
+			write(2, dt->parent, dt->psize );
 			p += dt->psize;
+#else
+			memcpy( &srch[ p ], par, parlen);
+			fprintf( stderr, "%s", "parent: " );write(2, par, parlen );write(2, "\n", 1 );
+			p += parlen;
+#endif
 
+			//some keys are really numeric indices, account for that here...
+			//i either have to figure out what kind of table is there (mixed, num,
+			//text) or
+			//loop through all the keys and make sure that they are a certain type
+
+			//if type of key is numeric, do calc here, if not, just write
+			//lt_keytypeat( ..., i )
+
+			//specific keys are tough to come by this way
 			//Reverse can be done by manipulating dt->times (top = dt->times; num = top - dt->times )
 			p += snprintf( (char *)&srch[ p ], 64, ".%d", dt->times );
 			memcpy( &srch[ p ], ct->blob, ct->size );
 			p += ct->size;
 		
+			write( 2, srch, p ); write( 2, "\n", 1 );	
+			i = lt_get_long_i( r->srctable, srch, p );
+
+			//niprintf( i );getchar();
+		
 			//Get long i, yay
-			if ((i = lt_get_long_i( r->srctable, srch, p )) == -1 ) {
+			if ( i == -1 ) {
 				ct++;
 				continue;
 			}
@@ -250,12 +279,12 @@ int render_render ( Render *r ) {
 					p = snprintf((char *)( src = srch ), sizeof(srch), "%0.2f", lt_float_at( r->srctable, i ));
 				else if (t == LITE_INT)
 					p = snprintf((char *)( src = srch ), sizeof(srch), "%d", lt_int_at( r->srctable, i ));
-				else if (t == LITE_TBL)
-					p = snprintf((char *)( src = srch ), sizeof(srch), "%p", &lt_table_at( r->srctable, i ));
 				else if (t == LITE_TXT)
 					p = strlen( lt_text_at(r->srctable, i) ), src = (uint8_t *)lt_text_at( r->srctable, i );
 				else if (t == LITE_BLB) 
 					p = lt_blobsize_at( r->srctable, i), src = lt_blobdata_at( r->srctable, i ); 
+				else if (t == LITE_TBL)
+					p = snprintf((char *)( src = srch ), sizeof(srch), "%p", &lt_table_at( r->srctable, i ));
 				else {
 					ct++;
 					continue;
@@ -280,10 +309,33 @@ int render_render ( Render *r ) {
 						//Skip completely if this is a table and there are no entries
 						if ( (dt->times = lt_counti( r->srctable, ct->index )) > 0 ) {
 							--dt->times;  /*Adjust count b/c the sentinel has its own index*/
-							//dt->times -= 2;  /*Adjust count b/c the sentinel has its own index*/
 							dt->mark = ct + 1;
 							dt->psize = ct->size;
 							dt->parent = ct->blob;
+							memcpy( &par[ parlen ], dt->parent, dt->psize );
+							parlen += dt->psize;
+
+LiteKv *ik = NULL; 
+while ( (ik = lt_items( r->srctable, "cities" )) ) {
+	char keybuf[ 1024 ] = {0};
+	if ( ik->key.type == LITE_BLB )
+		memcpy( keybuf, ik->key.v.vblob.blob, ik->key.v.vblob.size );
+	else if ( ik->key.type == LITE_TXT )
+		memcpy( keybuf, ik->key.v.vchar, strlen( ik->key.v.vchar )); 
+	else if ( ik->key.type == LITE_INT ) {
+		snprintf( keybuf, 1023, "%d", ik->key.v.vint );	
+	}
+
+	//if the type is a table, skip the count 
+	fprintf( stderr, "[??] => '%s' (%s) -> (%s)\n", keybuf 
+		,lt_typename( ik->key.type )
+		,lt_typename(ik->value.type ) 
+	);
+	getchar();
+}
+
+fprintf(stderr,"stopping function...\n" ); getchar();
+exit( 0 );
 						}
 					}
 				}

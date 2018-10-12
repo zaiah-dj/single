@@ -174,8 +174,8 @@ LiteKv SingleTable[] = {
 			{ TEXT_KEY( "rec" ), TEXT_VALUE( "Choo choo cachoo" ) },
 			{ TRM() },
 		{ INT_KEY( 1 )       , TABLE_VALUE( )         },
-			{ TEXT_KEY( "val" ), TEXT_VALUE( "MySQL makes me ecstatic." ) },
 			{ TEXT_KEY( "rec" ), TEXT_VALUE( "Choo choo cachoo" ) },
+			{ TEXT_KEY( "val" ), TEXT_VALUE( "MySQL makes me ecstatic." ) },
 			{ TRM() },
 		{ INT_KEY( 2 )       , TABLE_VALUE( )         },
 			{ TEXT_KEY( "val" ), TEXT_VALUE( "MySQL makes me giddy." ) },
@@ -361,6 +361,100 @@ LiteKv MultiLevelTable[] = {
 	{ LKV_LAST } 
 };
 
+
+#if 0
+LiteKv MultiLevelTableExtreme[] = {
+	{ TEXT_KEY( "cities" )       , TABLE_VALUE( )         },
+		/*Database records look a lot like this*/
+		{ INT_KEY( 0 )       , TABLE_VALUE( )         },
+			{ TEXT_KEY( "city" ), BLOB_VALUE( "San Francisco" ) },
+			{ TEXT_KEY( "parent_state" ), TEXT_VALUE( "CA" ) },
+			{ TEXT_KEY( "metadata" ), TABLE_VALUE( )         },
+				//Pay attention to this, I'd like to embed uint8_t data here (I think Lua can handle this)
+				{ TEXT_KEY( "skyline" ), BLOB_VALUE( "CA" ) },
+				{ TEXT_KEY( "population" ), INT_VALUE( 870887 ) },
+				{ TEXT_KEY( "demographics" ), TABLE_VALUE( )         },
+#if 0
+					{ TEXT_KEY( "Black" ),    INT_VALUE( 5.5 ) },
+					{ TEXT_KEY( "White" ),    INT_VALUE( 40.5 ) },
+					{ TEXT_KEY( "Asian" ),    INT_VALUE( 35.4 ) },
+					{ TEXT_KEY( "Hispanic" ), INT_VALUE( 15.2 ) },
+#else
+					{ TEXT_KEY( "Black" ),    INT_VALUE( 5 ) },
+					{ TEXT_KEY( "White" ),    INT_VALUE( 40 ) },
+					{ TEXT_KEY( "Asian" ),    INT_VALUE( 35 ) },
+					{ TEXT_KEY( "Hispanic" ), INT_VALUE( 15 ) },
+#endif
+					{ TEXT_KEY( "Other" ),    INT_VALUE( 20 ) },
+					{ TRM() },
+				{ TEXT_KEY( "sisterCities" ), TABLE_VALUE( )         },
+					{ INT_KEY( 0 ), TEXT_VALUE( "Sydney, Austrailia" ) },
+					{ INT_KEY( 1 ), TEXT_VALUE( "Beijing, China" ) },
+					{ INT_KEY( 2 ), TEXT_VALUE( "Perth, Australia" ) },
+					{ INT_KEY( 3 ), TEXT_VALUE( "Johannesburg, South Africa" ) },
+					{ TRM() },
+				{ TRM() },
+			{ TRM() },
+
+		{ INT_KEY( 1 )       , TABLE_VALUE( )         },
+			{ TEXT_KEY( "city" ), BLOB_VALUE( "New York" ) },
+			{ TEXT_KEY( "parent_state" ), TEXT_VALUE( "NY" ) },
+			{ TEXT_KEY( "metadata" ), TABLE_VALUE( )         },
+				{ TEXT_KEY( "skyline" ), BLOB_VALUE( "CA" ) },
+				{ TEXT_KEY( "population" ), INT_VALUE( 19750000 ) },
+				{ TEXT_KEY( "demographics" ), TABLE_VALUE( )         },
+#if 0
+					{ TEXT_KEY( "Black" ),    INT_VALUE( 17.7 ) },
+					{ TEXT_KEY( "White" ),    INT_VALUE( 55.8 ) },
+					{ TEXT_KEY( "Asian" ),    INT_VALUE( 8.9 ) },
+#else
+					{ TEXT_KEY( "Black" ),    INT_VALUE( 17 ) },
+					{ TEXT_KEY( "White" ),    INT_VALUE( 55 ) },
+					{ TEXT_KEY( "Asian" ),    INT_VALUE( 8 ) },
+#endif
+					{ TEXT_KEY( "Hispanic" ), INT_VALUE( 19 ) },
+					{ TEXT_KEY( "Other" ),    INT_VALUE( 13 ) },
+					{ TRM() },
+				{ TEXT_KEY( "sisterCities" ), TABLE_VALUE( )         },
+					{ INT_KEY( 0 ), TEXT_VALUE( "Arusha, Tanzania" ) },
+					{ INT_KEY( 1 ), TEXT_VALUE( "Durham, United Kingdom" ) },
+					{ INT_KEY( 2 ), TEXT_VALUE( "Kostroma, Russia" ) },
+					{ INT_KEY( 3 ), TEXT_VALUE( "Toyama, Japan" ) },
+					{ INT_KEY( 4 ), TEXT_VALUE( "Zhuzhou, Hunan Province, China" ) },
+					{ TRM() },
+				{ TRM() },
+			{ TRM() },
+
+		{ INT_KEY( 2 )       , TABLE_VALUE( )         },
+			{ TEXT_KEY( "city" ), BLOB_VALUE( "Raleigh" ) },
+			{ TEXT_KEY( "parent_state" ), TEXT_VALUE( "NC" ) },
+			{ TEXT_KEY( "metadata" ), TABLE_VALUE( )         },
+				{ TEXT_KEY( "skyline" ), BLOB_VALUE( "CA" ) },
+				{ TEXT_KEY( "population" ), INT_VALUE( 870887 ) },
+				{ TEXT_KEY( "demographics" ), TABLE_VALUE( )         },
+#if 0
+					{ TEXT_KEY( "Black" ),    INT_VALUE( 28.4 ) },
+					{ TEXT_KEY( "White" ),    INT_VALUE( 57.74 ) },
+					{ TEXT_KEY( "Asian" ),    INT_VALUE( 4.69 ) },
+					{ TEXT_KEY( "Hispanic" ), INT_VALUE( 11.81 ) },
+#else
+					{ TEXT_KEY( "Black" ),    INT_VALUE( 28 ) },
+					{ TEXT_KEY( "White" ),    INT_VALUE( 57 ) },
+					{ TEXT_KEY( "Asian" ),    INT_VALUE( 4 ) },
+					{ TEXT_KEY( "Hispanic" ), INT_VALUE( 11 ) },
+#endif
+					{ TEXT_KEY( "Other" ),    INT_VALUE( 9 ) },
+					{ TRM() },
+				{ TEXT_KEY( "sisterCities" ), TABLE_VALUE( )         },
+					{ INT_KEY( 0 ), TEXT_VALUE( "Agrigento, Sicily" ) },
+					{ INT_KEY( 1 ), TEXT_VALUE( "Ashdod South, Isreal" ) },
+					{ TRM() },
+				{ TRM() },
+			{ TRM() },
+		{ TRM() },
+	{ LKV_LAST } 
+};
+#endif
 
 
 
@@ -558,7 +652,7 @@ RenderTest r[] =
 	},
 #endif
 
-#ifdef TABLE_MULTI
+#if 0
 	{
 		.name = "two level table",
 		.desc = "two level table | key value test",
@@ -611,7 +705,9 @@ RenderTest r[] =
 		 "</body>\n"
 		 "</html>\n"
 	},
+#endif
 
+#ifdef TABLE_MULTI
 	//multi-level tables
 	{
 		.name = "key and value",
@@ -659,6 +755,7 @@ RenderTest r[] =
 	},
 #endif
 
+
 #ifdef TABLE_KEYVALUE
 	//key and value vs actual values
 	{
@@ -686,7 +783,7 @@ TEST( render ) {
 	int set = 1;
 	RenderTest *rt = r;
 	char buf[ BUFLEN ];
-	int destlen = 0;
+	int destlen = 0; 
 	uint8_t *dest = NULL;
 
 	//Let me know what's been defined
@@ -699,8 +796,7 @@ TEST( render ) {
 	//Reset RenderTest pointer and run each test.
 	fprintf( stderr, "\n" );
 	rt = r;
-	while ( !rt->sentinel )
-	{
+	while ( !rt->sentinel ) {
 		//Define
 		Render R;
 		Table *t = NULL; 
