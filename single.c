@@ -1100,29 +1100,6 @@ void print_body ( Bod *b )
  #endif
 
 
-const char render_type_text[] = 
-	"RAW  \0""-LOOP\0""^LOOP\0""$LOOP\0""STUB \0""DIRECT\0""INNER \0";//[ ct->action * 7 ] ); 
-
-
-void render_dump_mark ( Render *r ) {
-	Mark *ct = &r->markers[0];
-	while ( ct->blob ) {
-		fprintf( stderr, "{ size:   %-4d,", ct->size  );
-		fprintf( stderr,  " type:   %-1d,", ct->type  );
-		fprintf( stderr,  " index:  %-4d,", ct->index );
-#if 1
-		fprintf( stderr,  " action: %-6s,'", &render_type_text[ ct->action * 6 ] );
-#else
-		fprintf( stderr,  " action: %-6s,'",
-			&"RAW  \0""-LOOP\0""^LOOP\0""$LOOP\0""STUB \0""DIRECT\0""INNER \0"[ ct->action * 7 ] ); 
-#endif
-		for ( int i=0 ; i < ct->size ; i++ )
-			fprintf( stderr, "%c", (ct->blob[ i ] == '\n' ) ? '@' : ct->blob[ i ] ); 
-		//write( 2, ct->blob, ct->size );
-		fprintf( stderr, "' },\n" );
-		ct++;
-	}
-}
 
 
 //render_init - Initializes a render block

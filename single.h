@@ -458,6 +458,7 @@
 		memset( &r->markers[ (follow - 1)], 0, sizeof(Mark) ); \
 		ct = &r->markers[ (follow - 1) ]; \
 		ct->index = -1; \
+		ct->ix = NULL; \
 	}
 #endif
 
@@ -1057,20 +1058,20 @@ struct Option
 enum
 { /*...*/
 	R_RAW = 0,
-	R_NEGLOOP,
-	R_POSLOOP,
-	R_ENDLOOP,
+	R_NLOOP,
+	R_PLOOP,
+	R_ELOOP,
 	R_STUB,
 	R_DIRECT,
-	R_INNER	
+	R_KLOOP
 };
 
 
 typedef struct
 { 
   uint8_t *blob, *parent;
-  int      size, index;
-	short    action, type, psize, no;
+  signed int      size, index, *ix;
+	short    action, type, psize, loopcount;
 	//,action,psize ,type
 } Mark;  
 

@@ -28,6 +28,62 @@ typedef struct
 	short int index, action /*bitmasked with type*/;
 } TestMark;  
 
+void render_dump_mark ( Render *r ) {
+	Mark *ct = &r->markers[0];
+	while ( ct->blob ) {
+		fprintf( stderr, "{ size:   %-4d,", ct->size  );
+		fprintf( stderr,  " type:   %-1d,", ct->type  );
+		fprintf( stderr,  " index:  %-4d,", ct->index );
+		fprintf( stderr,  " action: %-6s,'",
+			&"RAW  \0""-LOOP\0""^LOOP\0""$LOOP\0""STUB \0""DIRECT\0""KEYVAL\0"[ ct->action * 6 ] ); 
+		fprintf( stderr,  " lcount: %-4d,", ct->loopcount );
+		fprintf( stderr,  " ix: %-10p,\n\t", ct->ix );
+		for ( int i=0 ; i < ct->size ; i++ )
+			fprintf( stderr, "%c", (ct->blob[ i ] == '\n' ) ? '@' : ct->blob[ i ] ); 
+		//write( 2, ct->blob, ct->size );
+		fprintf( stderr, "' },\n" );
+		ct++;
+	}
+}
+
+
+//This finds all integer keys that belong to a table located at a certain depth.
+//This is used to assist in finding hashes of values within tables that might
+//not usually be fetched explicitly
+static int render_prep_ints ( Render *r, int hash, int **p ) {
+	//Set index and set current
+	lt_set( r->srctable, hash + 1 );
+	LiteKv *ik = lt_current( r->srctable );
+	int c = lt_countall( r->srctable ) - 1;
+	int a = 0;
+	int *pp = *p;
+
+	//Loop and find the shallow keys
+	while ( (ik = lt_current( r->srctable )) && ((r->srctable)->index < c) ) {
+		//write the key and whatnot
+		if ( ik->key.type == LITE_INT ) {
+			*pp = ik->key.v.vint; pp++; a++;
+		} 
+
+		//if its a table, there are other things to do
+		if ( ik->value.type == LITE_TBL ) {
+			//have to just move forward until it's a terminator
+			int dep=1;
+			for ( int i=(r->srctable)->index; dep > 0 ; i++ ) {
+				//Advance by one, get new table, 
+				lt_set( r->srctable, 1 );
+				LiteKv *ik = lt_current( r->srctable );
+				dep += (ik->value.type == LITE_TBL) ? 1 : 0; 
+				dep -= (ik->key.type == LITE_TRM) ? 1 : 0; 
+			}
+		}
+
+		//Advance again (lt_next is really not working at all)
+		lt_set( r->srctable, 1 );
+	}
+	return a;
+}
+
 
 //Do a map
 int render_map ( Render *r, uint8_t *src, int srclen ) {
@@ -35,11 +91,13 @@ int render_map ( Render *r, uint8_t *src, int srclen ) {
 	Mark *raw=NULL, *ct=NULL; 
 	struct parent *par = r->parent;
 	memset( r->parent, 0, sizeof( struct parent ) * 10 );
-	//uint8_t *parent = NULL;
-	//unsigned int psize = 0;
+	uint8_t *parent = NULL;
+	unsigned int psize = 0;
 	Parser p = render_dialect;
 	pr_prepare( &p );
 	int depth=0, follow=1;
+lt_dump( r->srctable );
+	lt_reset( r->srctable );
 
 	//Prepare the markers
 	if ( !(r->markers = malloc( sizeof( Mark ) )) )
@@ -70,7 +128,8 @@ int render_map ( Render *r, uint8_t *src, int srclen ) {
 			ct->size = p.size,
 			ct->action = R_RAW;
 			REALLOC( raw, r->markers );
-			ct->action = R_POSLOOP;
+			ct->action = R_PLOOP;
+//ct->loopHasMany = 
 			depth++;
 		}
 		else if ( t == '^' ) {
@@ -79,16 +138,27 @@ int render_map ( Render *r, uint8_t *src, int srclen ) {
 			ct->size = p.size,
 			ct->action = R_RAW;
 			REALLOC( raw, r->markers );
-			ct->action = R_NEGLOOP;
+			ct->action = R_NLOOP;
 			depth--;
 		}
+#if 0
+		else if ( t == '$' ) {
+			//The start of "positive" loops (items that should be true)
+			ct->blob = &src[p.prev],
+			ct->size = p.size,
+			ct->action = R_RAW;
+			REALLOC( raw, r->markers );
+			ct->action = R_KLOOP;
+			depth++;
+		}
+#endif
 		else if (t == '/') {
 			//The end of either a "positive" or "negative" loop
 			ct->blob = &src[p.prev],
 			ct->size = p.size,
 			ct->action = R_RAW;
 			REALLOC( raw, r->markers );
-			ct->action = R_ENDLOOP;
+			ct->action = R_ELOOP;
 			depth--;
 		}
 		else if (t == '{') {
@@ -103,19 +173,53 @@ int render_map ( Render *r, uint8_t *src, int srclen ) {
 			//Anything within here will always be a table
 			ct->blob  = trim((uint8_t *)&src[ p.prev ], (char *)trimchars, p.size, &ct->size);
 			//This is for all inner stubs, same code and all.
-			int stat = ( ct->action != R_POSLOOP && ct->action != R_ENDLOOP && ct->action != R_NEGLOOP );
+			int stat = ( ct->action != R_PLOOP && ct->action != R_ELOOP && ct->action != R_NLOOP );
+
+			//...
 			if ( *ct->blob == '.' && stat ) {
-				//reverse lookup the parent + stub	
-				niprintf( ct->psize );
 				ct->action = R_STUB;
+				//the parent and other calc should have been done already, so copy stub
+				//and loop
+		
+				//define buffers for stubs and loops	
+				int *p = ct->ix;
+				int tmplen=0;
+				uint8_t tmp[1024]={0}; 
+
+				//do the copy once
+				memcpy( tmp, parent, psize );
+				tmplen += psize;
+				memcpy( &tmp[ tmplen ], ".", 1 );
+				tmplen ++;
+write( 2, tmp, tmplen ); write( 2, "\n", 1 );
+niprintf( ct->loopcount );	
+				//then copy each new index and add it to the int chain	
+				for ( int i=0, len=0; i<ct->loopcount; i++ ) {
+					char ii[10]={0};
+niprintf( *p );
+nsprintf( "sup" );
+					int l = snprintf(ii,9,"%d",*p);
+					memcpy( &tmp[ tmplen ], ii, l );
+					tmplen += l;
+					len += l;
+					memcpy( &tmp[ tmplen ], ct->blob, ct->size );
+					tmplen += ct->size;
+					len += ct->size;
+write( 2, tmp, tmplen ); write( 2, "\n", 1 );
+					tmplen -= len;
+				}
+
+//show me the stub
+				getchar();
 			}
 			else {
-				//get the index of the first table... (should just
-				//be a regular element)
-				if ( !par->size ) { 
+				//get the index of the first table... (should just be a regular element)
+				if ( !par->size ) {
 					ct->index = lt_get_long_i( r->srctable, ct->blob, ct->size );
-					ct->type  = lt_vta( r->srctable, ct->index );
-					fprintf( stderr, "first i: %d, t: %d\n", ct->index, ct->type );
+					ct->ix = malloc( sizeof(int) );
+					*ct->ix = ct->index; 
+					ct->type = lt_vta( r->srctable, ct->index );
+					//fprintf( stderr, "first i: %d, t: %d\n", ct->index, ct->type );
 				}
 				else {
 					//This is a temporary buffer, not the whole thing
@@ -127,25 +231,60 @@ int render_map ( Render *r, uint8_t *src, int srclen ) {
 							memcpy( &b[ bs ], (&par[i])->src, (&par[i])->size );
 							bs += (&par[i])->size;
 						}
-
 						memcpy( &b[ bs ], ".0", 2 );
 						bs += 2;
 						memcpy( &b[ bs ], ct->blob, ct->size );
 						bs += ct->size;
-					} 
+					}
 				
 					//Set columns	
 					ct->index = lt_get_long_i( r->srctable, b, bs );
+					ct->ix = malloc( sizeof(int) );
+					*ct->ix = ct->index; 
 					ct->type  = lt_vta( r->srctable, ct->index );
 				}
 
-				if ((ct->type == LITE_TBL) && (ct->action == R_POSLOOP || ct->action == R_NEGLOOP)) {
-					if ( depth == 1 )
-						(&par[ 0 ])->src = ct->blob, (&par[ 0 ])->size = ct->size;	
-					else {
-						(&par[ depth - 1 ])->src = ct->blob; 
-						(&par[ depth - 1 ])->size = ct->size;	
+				int parentHash=0, skeyCount=0, st=0;
+				st = (ct->action==R_PLOOP || ct->action==R_NLOOP || ct->action==R_KLOOP);
+
+				//ct->type == LITE_TBL
+				if ( (ct->type == LITE_TBL) && st ) {
+					if ( depth == 1 ) {
+						parent = (&par[ 0 ])->src = ct->blob; 
+						(&par[ 0 ])->size = ct->size;	
+						psize = (&par[ 0 ])->size;// = ct->size;	
 					}
+					else {
+						parent = (&par[ depth - 1 ])->src = ct->blob; 
+						(&par[ depth - 1 ])->size = ct->size;	
+						psize = (&par[ depth - 1 ])->size; 
+					}
+
+					//Get the hash, get a count of the shallow elements, and allocate
+					parentHash = lt_get_long_i(r->srctable, parent, psize); 
+					skeyCount = lt_counti(r->srctable, parentHash);
+
+					//if ((h = lt_get_long_i(r->srctable, parent, psize)) == -1 || !(c=lt_counti(r->srctable, h)))
+					//Don't allocate if there were no elements here
+					if ( parentHash == -1 || skeyCount < 2 )
+						ct->ix = NULL;
+					else {
+						ct->ix = malloc( sizeof(int) * skeyCount + sizeof(int) );
+						memset( ct->ix, 0, sizeof(int) * skeyCount + sizeof(int) ); 
+						//gotta catch this...	
+						if ( !ct->ix ) ;
+						//*ct->ix = 0;
+						//loop through the indices and find the hashes
+						ct->loopcount = render_prep_ints( r, parentHash, &ct->ix );	
+#if 0
+niprintf( *&ct->ix[0] );
+niprintf( *&ct->ix[1] );
+niprintf( *&ct->ix[2] );
+niprintf( *&ct->ix[3] );
+exit( 0 );
+#endif
+					}
+					ct->type  = lt_vta( r->srctable, ct->index );
 				}
 			}
 			REALLOC( raw, r->markers );
@@ -181,11 +320,11 @@ lt_dump( r->srctable );
 	
 	while ( ct->blob ) {
 		//Is the skip bit on?
-		if ( ct->action != R_ENDLOOP && dt->skip ) { 
+		if ( ct->action != R_ELOOP && dt->skip ) { 
 			ct++; 
 			continue; 
 		}
-		else if ( ct->action == R_ENDLOOP ) {
+		else if ( ct->action == R_ELOOP ) {
 			//Stop skipping if these match
 			if ( ct->size == dt->psize && (memcmp( dt->parent, ct->blob, dt->size ) == 0)) {
 				if ( dt->skip )
@@ -293,8 +432,8 @@ lt_dump( r->srctable );
 			}	
 			memset( srch, 0, sizeof(srch) );
 		}
-		else if ( ct->action == R_NEGLOOP || ct->action == R_POSLOOP ) {
-			if ( ct->action == R_NEGLOOP && ct->index > -1 )
+		else if ( ct->action == R_NLOOP || ct->action == R_PLOOP ) {
+			if ( ct->action == R_NLOOP && ct->index > -1 )
 				dt->skip = 1; //Set something
 			else {
 				if ( ct->index == -1 )
@@ -350,14 +489,12 @@ do {
 		niprintf( r->srctable->index );	
 		niprintf( lt_set( r->srctable, el ) );
 		niprintf( r->srctable->index );	
-
 	}
 	getchar();
 } while ( (ik = lt_next( r->srctable )) );
 
 
-fprintf(stderr,"stopping function...\n" ); getchar();
-exit( 0 );
+fprintf(stderr,"stopping function...\n" ); getchar(); exit( 0 );
 						}
 					}
 				}
